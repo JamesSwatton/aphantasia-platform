@@ -1,11 +1,37 @@
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.utils.text import slugify
 from core.models import Domain
+import os
+import zipfile
+import shutil
+from pathlib import Path
+
+
+def validate_zip_file(file):
+    """
+    Validate that the uploaded file is a valid zip archive.
+    """
+    if not file.name.endswith('.zip'):
+        raise ValidationError('Only .zip files are allowed.')
+
+    # Check if it's a valid zip file
+    try:
+        zip_file = zipfile.ZipFile(file)
+        # Check for index.html in the zip
+        file_list = zip_file.namelist()
+        if 'index.html' not in file_list:
+            raise ValidationError('Zip file must contain an index.html file.')
+        zip_file.close()
+    except zipfile.BadZipFile:
+        raise ValidationError('The uploaded file is not a valid zip archive.')
 
 
 class LabTask(models.Model):
     """
     Lab.js tasks uploaded by researchers for participants to complete.
+    Accepts zip files which are automatically unpacked and served.
     """
     title = models.CharField(max_length=200)
     description = models.TextField()
@@ -21,9 +47,22 @@ class LabTask(models.Model):
         blank=True,
         related_name='lab_tasks'
     )
-    task_file = models.FileField(
-        upload_to='lab_tasks/%Y/%m/',
-        help_text="Upload lab.js task HTML file or archive"
+    zip_file = models.FileField(
+        upload_to='lab_tasks/zips/',
+        help_text="Upload lab.js task as a .zip file (must contain index.html)",
+        validators=[validate_zip_file],
+        null=True,
+        blank=True
+    )
+    task_slug = models.SlugField(
+        max_length=250,
+        blank=True,
+        help_text="URL-safe identifier, generated from title"
+    )
+    task_directory = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text="Path to unpacked task directory"
     )
     is_active = models.BooleanField(default=True)
     time_limit_minutes = models.PositiveIntegerField(
@@ -45,6 +84,86 @@ class LabTask(models.Model):
 
     def __str__(self):
         return self.title
+
+    def get_task_path(self):
+        """
+        Get the full filesystem path to the unpacked task directory.
+        """
+        if self.task_directory:
+            return os.path.join(settings.MEDIA_ROOT, self.task_directory)
+        return None
+
+    def get_index_url(self):
+        """
+        Get the URL to the task's index.html file.
+        """
+        if self.task_directory:
+            return os.path.join(settings.MEDIA_URL, self.task_directory, 'index.html')
+        return None
+
+    def unpack_zip(self):
+        """
+        Unpack the uploaded zip file to the task directory.
+        """
+        if not self.zip_file:
+            return
+
+        # Generate task directory name: {slug}-{id}
+        task_dir_name = f"{self.task_slug}-{self.id}"
+        task_dir_path = os.path.join('lab_tasks', 'unpacked', task_dir_name)
+        full_path = os.path.join(settings.MEDIA_ROOT, task_dir_path)
+
+        # Remove old directory if it exists
+        if os.path.exists(full_path):
+            shutil.rmtree(full_path)
+
+        # Create directory and unpack
+        os.makedirs(full_path, exist_ok=True)
+
+        # Extract zip file
+        with zipfile.ZipFile(self.zip_file.path, 'r') as zip_ref:
+            zip_ref.extractall(full_path)
+
+        # Store the relative path
+        self.task_directory = task_dir_path
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to generate slug and unpack zip file.
+        """
+        # Generate slug from title if not set
+        if not self.task_slug:
+            self.task_slug = slugify(self.title)
+
+        # Save first to get an ID
+        is_new = self.pk is None
+        super().save(*args, **kwargs)
+
+        # Unpack zip file if it's a new task or zip file changed
+        if self.zip_file:
+            self.unpack_zip()
+            # Save again to store the task_directory path
+            if is_new or self.task_directory:
+                # Use update to avoid recursion
+                LabTask.objects.filter(pk=self.pk).update(
+                    task_directory=self.task_directory
+                )
+
+    def delete(self, *args, **kwargs):
+        """
+        Override delete to clean up unpacked files.
+        """
+        # Delete unpacked directory
+        if self.task_directory:
+            full_path = os.path.join(settings.MEDIA_ROOT, self.task_directory)
+            if os.path.exists(full_path):
+                shutil.rmtree(full_path)
+
+        # Delete zip file
+        if self.zip_file:
+            self.zip_file.delete(save=False)
+
+        super().delete(*args, **kwargs)
 
 
 class TaskSubmission(models.Model):
