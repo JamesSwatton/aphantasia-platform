@@ -104,6 +104,7 @@ class LabTask(models.Model):
     def unpack_zip(self):
         """
         Unpack the uploaded zip file to the task directory.
+        Also replaces ${TASK_ID} placeholders in script.js with the actual task ID.
         """
         if not self.zip_file:
             return
@@ -123,6 +124,22 @@ class LabTask(models.Model):
         # Extract zip file
         with zipfile.ZipFile(self.zip_file.path, 'r') as zip_ref:
             zip_ref.extractall(full_path)
+
+        # Replace ${TASK_ID} placeholder in script.js
+        script_path = os.path.join(full_path, 'script.js')
+        if os.path.exists(script_path):
+            try:
+                with open(script_path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+
+                # Replace the placeholder
+                content = content.replace('${TASK_ID}', str(self.id))
+
+                with open(script_path, 'w', encoding='utf-8') as f:
+                    f.write(content)
+            except Exception as e:
+                # Log error but don't fail the upload
+                print(f"Warning: Could not replace TASK_ID in script.js: {e}")
 
         # Store the relative path
         self.task_directory = task_dir_path

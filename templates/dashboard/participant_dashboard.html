@@ -8,7 +8,7 @@
 
     <div style="margin-bottom: 1rem;">
         <p style="color: #666; font-size: 1rem;">
-            Welcome, <strong>{{ user.email }}</strong>! Here you can view and complete available surveys.
+            Welcome, <strong>{{ user.email }}</strong>! Here you can view and complete available surveys and tasks.
         </p>
     </div>
 
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Completed Surveys Section -->
-    <div>
+    <div style="margin-bottom: 3rem;">
         <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #27ae60;">
             Completed Surveys
         </h2>
@@ -106,6 +106,108 @@
         {% else %}
             <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
                 You haven't completed any surveys yet.
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Available Tasks Section -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #9b59b6;">
+            Available Tasks
+        </h2>
+
+        {% if available_tasks %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for item in available_tasks %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #fafafa;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.task.title }}</h3>
+                                <p style="color: #666; margin-bottom: 1rem;">{{ item.task.description }}</p>
+
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    {% if item.task.domain %}
+                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                            {{ item.task.domain.name }}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if item.task.time_limit_minutes %}
+                                        <span style="background-color: #fff3cd; color: #856404; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                            ⏱️ {{ item.task.time_limit_minutes }} min
+                                        </span>
+                                    {% endif %}
+
+                                    <span style="background-color: #e1bee7; color: #6a1b9a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        Lab Task
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a href="{% url 'tasks:task_run' item.task.pk %}"
+                                   style="display: inline-block; background-color: #9b59b6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
+                                    Start Task
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
+                No new tasks available at this time. Check back later!
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Completed Tasks Section -->
+    <div>
+        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e67e22;">
+            Completed Tasks
+        </h2>
+
+        {% if completed_tasks %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for item in completed_tasks %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #f9f9f9;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.task.title }}</h3>
+                                <p style="color: #666; margin-bottom: 1rem;">{{ item.task.description }}</p>
+
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <span style="background-color: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        ✓ Completed
+                                    </span>
+
+                                    {% if item.task.domain %}
+                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                            {{ item.task.domain.name }}
+                                        </span>
+                                    {% endif %}
+
+                                    {% if item.submission.completed_at %}
+                                        <span style="color: #666; font-size: 0.875rem;">
+                                            Completed {{ item.submission.completed_at|date:"M d, Y" }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <a href="{% url 'tasks:task_run' item.task.pk %}"
+                                   style="display: inline-block; background-color: #95a5a6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
+                                    Retake
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
+                You haven't completed any tasks yet.
             </p>
         {% endif %}
     </div>

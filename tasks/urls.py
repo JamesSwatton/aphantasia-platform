@@ -4,7 +4,14 @@ from . import views
 app_name = 'tasks'
 
 urlpatterns = [
-    # Add your tasks URL patterns here
-    # Example: path('', views.task_list, name='task_list'),
-    # Example: path('<int:pk>/', views.task_detail, name='task_detail'),
+    # Researcher views
+    path('', views.task_list, name='task_list'),
+    path('<int:pk>/preview/', views.task_preview, name='task_preview'),
+
+    # Participant views
+    path('<int:pk>/run/', views.task_run, name='task_run'),
+    path('<int:pk>/complete/', views.task_complete, name='task_complete'),
+
+    # API endpoint
+    path('<int:pk>/submit/', views.task_submit, name='task_submit'),
 ]

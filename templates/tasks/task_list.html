@@ -1,0 +1,147 @@
+{% extends 'base.html' %}
+
+{% block title %}Task Management - Research Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .task-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #3771c8;
+    }
+
+    .task-card h3 {
+        margin-top: 0;
+        color: #2c3e50;
+    }
+
+    .task-meta {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+    }
+
+    .task-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        background-color: #3771c8;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .no-tasks {
+        text-align: center;
+        padding: 3rem;
+        color: #7f8c8d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <h1>Task Management</h1>
+    <a href="/admin/tasks/labtask/add/" class="btn btn-success">+ New Task</a>
+</div>
+
+{% if tasks %}
+    {% for task in tasks %}
+    <div class="task-card">
+        <h3>{{ task.title }}</h3>
+        <p>{{ task.description|truncatewords:30 }}</p>
+
+        <div class="task-meta">
+            <strong>Domain:</strong> {{ task.domain|default:"Uncategorized" }} &nbsp;|&nbsp;
+            <strong>Researcher:</strong> {{ task.researcher.email }} &nbsp;|&nbsp;
+            <strong>Created:</strong> {{ task.created_at|date:"M d, Y" }} &nbsp;|&nbsp;
+            <span class="status-badge {% if task.is_active %}status-active{% else %}status-inactive{% endif %}">
+                {% if task.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
+        </div>
+
+        {% if task.time_limit_minutes %}
+        <div class="task-meta">
+            <strong>Time Limit:</strong> {{ task.time_limit_minutes }} minutes
+        </div>
+        {% endif %}
+
+        {% if task.instructions %}
+        <div class="task-meta">
+            <strong>Instructions:</strong> {{ task.instructions|truncatewords:20 }}
+        </div>
+        {% endif %}
+
+        <div class="task-actions">
+            <a href="{% url 'tasks:task_preview' task.pk %}" class="btn btn-primary">
+                Preview
+            </a>
+            <a href="/admin/tasks/labtask/{{ task.pk }}/change/" class="btn btn-secondary">
+                Edit
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-tasks">
+        <h2>No Tasks Yet</h2>
+        <p>Upload your first lab.js task to get started.</p>
+        <a href="/admin/tasks/labtask/add/" class="btn btn-primary">
+            + Upload Task
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,229 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ task.title }} - Research Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .start-container {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .task-header {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .task-title {
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-size: 2rem;
+    }
+
+    .task-description {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+    }
+
+    .instructions-box {
+        background: #fff3cd;
+        border: 2px solid #ffeaa7;
+        border-radius: 12px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+
+    .instructions-box h3 {
+        margin-top: 0;
+        color: #856404;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .instructions-content {
+        color: #333;
+        line-height: 1.8;
+        font-size: 1.05rem;
+    }
+
+    .preview-badge {
+        display: inline-block;
+        background: #3771c8;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        font-weight: bold;
+        margin-bottom: 2rem;
+    }
+
+    .info-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+
+    .info-card {
+        background: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        text-align: center;
+    }
+
+    .info-card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-card-label {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin-bottom: 0.25rem;
+    }
+
+    .info-card-value {
+        color: #2c3e50;
+        font-size: 1.2rem;
+        font-weight: bold;
+    }
+
+    .action-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 3rem;
+    }
+
+    .btn {
+        padding: 1rem 2rem;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 1.1rem;
+        font-weight: bold;
+        transition: all 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .btn-primary:hover {
+        background-color: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+
+    .btn-secondary:hover {
+        background-color: #7f8c8d;
+    }
+
+    .ready-check {
+        background: #d1ecf1;
+        border: 2px solid #bee5eb;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+
+    .ready-check h4 {
+        color: #0c5460;
+        margin: 0 0 0.5rem 0;
+    }
+
+    .ready-check p {
+        color: #0c5460;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="start-container">
+    {% if is_preview %}
+    <div style="text-align: center;">
+        <span class="preview-badge">
+            👁️ Preview Mode - Results will not be saved
+        </span>
+    </div>
+    {% endif %}
+
+    <div class="task-header">
+        <h1 class="task-title">{{ task.title }}</h1>
+        <p class="task-description">{{ task.description }}</p>
+    </div>
+
+    <div class="info-cards">
+        {% if task.domain %}
+        <div class="info-card">
+            <div class="info-card-icon">🔬</div>
+            <div class="info-card-label">Domain</div>
+            <div class="info-card-value">{{ task.domain.name }}</div>
+        </div>
+        {% endif %}
+
+        {% if task.time_limit_minutes %}
+        <div class="info-card">
+            <div class="info-card-icon">⏱️</div>
+            <div class="info-card-label">Time Limit</div>
+            <div class="info-card-value">{{ task.time_limit_minutes }} min</div>
+        </div>
+        {% endif %}
+
+        <div class="info-card">
+            <div class="info-card-icon">🎯</div>
+            <div class="info-card-label">Type</div>
+            <div class="info-card-value">Lab Task</div>
+        </div>
+    </div>
+
+    {% if task.instructions %}
+    <div class="instructions-box">
+        <h3>
+            <span>📋</span>
+            <span>Instructions</span>
+        </h3>
+        <div class="instructions-content">
+            {{ task.instructions|linebreaks }}
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="ready-check">
+        <h4>✓ Ready to Begin?</h4>
+        <p>When you click "Start Task", the experiment will begin in full-screen mode.</p>
+        {% if task.time_limit_minutes and not is_preview %}
+        <p style="margin-top: 0.5rem;">You have <strong>{{ task.time_limit_minutes }} minutes</strong> to complete this task.</p>
+        {% endif %}
+    </div>
+
+    <div class="action-buttons">
+        {% if is_preview %}
+            <a href="{% url 'tasks:task_list' %}" class="btn btn-secondary">
+                ← Back to Tasks
+            </a>
+            <a href="{% url 'tasks:task_preview' task.pk %}?start=1" class="btn btn-primary">
+                Start Preview →
+            </a>
+        {% else %}
+            <a href="{% url 'dashboard:participant_dashboard' %}" class="btn btn-secondary">
+                ← Back to Dashboard
+            </a>
+            <a href="{% url 'tasks:task_run' task.pk %}?start=1" class="btn btn-primary">
+                Start Task →
+            </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

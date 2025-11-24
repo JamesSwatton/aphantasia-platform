@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+
+{% block title %}Task Complete - {{ task.title }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .complete-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        text-align: center;
+    }
+
+    .success-icon {
+        font-size: 5rem;
+        color: #27ae60;
+        margin-bottom: 1rem;
+        animation: scaleIn 0.5s ease-out;
+    }
+
+    @keyframes scaleIn {
+        from {
+            transform: scale(0);
+        }
+        to {
+            transform: scale(1);
+        }
+    }
+
+    .complete-title {
+        color: #2c3e50;
+        font-size: 2rem;
+        margin-bottom: 1rem;
+    }
+
+    .complete-message {
+        color: #7f8c8d;
+        font-size: 1.1rem;
+        line-height: 1.6;
+        margin-bottom: 2rem;
+    }
+
+    .info-box {
+        background: #f8f9fa;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .info-box h3 {
+        color: #2c3e50;
+        margin-top: 0;
+        font-size: 1.2rem;
+    }
+
+    .info-box p {
+        color: #666;
+        margin: 0.5rem 0;
+    }
+
+    .info-box strong {
+        color: #2c3e50;
+    }
+
+    .btn-complete {
+        background-color: #27ae60;
+        color: white;
+        padding: 1rem 3rem;
+        border: none;
+        border-radius: 8px;
+        font-size: 1.2rem;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.3s ease;
+    }
+
+    .btn-complete:hover {
+        background-color: #229954;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
+    }
+
+    .note {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 2rem;
+        color: #856404;
+        font-size: 0.9rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="complete-container">
+    <div class="success-icon">✓</div>
+
+    <h1 class="complete-title">Task Complete!</h1>
+
+    <p class="complete-message">
+        You have finished the <strong>{{ task.title }}</strong> task.
+        {% if submission.status != 'completed' %}
+        Please confirm below to record your completion.
+        {% endif %}
+    </p>
+
+    <div class="info-box">
+        <h3>What Happened:</h3>
+        <p><strong>✓</strong> Your task results were downloaded to your computer</p>
+        <p><strong>✓</strong> Your participation time was recorded</p>
+        {% if submission.started_at %}
+        <p><strong>Duration:</strong> Started {{ submission.started_at|date:"M d, Y g:i A" }}</p>
+        {% endif %}
+    </div>
+
+    {% if submission.status != 'completed' %}
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn-complete">
+            Confirm Completion & Return to Dashboard
+        </button>
+    </form>
+
+    <div class="note">
+        <strong>Note:</strong> Make sure you've downloaded your results file before confirming.
+        The file should be in your Downloads folder with a name like "bart-[timestamp].csv"
+    </div>
+    {% else %}
+    <p style="color: #27ae60; font-weight: bold; margin: 2rem 0;">
+        ✓ This task has already been marked as complete
+    </p>
+    <a href="{% url 'dashboard:participant_dashboard' %}" style="color: #3498db; text-decoration: none; font-size: 1.1rem;">
+        ← Return to Dashboard
+    </a>
+    {% endif %}
+</div>
+{% endblock %}

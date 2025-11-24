@@ -16,7 +16,19 @@ class LabTaskAdmin(admin.ModelAdmin):
         }),
         ('Task File', {
             'fields': ['zip_file', 'task_slug', 'task_directory', 'preview_link'],
-            'description': 'Upload a .zip file containing your lab.js experiment. It must include an index.html file.'
+            'description': '''
+                <strong>Upload Instructions:</strong><br>
+                1. Export your lab.js experiment as a zip file<br>
+                2. Make sure your task includes a completion screen that redirects to: <code>/tasks/${TASK_ID}/complete/</code><br>
+                3. Upload the zip file here<br>
+                <br>
+                <a href="/static/LABJS_INTEGRATION.md" target="_blank" style="color: #3498db; font-weight: bold;">
+                    📖 View Full Integration Guide
+                </a> |
+                <a href="https://github.com/your-repo/blob/main/LABJS_INTEGRATION.md" target="_blank" style="color: #3498db;">
+                    View on GitHub
+                </a>
+            '''
         }),
         ('Settings', {
             'fields': ['is_active', 'time_limit_minutes', 'instructions']

@@ -2,12 +2,13 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from surveys.models import Survey, ParticipantResponse
+from tasks.models import LabTask, TaskSubmission
 
 
 @login_required
 def participant_dashboard(request):
     """
-    Dashboard view for participants showing available surveys and their progress.
+    Dashboard view for participants showing available surveys, tasks, and their progress.
     Researchers are redirected to the survey management page.
     """
     # Redirect researchers to their survey management interface
@@ -52,9 +53,45 @@ def participant_dashboard(request):
         else:
             available_surveys.append(survey_data)
 
+    # Get all active tasks
+    active_tasks = LabTask.objects.filter(is_active=True, task_directory__isnull=False).order_by('-created_at')
+
+    # Get tasks the participant has completed
+    completed_task_ids = TaskSubmission.objects.filter(
+        participant=request.user,
+        status='completed'
+    ).values_list('task_id', flat=True).distinct()
+
+    # Split tasks into completed and available
+    completed_tasks = []
+    available_tasks = []
+
+    for task in active_tasks:
+        # Get submission if it exists
+        try:
+            submission = TaskSubmission.objects.get(task=task, participant=request.user)
+            task_data = {
+                'task': task,
+                'submission': submission,
+                'is_complete': submission.status == 'completed',
+            }
+        except TaskSubmission.DoesNotExist:
+            task_data = {
+                'task': task,
+                'submission': None,
+                'is_complete': False,
+            }
+
+        if task.id in completed_task_ids:
+            completed_tasks.append(task_data)
+        else:
+            available_tasks.append(task_data)
+
     context = {
         'available_surveys': available_surveys,
         'completed_surveys': completed_surveys,
+        'available_tasks': available_tasks,
+        'completed_tasks': completed_tasks,
     }
 
     return render(request, 'dashboard/participant_dashboard.html', context)
