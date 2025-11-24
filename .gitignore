@@ -39,3 +39,5 @@ db.sqlite3-journal
 # Migrations (optional - uncomment if you want to track migrations)
 # */migrations/*
 # !*/migrations/__init__.py
+*.zip
+bart-export.zip
