@@ -365,17 +365,76 @@ Individual questions can be reverse-coded to detect response patterns:
 
 **Use case**: Detect acquiescence bias (participants always clicking same value)
 
+## Lab.js Task Integration
+
+The platform now supports lab.js experimental tasks with full integration:
+
+### Features Implemented
+- **Zip Upload & Automatic Unpacking**: Upload lab.js exports as .zip files, automatically unpacked to task directories
+- **File Validation**: Ensures zip contains index.html and is properly formatted
+- **Task Management Interface**: Researchers can view, preview, and edit all tasks at `/tasks/`
+- **Task Execution**: Participants run tasks via direct navigation (no iframe/CORS issues)
+- **Instructions Screen**: Optional pre-task instructions page with task info and time limits
+- **Task Completion Flow**: Template-based approach with automatic ${TASK_ID} placeholder replacement
+- **Dashboard Integration**: Tasks appear alongside surveys on participant dashboard
+- **Data Protection**: Researchers automatically redirected to preview mode
+- **CSV Download Preserved**: Lab.js download plugin functionality works as designed
+
+### Task Completion System
+Researchers add a completion screen to their lab.js exports that redirects to `/tasks/${TASK_ID}/complete/`:
+1. Platform automatically replaces `${TASK_ID}` with actual task ID during upload
+2. Participant completes task → lab.js downloads CSV results
+3. Task redirects to completion page
+4. Participant clicks "Confirm Completion" button
+5. Status updated to 'completed', time calculated, back to dashboard
+
+### File Structure
+```
+media/lab_tasks/
+├── zips/                          # Original uploaded zip files
+└── unpacked/
+    └── {task-slug}-{id}/          # Unpacked task directories
+        ├── index.html
+        ├── script.js              # ${TASK_ID} replaced automatically
+        ├── style.css
+        └── lib/                   # Lab.js library files
+```
+
+### URLs Structure
+- `/tasks/` - Task management (researchers only)
+- `/tasks/<id>/preview/` - Preview task (researchers only)
+- `/tasks/<id>/run/` - Run task (participants, creates TaskSubmission)
+- `/tasks/<id>/complete/` - Completion confirmation page
+- `/tasks/<id>/submit/` - API endpoint for future JSON result submission
+
+### Documentation
+Full integration guide available at `LABJS_INTEGRATION.md` with:
+- Step-by-step instructions for researchers
+- Code snippets for completion screen
+- Troubleshooting section
+- Advanced customization examples
+
+### ⚠️ Testing Required (Next Session)
+**IMPORTANT**: Test the task completion flow:
+1. Modify BART task export to include completion screen with redirect
+2. Re-upload and test full workflow from start to completion
+3. Verify CSV download works alongside completion flow
+4. Confirm ${TASK_ID} replacement is functioning
+5. Test both auto-redirect (timeout) and manual button click
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
 2. ~~**Create participant dashboard**~~ ✅ **Completed**
-3. **Implement task views** for participants to complete lab.js tasks
-4. **Create researcher dashboard** with data analytics
-5. **Integrate HTMX** for dynamic interactions
-6. **Add Alpine.js** for frontend interactivity
-7. **Implement data export** functionality (CSV, JSON, Excel)
-8. **Add data visualization** for research insights
-9. **Configure production settings** (PostgreSQL, static files, security)
+3. ~~**Implement task views** for participants to complete lab.js tasks~~ ✅ **Completed**
+4. **Test lab.js task completion flow** (see Testing Required above) ⚠️ **Next session**
+5. **Add CSV export** for task results in admin panel
+6. **Create researcher dashboard** with data analytics
+7. **Integrate HTMX** for dynamic interactions
+8. **Add Alpine.js** for frontend interactivity
+9. **Implement data export** functionality (CSV, JSON, Excel) for surveys
+10. **Add data visualization** for research insights
+11. **Configure production settings** (PostgreSQL, static files, security)
 
 ## Data Protection & Research Integrity
 
@@ -406,7 +465,46 @@ This design allows researchers to fully test the participant experience while ma
 
 ## Recent Updates
 
-### Survey Model Refactoring & Advanced Features (Latest)
+### Lab.js Task Integration (Latest - Session 2)
+- **Complete Task System Implementation**: Full integration of lab.js experimental tasks
+  - Zip file upload with automatic unpacking and validation
+  - Task management interface for researchers (`/tasks/`)
+  - Task preview and execution views with CORS-free implementation
+  - Instructions screen with task metadata (domain, time limit, etc.)
+  - Integrated into participant dashboard alongside surveys
+- **Task Completion Flow (Template Approach)**:
+  - Researchers add completion screen to lab.js exports
+  - Automatic `${TASK_ID}` placeholder replacement during upload
+  - Completion confirmation page at `/tasks/<id>/complete/`
+  - Status tracking: started → in_progress → completed
+  - Time calculation from task start to completion
+  - Preserves lab.js CSV download functionality
+- **Enhanced Admin Interface**:
+  - Upload status indicators (✓ Unpacked / ⧗ Pending)
+  - Preview links for quick testing
+  - Inline help text with upload instructions
+  - Link to full integration documentation
+- **Comprehensive Documentation**:
+  - Created `LABJS_INTEGRATION.md` with step-by-step guide
+  - Code snippets for researchers to copy-paste
+  - Troubleshooting section and advanced customization
+  - Examples for auto-redirect and manual button approaches
+- **Data Protection Extended to Tasks**:
+  - Researchers automatically redirected to preview mode
+  - TaskSubmission model tracks participant progress
+  - Role-based access control consistent with surveys
+- **Migration**: Added `task_slug`, `task_directory` fields; renamed `task_file` to `zip_file`
+
+### Git Repository Setup & Security (Session 1)
+- **Environment Variables**: Implemented secure configuration with python-decouple
+  - SECRET_KEY, DEBUG, and ALLOWED_HOSTS moved to .env file
+  - `.env.example` template for other developers
+  - All secrets excluded from version control
+- **Git Initialization**: Repository set up with proper .gitignore
+  - 77 files committed in initial commit
+  - Proper exclusions for sensitive data, media files, and virtual environment
+
+### Survey Model Refactoring & Advanced Features
 - **Question Model Restructure**: Changed from many-to-many to one-to-many relationship
   - Questions now belong to a single survey (direct ForeignKey)
   - Removed `SurveyQuestion` intermediary model
