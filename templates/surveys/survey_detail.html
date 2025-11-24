@@ -1,0 +1,307 @@
+{% extends "base.html" %}
+{% block title %}{{ survey.title }} - Research Platform{% endblock %}
+{% block extra_css %}
+    <style>
+    .survey-form {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    .question-container {
+        background-color: #fafafa;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .question-text {
+        font-size: 1.1rem;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+
+    .likert-scale {
+        display: flex;
+        justify-content: space-between;
+        align-items: start;
+        gap: 0.5rem;
+        margin-top: 1rem;
+    }
+
+    .likert-option {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        flex: 1;
+    }
+
+    .likert-option input[type="radio"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        margin-bottom: 0.25rem;
+    }
+
+    .likert-option label {
+        font-size: 0.875rem;
+        color: #666;
+        cursor: pointer;
+        text-align: center;
+    }
+
+    .likert-label {
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 0.25rem;
+        text-align: center;
+        max-width: 100px;
+        word-wrap: break-word;
+    }
+
+    .scale-labels {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        font-size: 0.875rem;
+        color: #666;
+        font-style: italic;
+    }
+
+    .required-indicator {
+        color: #e74c3c;
+        margin-left: 0.25rem;
+    }
+
+    .preview-banner {
+        background-color: #fff3cd;
+        border: 2px solid #ffc107;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #856404;
+        font-weight: 500;
+    }
+
+    .test-mode-banner {
+        background-color: #f8d7da;
+        border: 2px solid #e67e22;
+        border-radius: 8px;
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+        text-align: center;
+        color: #721c24;
+        font-weight: 500;
+    }
+
+    .submit-button {
+        background-color: #3498db;
+        color: white;
+        padding: 0.75rem 2rem;
+        border: none;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background-color 0.2s;
+    }
+
+    .submit-button:hover {
+        background-color: #2980b9;
+    }
+
+    .submit-button:disabled {
+        background-color: #95a5a6;
+        cursor: not-allowed;
+    }
+
+    .test-response-container {
+        background-color: #e8f5e9;
+        border: 2px solid #4caf50;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .test-response-header {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: #2e7d32;
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .test-response-table {
+        width: 100%;
+        background-color: white;
+        border-radius: 4px;
+        overflow: hidden;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .test-response-table th {
+        background-color: #f5f5f5;
+        padding: 0.75rem;
+        text-align: left;
+        font-weight: 600;
+        color: #333;
+        border-bottom: 2px solid #ddd;
+    }
+
+    .test-response-table td {
+        padding: 0.75rem;
+        border-bottom: 1px solid #eee;
+        color: #555;
+    }
+
+    .test-response-table tr:last-child td {
+        border-bottom: none;
+    }
+
+    .test-response-table tr:hover {
+        background-color: #fafafa;
+    }
+
+    .response-value {
+        font-weight: 600;
+        color: #2e7d32;
+    }
+    </style>
+{% endblock %}
+{% block content %}
+    <div class="survey-form">
+        {% if is_preview %}
+            {% if test_mode %}
+                <div class="test-mode-banner">🧪 TEST MODE - Responses will NOT be saved to the database</div>
+            {% else %}
+                <div class="preview-banner">👁️ PREVIEW MODE - This is how participants will see the survey</div>
+            {% endif %}
+        {% endif %}
+
+        {% if test_responses %}
+            <div class="test-response-container">
+                <div class="test-response-header">
+                    ✅ Test Submission Data (Not Saved)
+                </div>
+                <table class="test-response-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 8%;">Q#</th>
+                            <th style="width: 42%;">Question</th>
+                            <th style="width: 12%;">Selected</th>
+                            <th style="width: 12%;">Stored</th>
+                            <th style="width: 26%;">Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in test_responses %}
+                            <tr>
+                                <td>{{ response.order }}</td>
+                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}</td>
+                                <td class="response-value">{{ response.answer_value }}</td>
+                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>{{ response.stored_value }}</td>
+                                <td>{{ response.answer_label }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+        <div class="card">
+            <h1 style="margin-bottom: 1rem; color: #2c3e50;">{{ survey.title }}</h1>
+            {% if survey.description %}
+                <p style="color: #666; margin-bottom: 2rem; line-height: 1.6;">{{ survey.description }}</p>
+            {% endif %}
+            {% if survey.domain %}
+                <div style="margin-bottom: 2rem;">
+                    <span style="background-color: #d1ecf1;
+                                 color: #0c5460;
+                                 padding: 0.5rem 1rem;
+                                 border-radius: 4px;
+                                 font-size: 0.875rem">Domain: {{ survey.domain.name }}</span>
+                </div>
+            {% endif %}
+            {% if has_existing_responses and not is_preview %}
+                <div style="background-color: #d1ecf1;
+                            border: 1px solid #bee5eb;
+                            border-radius: 4px;
+                            padding: 1rem;
+                            margin-bottom: 2rem;
+                            color: #0c5460">
+                    ℹ️ You have already submitted responses to this survey. Submitting again will update your previous responses.
+                </div>
+            {% endif %}
+            <form method="post">
+                {% csrf_token %}
+                {% if questions %}
+                    {% for question in questions %}
+                        <div class="question-container">
+                            <div class="question-text">
+                                {{ forloop.counter }}. {{ question.text }}
+                                {% if question.required %}<span class="required-indicator">*</span>{% endif %}
+                            </div>
+                            <div class="likert-scale">
+                                {% for value, label in question.scale_options %}
+                                    <div class="likert-option">
+                                        <input type="radio"
+                                               name="question_{{ question.id }}"
+                                               id="q{{ question.id }}_{{ value }}"
+                                               value="{{ value }}"
+                                               {% if question.required %}required{% endif %}>
+                                        <label for="q{{ question.id }}_{{ value }}">{{ value }}</label>
+                                        {% if label != value|stringformat:"s" %}<div class="likert-label">{{ label }}</div>{% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if not survey.scale_labels %}
+                                <div class="scale-labels">
+                                    <span>{{ survey.min_value }} - Lowest</span>
+                                    <span>{{ survey.max_value }} - Highest</span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                    <div style="margin-top: 2rem; text-align: center;">
+                        {% if is_preview and not test_mode %}
+                            <button type="button" disabled class="submit-button">Submit Survey (Preview Mode - Disabled)</button>
+                        {% else %}
+                            <button type="submit" class="submit-button">
+                                {% if test_mode %}
+                                    Submit Test Survey
+                                {% else %}
+                                    Submit Survey
+                                {% endif %}
+                            </button>
+                        {% endif %}
+                    </div>
+                {% else %}
+                    <p style="text-align: center; color: #666; padding: 2rem;">This survey has no questions yet.</p>
+                {% endif %}
+            </form>
+        </div>
+        <div style="margin-top: 1rem; text-align: center;">
+            {% if is_preview %}
+                <a href="{% url 'surveys:survey_list' %}"
+                   style="color: #3498db;
+                          text-decoration: none;
+                          margin-right: 1rem">← Back to Survey List</a>
+                {% if not test_mode %}
+                    <a href="{% url 'surveys:survey_preview' survey.pk %}?test_mode=true"
+                       style="color: #e67e22;
+                              text-decoration: none">Enable Test Mode →</a>
+                {% else %}
+                    <a href="{% url 'surveys:survey_preview' survey.pk %}"
+                       style="color: #9b59b6;
+                              text-decoration: none">Disable Test Mode</a>
+                {% endif %}
+            {% else %}
+                <a href="{% url 'surveys:survey_list' %}"
+                   style="color: #3498db;
+                          text-decoration: none">← Back to Survey List</a>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

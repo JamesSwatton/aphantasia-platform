@@ -1,0 +1,117 @@
+{% extends "base.html" %}
+
+{% block title %}My Dashboard - Research Platform{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 style="margin-bottom: 2rem; color: #2c3e50;">Participant Dashboard</h1>
+
+    <div style="margin-bottom: 1rem;">
+        <p style="color: #666; font-size: 1rem;">
+            Welcome, <strong>{{ user.email }}</strong>! Here you can view and complete available surveys.
+        </p>
+    </div>
+
+    <!-- Available Surveys Section -->
+    <div style="margin-bottom: 3rem;">
+        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db;">
+            Available Surveys
+        </h2>
+
+        {% if available_surveys %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for item in available_surveys %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #fafafa;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.survey.title }}</h3>
+                                <p style="color: #666; margin-bottom: 1rem;">{{ item.survey.description }}</p>
+
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    {% if item.survey.domain %}
+                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                            {{ item.survey.domain.name }}
+                                        </span>
+                                    {% endif %}
+
+                                    <span style="background-color: #e3f2fd; color: #1565c0; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        {{ item.total_questions }} question{{ item.total_questions|pluralize }}
+                                    </span>
+
+                                    <span style="background-color: #f3e5f5; color: #6a1b9a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        Scale: {{ item.survey.min_value }}-{{ item.survey.max_value }}
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a href="{% url 'surveys:survey_take' item.survey.pk %}"
+                                   style="display: inline-block; background-color: #3498db; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
+                                    Start Survey
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
+                No new surveys available at this time. Check back later!
+            </p>
+        {% endif %}
+    </div>
+
+    <!-- Completed Surveys Section -->
+    <div>
+        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #27ae60;">
+            Completed Surveys
+        </h2>
+
+        {% if completed_surveys %}
+            <div style="display: flex; flex-direction: column; gap: 1rem;">
+                {% for item in completed_surveys %}
+                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #f9f9f9;">
+                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
+                            <div style="flex: 1;">
+                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.survey.title }}</h3>
+                                <p style="color: #666; margin-bottom: 1rem;">{{ item.survey.description }}</p>
+
+                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
+                                    <span style="background-color: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                        ✓ Completed
+                                    </span>
+
+                                    {% if item.survey.domain %}
+                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
+                                            {{ item.survey.domain.name }}
+                                        </span>
+                                    {% endif %}
+
+                                    <span style="color: #666; font-size: 0.875rem;">
+                                        {{ item.response_count }} of {{ item.total_questions }} question{{ item.total_questions|pluralize }} answered
+                                    </span>
+                                </div>
+                            </div>
+
+                            <div>
+                                <a href="{% url 'surveys:survey_take' item.survey.pk %}"
+                                   style="display: inline-block; background-color: #95a5a6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
+                                    View/Edit
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
+                You haven't completed any surveys yet.
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<div style="margin-top: 1rem; text-align: center;">
+    <a href="/" style="color: #3498db; text-decoration: none;">← Back to Home</a>
+</div>
+{% endblock %}

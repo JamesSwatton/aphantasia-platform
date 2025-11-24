@@ -1,0 +1,83 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block title %}{{ title }} | {{ site_title }}{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+  <a href="{% url 'admin:index' %}">Home</a>
+  &rsaquo; <a href="{% url 'admin:accounts_researcherinvitation_changelist' %}">Researcher Invitations</a>
+  &rsaquo; {{ title }}
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+  <form method="post" novalidate>
+    {% csrf_token %}
+
+    <div>
+      {% if form.non_field_errors %}
+        <div class="errornote">
+          {{ form.non_field_errors }}
+        </div>
+      {% endif %}
+
+      <fieldset class="module aligned">
+        <h2>Send Researcher Invitation</h2>
+
+        <div class="form-row">
+          <div>
+            {{ form.email.label_tag }}
+            {{ form.email }}
+            {% if form.email.errors %}
+              <div class="errors">{{ form.email.errors }}</div>
+            {% endif %}
+            {% if form.email.help_text %}
+              <div class="help">{{ form.email.help_text }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div>
+            {{ form.expires_in_days.label_tag }}
+            {{ form.expires_in_days }}
+            {% if form.expires_in_days.errors %}
+              <div class="errors">{{ form.expires_in_days.errors }}</div>
+            {% endif %}
+            {% if form.expires_in_days.help_text %}
+              <div class="help">{{ form.expires_in_days.help_text }}</div>
+            {% endif %}
+          </div>
+        </div>
+      </fieldset>
+
+      <div class="submit-row">
+        <input type="submit" value="Send Invitation" class="default" />
+        <a href="{% url 'admin:accounts_researcherinvitation_changelist' %}" class="button cancel-link">Cancel</a>
+      </div>
+    </div>
+  </form>
+
+  <div class="module" style="margin-top: 30px;">
+    <h2>About Researcher Invitations</h2>
+    <p>
+      When you send an invitation:
+    </p>
+    <ul>
+      <li>An email will be sent to the recipient with a unique invitation link</li>
+      <li>The recipient will be able to create a researcher account using that link</li>
+      <li>Once registered, they will automatically receive:
+        <ul>
+          <li>Admin panel access (staff status)</li>
+          <li>Researcher group membership with appropriate permissions</li>
+          <li>Ability to create surveys and tasks</li>
+        </ul>
+      </li>
+      <li>The invitation will expire after the specified number of days</li>
+      <li>You can resend invitations from the invitation list if needed</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

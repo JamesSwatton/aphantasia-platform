@@ -1,0 +1,229 @@
+{% extends "base.html" %}
+{% load account %}
+{% load consent_tags %}
+
+{% block title %}Sign Up - Research Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .consent-form {
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+
+    .consent-form h3 {
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+        color: #2c3e50;
+    }
+
+    .consent-form h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 1rem;
+    }
+
+    .consent-form p {
+        margin-bottom: 1rem;
+    }
+
+    form {
+        margin-top: 1rem;
+    }
+
+    .form-group {
+        margin-bottom: 1rem;
+    }
+
+    label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    input[type="email"],
+    input[type="password"],
+    input[type="text"] {
+        width: 100%;
+        padding: 0.5rem;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 1rem;
+    }
+
+    input[type="checkbox"] {
+        margin-right: 0.5rem;
+    }
+
+    .checkbox-label {
+        display: flex;
+        align-items: flex-start;
+        font-weight: normal;
+    }
+
+    .checkbox-label input {
+        margin-top: 0.25rem;
+        flex-shrink: 0;
+    }
+
+    button[type="submit"] {
+        background-color: #3498db;
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 4px;
+        font-size: 1rem;
+        cursor: pointer;
+        width: 100%;
+    }
+
+    button[type="submit"]:hover {
+        background-color: #2980b9;
+    }
+
+    .errorlist {
+        list-style: none;
+        color: #dc3545;
+        margin-top: 0.25rem;
+        font-size: 0.875rem;
+    }
+
+    .helptext {
+        font-size: 0.875rem;
+        color: #6c757d;
+        margin-top: 0.25rem;
+    }
+
+    .login-link {
+        text-align: center;
+        margin-top: 1rem;
+        color: #6c757d;
+    }
+
+    .login-link a {
+        color: #3498db;
+        text-decoration: none;
+    }
+
+    .login-link a:hover {
+        text-decoration: underline;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="card">
+    <h1 style="text-align: center; margin-bottom: 2rem; color: #2c3e50;">Participant Registration</h1>
+
+    {% get_active_consent_form as consent_form %}
+    <div class="consent-form">
+        {% if consent_form %}
+            <h2>{{ consent_form.title|upper }}</h2>
+            <div style="white-space: pre-wrap;">{{ consent_form.content }}</div>
+        {% else %}
+            {# Fallback consent text if no active form exists #}
+            <h2>RESEARCH PARTICIPATION CONSENT FORM</h2>
+
+            <p>Thank you for your interest in participating in our research study on aphantasia and related conditions.</p>
+
+            <h3>PURPOSE OF THE STUDY:</h3>
+            <p>This research aims to better understand the experiences of individuals with aphantasia and contribute to scientific knowledge in this area.</p>
+
+            <h3>WHAT YOU WILL DO:</h3>
+            <ul>
+                <li>Complete surveys about your experiences</li>
+                <li>Participate in research tasks</li>
+                <li>Your responses will be used for research purposes only</li>
+            </ul>
+
+            <h3>CONFIDENTIALITY:</h3>
+            <ul>
+                <li>Your data will be kept confidential and secure</li>
+                <li>Only aggregated, de-identified data may be published</li>
+                <li>You can withdraw from the study at any time</li>
+            </ul>
+
+            <h3>VOLUNTARY PARTICIPATION:</h3>
+            <p>Your participation is completely voluntary. You may choose to stop participating at any time without penalty.</p>
+
+            <p style="margin-top: 1.5rem;"><strong>By checking the box below and creating an account, you acknowledge that you have read and understood this consent form and agree to participate in this research.</strong></p>
+        {% endif %}
+    </div>
+
+    <form method="post" action="{% url 'account_signup' %}">
+        {% csrf_token %}
+
+        {% if form.non_field_errors %}
+            <ul class="errorlist">
+                {% for error in form.non_field_errors %}
+                    <li>{{ error }}</li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+
+        <div class="form-group">
+            <label for="{{ form.email.id_for_label }}">Email Address *</label>
+            {{ form.email }}
+            {% if form.email.errors %}
+                <ul class="errorlist">
+                    {% for error in form.email.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password1.id_for_label }}">Password *</label>
+            {{ form.password1 }}
+            {% if form.password1.help_text %}
+                <div class="helptext">{{ form.password1.help_text }}</div>
+            {% endif %}
+            {% if form.password1.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password1.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label for="{{ form.password2.id_for_label }}">Confirm Password *</label>
+            {{ form.password2 }}
+            {% if form.password2.errors %}
+                <ul class="errorlist">
+                    {% for error in form.password2.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <div class="form-group">
+            <label class="checkbox-label">
+                {{ form.consent }}
+                <span>I have read and agree to the research participation consent form *</span>
+            </label>
+            {% if form.consent.errors %}
+                <ul class="errorlist">
+                    {% for error in form.consent.errors %}
+                        <li>{{ error }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        </div>
+
+        <button type="submit">Create Account</button>
+    </form>
+
+    <div class="login-link">
+        Already have an account? <a href="{% url 'account_login' %}">Log in here</a>
+    </div>
+</div>
+{% endblock %}
