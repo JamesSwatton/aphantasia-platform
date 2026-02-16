@@ -422,17 +422,18 @@ Full integration guide available at `LABJS_INTEGRATION.md` with:
 4. ✅ Task completion status tracking works
 5. ✅ Simplified approach: minimal completion screen with redirect only
 
-### 🔬 Data Capture Development (Session 4 - In Progress)
-**Progress on lab.js data submission:**
-- ✅ Identified correct method to extract clean trial data from lab.js
-- ✅ Successfully capturing data using `this.parent.options.datastore.data`
-- ✅ Logging clean, structured data to browser console for verification
-- ⚠️ Testing across multiple task types to ensure consistency
-- ⏳ Next: POST data to `/tasks/<id>/submit/` endpoint
+### ✅ Data Submission & Filtering (Session 6 - Latest)
+**Full lab.js data submission pipeline implemented and tested:**
+- ✅ Diagnosed race condition between `after:end` handler and screen timeout
+- ✅ Fixed by moving script to **"Run"** event (fires immediately when End screen appears)
+- ✅ Switched from synchronous XHR to `fetch` with `.then()` chaining (no deprecation warning)
+- ✅ Data POSTed to `/tasks/<id>/submit/` endpoint and saved to `TaskSubmission.results_data`
+- ✅ Full end-to-end flow tested: builder → export → upload → participant run → data saved
+- ✅ Added `get_trial_data()` method to `TaskSubmission` model to filter raw datastore to meaningful trial rows only (`sender == 'Trial'` and `ended_on == 'response'`)
+- ✅ Rewrote `LABJS_INTEGRATION.md` with correct, tested instructions for researchers
 
-**Current Working Snippet (add to completion screen "After end" script):**
+**Working completion screen snippet (add to End screen "Run" script in lab.js builder):**
 ```javascript
-// Get the clean trial data from datastore
 const datastore = this.parent.options.datastore;
 const data = datastore.data;
 
@@ -442,17 +443,36 @@ console.log('Data:', data);
 console.log('Total Trials:', data.length);
 console.log('========================');
 
-// Store for later
-window.labJsTaskData = data;
+function getCookie(name) {
+  const value = '; ' + document.cookie;
+  const parts = value.split('; ' + name + '=');
+  if (parts.length === 2) return parts.pop().split(';').shift();
+}
 
-// Redirect
-window.location.href = "/tasks/${TASK_ID}/complete/";
+fetch('/tasks/${TASK_ID}/submit/', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json',
+    'X-CSRFToken': getCookie('csrftoken'),
+  },
+  body: JSON.stringify(data),
+})
+.then(function(response) { return response.json(); })
+.then(function(result) {
+  console.log('Submission result:', result);
+  window.location.href = "/tasks/${TASK_ID}/complete/";
+})
+.catch(function(e) {
+  console.error('Data submission failed:', e);
+  window.location.href = "/tasks/${TASK_ID}/complete/";
+});
 ```
 
-### ⚠️ Known Issues (To Address Next Session)
-**Data submission needs implementation:**
-- Need to implement automatic JSON data POST to `/tasks/<id>/submit/` endpoint
-- Need to create researcher test mode for task data preview (similar to surveys)
+**Key notes:**
+- Script goes in **"Run"** section, not "After end"
+- End screen must have **no timeout** set
+- `${TASK_ID}` is replaced automatically on upload
+- See `LABJS_INTEGRATION.md` for full instructions
 
 ## Next Steps
 
@@ -460,15 +480,16 @@ window.location.href = "/tasks/${TASK_ID}/complete/";
 2. ~~**Create participant dashboard**~~ ✅ **Completed**
 3. ~~**Implement task views** for participants to complete lab.js tasks~~ ✅ **Completed**
 4. ~~**Test lab.js task completion flow**~~ ✅ **Completed** (Session 3)
-5. **Implement automatic task data submission** to Django database ⚠️ **Priority for next session**
-6. **Create researcher test mode** for task data preview ⚠️ **Priority for next session**
-7. **Add CSV export** for task results in admin panel
-8. **Create researcher dashboard** with data analytics
-9. **Integrate HTMX** for dynamic interactions
-10. **Add Alpine.js** for frontend interactivity
-11. **Implement data export** functionality (CSV, JSON, Excel) for surveys
-12. **Add data visualization** for research insights
-13. **Configure production settings** (PostgreSQL, static files, security)
+5. ~~**Implement automatic task data submission** to Django database~~ ✅ **Completed** (Session 6)
+6. **Display filtered trial data in admin panel** for task submissions ⚠️ **Priority for next session**
+7. **Create researcher test mode** for task data preview (similar to surveys)
+8. **Add CSV export** for task results in admin panel
+9. **Create researcher dashboard** with data analytics
+10. **Integrate HTMX** for dynamic interactions
+11. **Add Alpine.js** for frontend interactivity
+12. **Implement data export** functionality (CSV, JSON, Excel) for surveys
+13. **Add data visualization** for research insights
+14. **Configure production settings** (PostgreSQL, static files, security)
 
 ## Data Protection & Research Integrity
 
@@ -499,7 +520,23 @@ This design allows researchers to fully test the participant experience while ma
 
 ## Recent Updates
 
-### Bug Fixes & Admin Improvements (Session 5 - Latest)
+### Lab.js Data Submission & Filtering (Session 6 - Latest)
+- **Full data submission pipeline implemented and tested end-to-end**
+  - Diagnosed race condition: `after:end` was firing after screen timeout redirect
+  - Fixed by using `"run"` event instead — fires immediately when End screen appears
+  - Replaced synchronous XHR (deprecated) with `fetch` and `.then()` chaining
+  - Redirect now happens inside `.then()` callback, ensuring POST completes first
+- **Added `get_trial_data()` method to `TaskSubmission` model**
+  - Filters raw lab.js datastore (~146 entries) to meaningful trial rows only (~36)
+  - Filters on `sender == 'Trial'` and `ended_on == 'response'`
+  - Raw data always preserved in `results_data`; method used for analysis/export
+- **Rewrote `LABJS_INTEGRATION.md`** with correct, tested instructions
+  - Script placement: "Run" section (not "After end")
+  - No timeout on End screen
+  - Named variables, `getCookie` helper, console logging for debugging
+  - Added data submission flow explanation, testing guide, and troubleshooting
+
+### Bug Fixes & Admin Improvements (Session 5)
 - **Fixed File Cleanup Bug**: Resolved issue where bulk delete from admin list view wasn't cleaning up task files
   - Added `delete_queryset()` method to `LabTaskAdmin` to ensure file cleanup on bulk deletes
   - Added `delete_model()` method for extra safety on single deletes
