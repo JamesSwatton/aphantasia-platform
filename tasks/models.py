@@ -229,5 +229,22 @@ class TaskSubmission(models.Model):
         verbose_name_plural = 'Task Submissions'
         unique_together = ['task', 'participant']
 
+    def get_trial_data(self):
+        """
+        Returns only the meaningful trial response rows from results_data,
+        filtering out fixation screens, feedback screens, instructions, etc.
+
+        Filters to entries where:
+        - sender == 'Trial' (the actual stimulus/response screen)
+        - ended_on == 'response' (participant responded, not a duplicate timeout entry)
+        """
+        if not self.results_data:
+            return []
+        return [
+            entry for entry in self.results_data
+            if entry.get('sender') == 'Trial'
+            and entry.get('ended_on') == 'response'
+        ]
+
     def __str__(self):
         return f"{self.participant.email} - {self.task.title} ({self.status})"
