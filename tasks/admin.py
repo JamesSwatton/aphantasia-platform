@@ -1,10 +1,27 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django import forms
 from .models import LabTask, TaskSubmission
+from accounts.models import User
+
+
+class LabTaskAdminForm(forms.ModelForm):
+    """
+    Custom form to filter researcher dropdown to only show staff users (researchers and superusers).
+    """
+    class Meta:
+        model = LabTask
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter researcher field to only show users with staff access
+        self.fields['researcher'].queryset = User.objects.filter(is_staff=True)
 
 
 @admin.register(LabTask)
 class LabTaskAdmin(admin.ModelAdmin):
+    form = LabTaskAdminForm
     list_display = ['title', 'researcher', 'domain', 'is_active', 'unpacked_status', 'created_at']
     list_filter = ['is_active', 'domain', 'created_at']
     search_fields = ['title', 'description', 'researcher__email']
@@ -56,6 +73,20 @@ class LabTaskAdmin(admin.ModelAdmin):
             )
         return "Upload and save to generate preview link"
     preview_link.short_description = 'Preview'
+
+    def delete_queryset(self, request, queryset):
+        """
+        Override bulk delete to call delete() on each instance.
+        This ensures file cleanup happens for each task.
+        """
+        for obj in queryset:
+            obj.delete()
+
+    def delete_model(self, request, obj):
+        """
+        Override single delete to ensure cleanup happens.
+        """
+        obj.delete()
 
 
 @admin.register(TaskSubmission)

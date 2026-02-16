@@ -1,6 +1,22 @@
 from django.contrib import admin
+from django import forms
 
 from .models import ParticipantResponse, Question, Survey
+from accounts.models import User
+
+
+class SurveyAdminForm(forms.ModelForm):
+    """
+    Custom form to filter researcher dropdown to only show staff users (researchers and superusers).
+    """
+    class Meta:
+        model = Survey
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Filter researcher field to only show users with staff access
+        self.fields['researcher'].queryset = User.objects.filter(is_staff=True)
 
 
 class QuestionInline(admin.TabularInline):
@@ -18,6 +34,7 @@ class QuestionInline(admin.TabularInline):
 
 @admin.register(Survey)
 class SurveyAdmin(admin.ModelAdmin):
+    form = SurveyAdminForm
     list_display = ["title", "researcher", "domain", "is_active", "created_at"]
     list_filter = ["is_active", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]

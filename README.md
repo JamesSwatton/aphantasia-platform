@@ -414,27 +414,61 @@ Full integration guide available at `LABJS_INTEGRATION.md` with:
 - Troubleshooting section
 - Advanced customization examples
 
-### ⚠️ Testing Required (Next Session)
-**IMPORTANT**: Test the task completion flow:
-1. Modify BART task export to include completion screen with redirect
-2. Re-upload and test full workflow from start to completion
-3. Verify CSV download works alongside completion flow
-4. Confirm ${TASK_ID} replacement is functioning
-5. Test both auto-redirect (timeout) and manual button click
+### ✅ Testing Completed (Session 3)
+**Task completion flow has been tested and verified:**
+1. ✅ Task execution and preview work correctly
+2. ✅ `${TASK_ID}` placeholder replacement works
+3. ✅ Redirect to completion confirmation page works
+4. ✅ Task completion status tracking works
+5. ✅ Simplified approach: minimal completion screen with redirect only
+
+### 🔬 Data Capture Development (Session 4 - In Progress)
+**Progress on lab.js data submission:**
+- ✅ Identified correct method to extract clean trial data from lab.js
+- ✅ Successfully capturing data using `this.parent.options.datastore.data`
+- ✅ Logging clean, structured data to browser console for verification
+- ⚠️ Testing across multiple task types to ensure consistency
+- ⏳ Next: POST data to `/tasks/<id>/submit/` endpoint
+
+**Current Working Snippet (add to completion screen "After end" script):**
+```javascript
+// Get the clean trial data from datastore
+const datastore = this.parent.options.datastore;
+const data = datastore.data;
+
+console.log('=== Lab.js Task Data ===');
+console.log('Task ID: ${TASK_ID}');
+console.log('Data:', data);
+console.log('Total Trials:', data.length);
+console.log('========================');
+
+// Store for later
+window.labJsTaskData = data;
+
+// Redirect
+window.location.href = "/tasks/${TASK_ID}/complete/";
+```
+
+### ⚠️ Known Issues (To Address Next Session)
+**Data submission needs implementation:**
+- Need to implement automatic JSON data POST to `/tasks/<id>/submit/` endpoint
+- Need to create researcher test mode for task data preview (similar to surveys)
 
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
 2. ~~**Create participant dashboard**~~ ✅ **Completed**
 3. ~~**Implement task views** for participants to complete lab.js tasks~~ ✅ **Completed**
-4. **Test lab.js task completion flow** (see Testing Required above) ⚠️ **Next session**
-5. **Add CSV export** for task results in admin panel
-6. **Create researcher dashboard** with data analytics
-7. **Integrate HTMX** for dynamic interactions
-8. **Add Alpine.js** for frontend interactivity
-9. **Implement data export** functionality (CSV, JSON, Excel) for surveys
-10. **Add data visualization** for research insights
-11. **Configure production settings** (PostgreSQL, static files, security)
+4. ~~**Test lab.js task completion flow**~~ ✅ **Completed** (Session 3)
+5. **Implement automatic task data submission** to Django database ⚠️ **Priority for next session**
+6. **Create researcher test mode** for task data preview ⚠️ **Priority for next session**
+7. **Add CSV export** for task results in admin panel
+8. **Create researcher dashboard** with data analytics
+9. **Integrate HTMX** for dynamic interactions
+10. **Add Alpine.js** for frontend interactivity
+11. **Implement data export** functionality (CSV, JSON, Excel) for surveys
+12. **Add data visualization** for research insights
+13. **Configure production settings** (PostgreSQL, static files, security)
 
 ## Data Protection & Research Integrity
 
@@ -465,7 +499,51 @@ This design allows researchers to fully test the participant experience while ma
 
 ## Recent Updates
 
-### Lab.js Task Integration (Latest - Session 2)
+### Bug Fixes & Admin Improvements (Session 5 - Latest)
+- **Fixed File Cleanup Bug**: Resolved issue where bulk delete from admin list view wasn't cleaning up task files
+  - Added `delete_queryset()` method to `LabTaskAdmin` to ensure file cleanup on bulk deletes
+  - Added `delete_model()` method for extra safety on single deletes
+  - Both zip files and unpacked directories now properly deleted in all deletion scenarios
+- **Researcher Dropdown Filter**: Added custom forms to filter researcher dropdowns in Survey and LabTask admin
+  - Now only shows users with `is_staff=True` (researchers and superusers)
+  - Prevents confusion by hiding regular participants from dropdown
+  - Implemented via `SurveyAdminForm` and `LabTaskAdminForm`
+
+### Lab.js Data Capture Implementation (Session 4)
+- **Implemented Data Extraction**: Identified correct method to capture clean trial data
+  - Using `this.parent.options.datastore.data` to get structured trial data
+  - Avoids metadata and internal lab.js state from `exportJson()`
+  - Logs data to browser console for verification
+- **Created Working Snippet**: JavaScript code for completion screen
+  - Captures clean trial-by-trial data
+  - Stores in `window.labJsTaskData` for future POST request
+  - Maintains redirect to completion confirmation page
+- **Cleaned Up Test Environment**: Removed all orphaned task files
+  - Cleared media/lab_tasks/unpacked/ directory
+  - Cleared media/lab_tasks/zips/ directory
+  - Ready for fresh testing workflow
+- **Next Steps**:
+  - Test data capture across multiple task types for consistency
+  - Implement POST request to `/tasks/<id>/submit/` endpoint
+  - Save data to TaskSubmission.results_data field
+
+### Lab.js Task Testing & Refinement (Session 3)
+- **Tested Task Completion Flow**: Verified end-to-end task execution and completion
+  - Task preview and execution work correctly
+  - `${TASK_ID}` placeholder replacement confirmed working
+  - Redirect to completion confirmation page functional
+  - Task completion status tracking verified
+- **Simplified Integration Approach**: Updated documentation with minimal completion screen
+  - Removed complex HTML and button handlers to avoid timing issues
+  - Simple redirect-only approach (empty screen + timeout + redirect script)
+  - Updated `LABJS_INTEGRATION.md` with streamlined instructions
+- **Identified Data Submission Issue**: CSV download not working, needs database submission
+  - lab.js Download plugin not triggering reliably
+  - Task data not being saved to database (only completion status)
+  - `/tasks/<id>/submit/` endpoint exists but needs proper integration
+  - Researcher test mode needed for data preview
+
+### Lab.js Task Integration (Session 2)
 - **Complete Task System Implementation**: Full integration of lab.js experimental tasks
   - Zip file upload with automatic unpacking and validation
   - Task management interface for researchers (`/tasks/`)
