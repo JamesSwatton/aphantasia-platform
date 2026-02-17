@@ -48,8 +48,8 @@ research_platform/
 - **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order)
 
 ### tasks
-- **LabTask**: Lab.js task uploads
-- **TaskSubmission**: Participant task submissions and results
+- **LabTask**: Lab.js task uploads. Includes optional `trial_sender_filter` field (comma-separated sender names) to narrow trial data filtering beyond the default `ended_on='response'` filter
+- **TaskSubmission**: Participant task submissions and results. Includes `is_test` flag for researcher/staff test runs, and `get_trial_data()` method which filters raw lab.js data to response rows only
 
 ## Setup Instructions
 
@@ -377,16 +377,19 @@ The platform now supports lab.js experimental tasks with full integration:
 - **Instructions Screen**: Optional pre-task instructions page with task info and time limits
 - **Task Completion Flow**: Template-based approach with automatic ${TASK_ID} placeholder replacement
 - **Dashboard Integration**: Tasks appear alongside surveys on participant dashboard
-- **Data Protection**: Researchers automatically redirected to preview mode
-- **CSV Download Preserved**: Lab.js download plugin functionality works as designed
+- **Data Submission**: Lab.js POSTs full datastore JSON to `/tasks/<id>/submit/` on completion
+- **Test Submissions**: Researchers run tasks through the real submission pipeline; data saved and flagged with `is_test=True` for review and deletion
+- **Trial Data Filtering**: `get_trial_data()` filters raw lab.js datastore to response rows only (`ended_on='response'`), generic across task designs
+- **Configurable Sender Filter**: Optional `trial_sender_filter` on `LabTask` to narrow filtering by sender name (e.g. `"Trial"`)
+- **Accurate Timing**: `time_spent_seconds` derived from lab.js `Task` row `duration` field (actual in-task time), not server-side timestamp diffs
 
 ### Task Completion System
 Researchers add a completion screen to their lab.js exports that redirects to `/tasks/${TASK_ID}/complete/`:
 1. Platform automatically replaces `${TASK_ID}` with actual task ID during upload
-2. Participant completes task → lab.js downloads CSV results
-3. Task redirects to completion page
+2. Participant completes task → lab.js POSTs datastore JSON to `/tasks/${TASK_ID}/submit/`
+3. Task redirects to completion confirmation page
 4. Participant clicks "Confirm Completion" button
-5. Status updated to 'completed', time calculated, back to dashboard
+5. Status updated to 'completed', timing recorded from lab.js data, back to dashboard
 
 ### File Structure
 ```
@@ -481,9 +484,9 @@ fetch('/tasks/${TASK_ID}/submit/', {
 3. ~~**Implement task views** for participants to complete lab.js tasks~~ ✅ **Completed**
 4. ~~**Test lab.js task completion flow**~~ ✅ **Completed** (Session 3)
 5. ~~**Implement automatic task data submission** to Django database~~ ✅ **Completed** (Session 6)
-6. **Display filtered trial data in admin panel** for task submissions ⚠️ **Priority for next session**
-7. **Create researcher test mode** for task data preview (similar to surveys)
-8. **Add CSV export** for task results in admin panel
+6. ~~**Display filtered trial data in admin panel** for task submissions~~ ✅ **Completed** (Session 7)
+7. ~~**Create researcher test mode** for task data~~ ✅ **Completed** (Session 7 — test submissions flagged with `is_test`)
+8. **Add CSV export** for task results in admin panel ⚠️ **Priority for next session**
 9. **Create researcher dashboard** with data analytics
 10. **Integrate HTMX** for dynamic interactions
 11. **Add Alpine.js** for frontend interactivity
@@ -502,25 +505,58 @@ The platform includes robust protections to prevent researcher data from contami
 - **Dashboard Separation**: Researchers cannot access the participant dashboard and are redirected to Survey Management
 
 ### How It Works
-1. **For Researchers**:
+1. **For Researchers — Surveys**:
    - Accessing `/surveys/<id>/take/` → Automatically redirected to `/surveys/<id>/preview/?test_mode=true`
    - Accessing `/dashboard/` → Automatically redirected to `/surveys/` (Survey Management)
    - Can test surveys with full validation but data is never saved
 
-2. **For Participants**:
-   - Normal survey access and data submission works as expected
-   - Responses are saved to database for research analysis
+2. **For Researchers — Lab.js Tasks**:
+   - Researchers run tasks through the full submission pipeline (no redirect)
+   - Submissions are saved but flagged with `is_test=True` automatically
+   - Flagged submissions show an orange "TEST" badge in the admin and a notice on the completion page
+   - Researchers can review the data looks correct in the admin, then delete the test submission
 
-3. **Technical Implementation**:
-   - View-level checks prevent researchers from submitting real data (see `surveys/views.py`)
-   - Researchers are automatically marked as participants (via signal) but cannot contaminate data
-   - The `is_participant` flag for researchers enables UI testing without data risk
+3. **For Participants**:
+   - Normal survey and task access works as expected
+   - Responses and submissions saved to database with `is_test=False`
 
-This design allows researchers to fully test the participant experience while maintaining data integrity.
+4. **Technical Implementation**:
+   - View-level checks redirect researchers away from participant survey URLs (`surveys/views.py`)
+   - `task_submit` view sets `is_test` based on `request.user.is_researcher or request.user.is_staff`
+   - Researchers are automatically marked as participants (via signal) but survey data is never saved for them
+
+This design allows researchers to fully test the participant experience — including seeing real data in the admin — while keeping test data clearly identifiable and separate.
 
 ## Recent Updates
 
-### Lab.js Data Submission & Filtering (Session 6 - Latest)
+### Admin Trial Data Display, Test Submissions & Timing Fix (Session 7 - Latest)
+
+#### Trial Data Filtering Improvements
+- **Generalised `get_trial_data()` filter**: Changed from `sender=='Trial' AND ended_on=='response'` to `ended_on=='response'` only, making it work across different lab.js task designs regardless of how researchers name their screens
+- **Added `trial_sender_filter` field to `LabTask`**: Optional comma-separated sender names (e.g. `"Trial"`) to narrow filtering further per task. Blank by default — falls back to `ended_on='response'` for all tasks
+- Investigated the Flanker task data in detail: 146 raw rows filtered to 37 response rows (36 Trial + 1 Instructions screen accepted as noise)
+
+#### Enhanced TaskSubmission Admin
+- **Formatted trial data table**: Detail view now shows `get_trial_data()` results as a readable HTML table with dynamic columns — common fields first (`sender`, `timestamp`, `duration`, `response`, `correct`, etc.), then task-specific fields. Internal lab.js metadata fields hidden
+- **Colour-coded `correct` field**: Green for `True`, red for `False`
+- **Trial count column**: List view shows number of response rows per submission at a glance
+- **Organised fieldsets**: Detail view split into Submission Info, Trial Data (formatted table), and Raw Data (collapsible JSON)
+
+#### Researcher Test Submissions
+- **Removed researcher redirect**: Researchers/staff now go through the full submission pipeline instead of being redirected to a data-less preview
+- **`is_test` flag on `TaskSubmission`**: Set to `True` automatically for researcher/staff submissions. Defaults `False` — existing participant submissions unaffected
+- **Visual flagging in admin**: Orange "TEST" badge in list view; filterable via sidebar; `is_test` checkbox in detail view
+- **Test mode notice on completion page**: Researchers see a yellow note explaining the submission is flagged and can be deleted after review
+- **Removed stale CSV references**: Completion page no longer mentions CSV file download (leftover from an earlier design)
+
+#### Timing Fix
+- **`time_spent_seconds` now sourced from lab.js data**: Uses the `duration` field on the `Task` sender row (milliseconds, recorded by lab.js itself) rather than server-side `started_at`/`completed_at` diffs
+- This fixes a race condition where researcher test submissions were recording 0 seconds (submission created and completed in the same request)
+- Also more accurate for participants — server-side diffs included instructions page and completion page overhead; lab.js duration reflects only actual time inside the task
+- Fallback to server-side diff retained for tasks that don't produce a `Task` sender row
+- Existing submissions backfilled with corrected values
+
+### Lab.js Data Submission & Filtering (Session 6)
 - **Full data submission pipeline implemented and tested end-to-end**
   - Diagnosed race condition: `after:end` was firing after screen timeout redirect
   - Fixed by using `"run"` event instead — fires immediately when End screen appears
