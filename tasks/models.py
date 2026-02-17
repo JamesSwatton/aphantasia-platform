@@ -64,6 +64,15 @@ class LabTask(models.Model):
         blank=True,
         help_text="Path to unpacked task directory"
     )
+    trial_sender_filter = models.CharField(
+        max_length=500,
+        blank=True,
+        help_text=(
+            "Optional: comma-separated list of sender names to filter trial data to "
+            "(e.g. 'Trial' or 'Trial, Stimulus'). "
+            "If blank, all rows where ended_on='response' are included."
+        )
+    )
     is_active = models.BooleanField(default=True)
     time_limit_minutes = models.PositiveIntegerField(
         null=True,
@@ -209,6 +218,10 @@ class TaskSubmission(models.Model):
         choices=STATUS_CHOICES,
         default='started'
     )
+    is_test = models.BooleanField(
+        default=False,
+        help_text="True if submitted by a researcher or staff member for testing purposes. Safe to delete after review."
+    )
     results_data = models.JSONField(
         null=True,
         blank=True,
@@ -232,18 +245,26 @@ class TaskSubmission(models.Model):
     def get_trial_data(self):
         """
         Returns only the meaningful trial response rows from results_data,
-        filtering out fixation screens, feedback screens, instructions, etc.
+        filtering out fixation screens, feedback screens, timeouts, etc.
 
-        Filters to entries where:
-        - sender == 'Trial' (the actual stimulus/response screen)
-        - ended_on == 'response' (participant responded, not a duplicate timeout entry)
+        Base filter: ended_on == 'response' (participant actively responded).
+
+        If the linked task has a trial_sender_filter set, additionally filters
+        to only rows where sender matches one of the specified values.
+        This is intentionally generic so it works across different lab.js task designs.
         """
         if not self.results_data:
             return []
+
+        # Parse optional sender filter from the task
+        sender_filter = None
+        if self.task.trial_sender_filter:
+            sender_filter = [s.strip() for s in self.task.trial_sender_filter.split(',') if s.strip()]
+
         return [
             entry for entry in self.results_data
-            if entry.get('sender') == 'Trial'
-            and entry.get('ended_on') == 'response'
+            if entry.get('ended_on') == 'response'
+            and (sender_filter is None or entry.get('sender') in sender_filter)
         ]
 
     def __str__(self):

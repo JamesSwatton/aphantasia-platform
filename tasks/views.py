@@ -72,14 +72,13 @@ def task_run(request, pk):
     """
     task = get_object_or_404(LabTask, pk=pk)
 
-    # Redirect researchers to preview mode to prevent data contamination
+    # Notify researchers they are in test mode — data will be saved but flagged
     if request.user.is_researcher or request.user.is_staff:
         messages.info(
             request,
-            "As a researcher, you've been redirected to preview mode. "
-            "Your task results will not be saved to the database."
+            "You are running this task in test mode. "
+            "Your submission will be saved and flagged as a test so it can be reviewed and deleted."
         )
-        return redirect('tasks:task_preview', pk=pk)
 
     # Check if task is active
     if not task.is_active:
@@ -98,10 +97,15 @@ def task_run(request, pk):
         defaults={'status': 'started'}
     )
 
-    # If restarting a completed task, reset status
+    # If restarting a completed task, reset status and start time
     if submission.status == 'completed':
-        submission.status = 'in_progress'
-        submission.save()
+        TaskSubmission.objects.filter(pk=submission.pk).update(
+            status='in_progress',
+            started_at=timezone.now(),
+            completed_at=None,
+            time_spent_seconds=None,
+        )
+        submission.refresh_from_db()
 
     # Show instructions page first if task has instructions
     if task.instructions and not request.GET.get('start'):
@@ -136,10 +140,13 @@ def task_complete(request, pk):
     # Handle the completion form submission
     if request.method == 'POST':
         submission.status = 'completed'
-        submission.completed_at = timezone.now()
 
-        # Calculate time spent
-        if submission.started_at:
+        # Only set completed_at and recalculate time if task_submit hasn't already done so.
+        # task_submit sets completed_at and time_spent_seconds with accurate in-task timing.
+        # The confirm button here is a UI step only — we don't want to overwrite the real timing.
+        if not submission.completed_at:
+            submission.completed_at = timezone.now()
+        if not submission.time_spent_seconds and submission.started_at:
             time_diff = submission.completed_at - submission.started_at
             submission.time_spent_seconds = int(time_diff.total_seconds())
 
@@ -172,31 +179,36 @@ def task_submit(request, pk):
 
     task = get_object_or_404(LabTask, pk=pk)
 
-    # Don't save data from researchers
-    if request.user.is_researcher or request.user.is_staff:
-        return JsonResponse({
-            'status': 'preview',
-            'message': 'Preview mode: Data not saved'
-        })
-
     try:
         # Parse JSON data from request body
         data = json.loads(request.body)
+
+        # Flag submissions from researchers/staff as test data
+        is_test = request.user.is_researcher or request.user.is_staff
 
         # Get or create submission
         submission, created = TaskSubmission.objects.get_or_create(
             task=task,
             participant=request.user,
-            defaults={'status': 'started'}
+            defaults={'status': 'started', 'is_test': is_test}
         )
 
         # Update submission with results
         submission.results_data = data
         submission.status = 'completed'
         submission.completed_at = timezone.now()
+        submission.is_test = is_test
 
-        # Calculate time spent if start time is available
-        if submission.started_at:
+        # Extract task duration directly from lab.js data.
+        # The 'Task' sender row contains a 'duration' field in milliseconds,
+        # recorded by lab.js itself. This reflects only time spent inside the
+        # task, which is more meaningful for research than server-side diffs
+        # (which include instructions page, network latency, complete page, etc.)
+        task_row = next((r for r in data if r.get('sender') == 'Task'), None)
+        if task_row and task_row.get('duration'):
+            submission.time_spent_seconds = int(task_row['duration'] / 1000)
+        elif submission.started_at:
+            # Fallback to server-side diff if no Task row present in data
             time_diff = submission.completed_at - submission.started_at
             submission.time_spent_seconds = int(time_diff.total_seconds())
 

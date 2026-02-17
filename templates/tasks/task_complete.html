@@ -108,12 +108,19 @@
 
     <div class="info-box">
         <h3>What Happened:</h3>
-        <p><strong>✓</strong> Your task results were downloaded to your computer</p>
+        <p><strong>✓</strong> Your task results were submitted to the research database</p>
         <p><strong>✓</strong> Your participation time was recorded</p>
         {% if submission.started_at %}
         <p><strong>Duration:</strong> Started {{ submission.started_at|date:"M d, Y g:i A" }}</p>
         {% endif %}
     </div>
+
+    {% if submission.is_test %}
+    <div class="note">
+        <strong>Test submission:</strong> This submission has been flagged as test data.
+        You can review it in the admin panel and delete it once you're done testing.
+    </div>
+    {% endif %}
 
     {% if submission.status != 'completed' %}
     <form method="post">
@@ -122,11 +129,6 @@
             Confirm Completion & Return to Dashboard
         </button>
     </form>
-
-    <div class="note">
-        <strong>Note:</strong> Make sure you've downloaded your results file before confirming.
-        The file should be in your Downloads folder with a name like "bart-[timestamp].csv"
-    </div>
     {% else %}
     <p style="color: #27ae60; font-weight: bold; margin: 2rem 0;">
         ✓ This task has already been marked as complete
