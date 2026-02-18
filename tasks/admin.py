@@ -1,4 +1,10 @@
+import csv
+from datetime import date
+
 from django.contrib import admin
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.urls import path
 from django.utils.html import format_html
 from django import forms
 from .models import LabTask, TaskSubmission
@@ -95,6 +101,7 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
     list_filter = ['status', 'is_test', 'started_at', 'completed_at']
     search_fields = ['task__title', 'participant__email']
     readonly_fields = ['started_at', 'updated_at', 'trial_data_display', 'is_test_badge']
+    actions = ['export_trial_data_csv', 'export_raw_data_csv']
 
     # Fields that are internal lab.js timing/rendering metadata, not useful to researchers
     LABJS_INTERNAL_FIELDS = {
@@ -193,3 +200,203 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         )
         return format_html(table)
     trial_data_display.short_description = 'Trial Responses'
+
+    def _make_filename(self, prefix, queryset=None, task_slug=None):
+        """
+        Build a consistent CSV filename.
+        - For a single submission (detail view): uses the provided task_slug.
+        - For a queryset (list action): uses the task slug if all submissions share
+          the same task, otherwise 'multiple-tasks'.
+        """
+        today = date.today().isoformat()
+        if task_slug:
+            slug = task_slug
+        else:
+            task_slugs = queryset.values_list('task__task_slug', flat=True).distinct()
+            slug = task_slugs[0] if task_slugs.count() == 1 else 'multiple-tasks'
+        return f"{prefix}_{slug}_{today}.csv"
+
+    def get_urls(self):
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:pk>/export-trial-csv/',
+                self.admin_site.admin_view(self.export_single_trial_csv),
+                name='tasks_tasksubmission_export_trial_csv',
+            ),
+            path(
+                '<int:pk>/export-raw-csv/',
+                self.admin_site.admin_view(self.export_single_raw_csv),
+                name='tasks_tasksubmission_export_raw_csv',
+            ),
+        ]
+        return custom_urls + urls
+
+    def export_single_trial_csv(self, request, pk):
+        """Export filtered trial data for a single submission."""
+        submission = get_object_or_404(TaskSubmission, pk=pk)
+        response = HttpResponse(content_type='text/csv')
+        filename = self._make_filename('trial_data', task_slug=submission.task.task_slug)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        trials = submission.get_trial_data()
+
+        all_trial_keys = []
+        for trial in trials:
+            for key in trial.keys():
+                if key not in all_trial_keys:
+                    all_trial_keys.append(key)
+
+        priority = [f for f in self.PRIORITY_FIELDS if f in all_trial_keys]
+        extras = [f for f in all_trial_keys if f not in self.PRIORITY_FIELDS and f not in self.LABJS_INTERNAL_FIELDS]
+        trial_columns = priority + extras
+
+        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+
+        writer = csv.DictWriter(response, fieldnames=meta_columns + trial_columns, extrasaction='ignore')
+        writer.writeheader()
+
+        meta = {
+            'participant_email': submission.participant.email,
+            'task_title': submission.task.title,
+            'submission_status': submission.status,
+            'is_test': submission.is_test,
+            'time_spent_seconds': submission.time_spent_seconds,
+            'started_at': submission.started_at.isoformat() if submission.started_at else '',
+            'completed_at': submission.completed_at.isoformat() if submission.completed_at else '',
+        }
+        for trial in trials:
+            row = {**meta, **{k: v for k, v in trial.items() if k in trial_columns}}
+            writer.writerow(row)
+
+        return response
+
+    def export_single_raw_csv(self, request, pk):
+        """Export complete unfiltered data for a single submission."""
+        submission = get_object_or_404(TaskSubmission, pk=pk)
+        response = HttpResponse(content_type='text/csv')
+        filename = self._make_filename('raw_data', task_slug=submission.task.task_slug)
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+        raw_rows = submission.results_data or []
+
+        all_keys = []
+        for row in raw_rows:
+            for key in row.keys():
+                if key not in all_keys:
+                    all_keys.append(key)
+
+        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+
+        writer = csv.DictWriter(response, fieldnames=meta_columns + all_keys, extrasaction='ignore')
+        writer.writeheader()
+
+        meta = {
+            'participant_email': submission.participant.email,
+            'task_title': submission.task.title,
+            'submission_status': submission.status,
+            'is_test': submission.is_test,
+            'time_spent_seconds': submission.time_spent_seconds,
+            'started_at': submission.started_at.isoformat() if submission.started_at else '',
+            'completed_at': submission.completed_at.isoformat() if submission.completed_at else '',
+        }
+        for row in raw_rows:
+            writer.writerow({**meta, **row})
+
+        return response
+
+    @admin.action(description='Export trial data as CSV (filtered responses)')
+    def export_trial_data_csv(self, request, queryset):
+        """
+        Export the filtered trial data (get_trial_data()) for selected submissions as CSV.
+        Each row in the CSV corresponds to one trial response, with submission-level
+        metadata (participant email, task title, is_test, status, time_spent_seconds)
+        prepended as additional columns.
+        """
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{self._make_filename("trial_data", queryset=queryset)}"'
+
+        # Gather all trial rows across selected submissions to determine full column set
+        submission_rows = []
+        all_trial_keys = []
+        for submission in queryset:
+            trials = submission.get_trial_data()
+            submission_rows.append((submission, trials))
+            for trial in trials:
+                for key in trial.keys():
+                    if key not in all_trial_keys:
+                        all_trial_keys.append(key)
+
+        # Order columns: priority trial fields first, then extras (excluding internal)
+        priority = [f for f in self.PRIORITY_FIELDS if f in all_trial_keys]
+        extras = [f for f in all_trial_keys if f not in self.PRIORITY_FIELDS and f not in self.LABJS_INTERNAL_FIELDS]
+        trial_columns = priority + extras
+
+        # Submission-level metadata columns prepended to every row
+        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+
+        writer = csv.DictWriter(response, fieldnames=meta_columns + trial_columns, extrasaction='ignore')
+        writer.writeheader()
+
+        for submission, trials in submission_rows:
+            meta = {
+                'participant_email': submission.participant.email,
+                'task_title': submission.task.title,
+                'submission_status': submission.status,
+                'is_test': submission.is_test,
+                'time_spent_seconds': submission.time_spent_seconds,
+                'started_at': submission.started_at.isoformat() if submission.started_at else '',
+                'completed_at': submission.completed_at.isoformat() if submission.completed_at else '',
+            }
+            if not trials:
+                # Write a row with just metadata and empty trial columns
+                writer.writerow(meta)
+            else:
+                for trial in trials:
+                    row = {**meta, **{k: v for k, v in trial.items() if k in trial_columns}}
+                    writer.writerow(row)
+
+        return response
+
+    @admin.action(description='Export raw data as CSV (all lab.js rows)')
+    def export_raw_data_csv(self, request, queryset):
+        """
+        Export the complete, unfiltered results_data for selected submissions as CSV.
+        Every row from the lab.js datastore is included, with submission-level metadata prepended.
+        """
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="{self._make_filename("raw_data", queryset=queryset)}"'
+
+        # Collect all raw rows to determine full column set
+        submission_rows = []
+        all_keys = []
+        for submission in queryset:
+            raw = submission.results_data or []
+            submission_rows.append((submission, raw))
+            for row in raw:
+                for key in row.keys():
+                    if key not in all_keys:
+                        all_keys.append(key)
+
+        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+
+        writer = csv.DictWriter(response, fieldnames=meta_columns + all_keys, extrasaction='ignore')
+        writer.writeheader()
+
+        for submission, raw_rows in submission_rows:
+            meta = {
+                'participant_email': submission.participant.email,
+                'task_title': submission.task.title,
+                'submission_status': submission.status,
+                'is_test': submission.is_test,
+                'time_spent_seconds': submission.time_spent_seconds,
+                'started_at': submission.started_at.isoformat() if submission.started_at else '',
+                'completed_at': submission.completed_at.isoformat() if submission.completed_at else '',
+            }
+            if not raw_rows:
+                writer.writerow(meta)
+            else:
+                for row in raw_rows:
+                    writer.writerow({**meta, **row})
+
+        return response
