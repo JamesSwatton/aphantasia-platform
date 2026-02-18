@@ -486,13 +486,52 @@ fetch('/tasks/${TASK_ID}/submit/', {
 5. ~~**Implement automatic task data submission** to Django database~~ ✅ **Completed** (Session 6)
 6. ~~**Display filtered trial data in admin panel** for task submissions~~ ✅ **Completed** (Session 7)
 7. ~~**Create researcher test mode** for task data~~ ✅ **Completed** (Session 7 — test submissions flagged with `is_test`)
-8. **Add CSV export** for task results in admin panel ⚠️ **Priority for next session**
-9. **Create researcher dashboard** with data analytics
-10. **Integrate HTMX** for dynamic interactions
-11. **Add Alpine.js** for frontend interactivity
-12. **Implement data export** functionality (CSV, JSON, Excel) for surveys
-13. **Add data visualization** for research insights
-14. **Configure production settings** (PostgreSQL, static files, security)
+8. ~~**Add CSV export** for task results in admin panel~~ ✅ **Completed** (Session 8 — list action + per-submission download buttons)
+9. **Redesign survey system** to support richer question types ⚠️ **In progress (feature-surveys branch)**
+10. **Create researcher dashboard** with data analytics
+11. **Integrate HTMX** for dynamic interactions
+12. **Add Alpine.js** for frontend interactivity
+13. **Implement data export** functionality (CSV, JSON, Excel) for surveys
+14. **Add data visualization** for research insights
+15. **Configure production settings** (PostgreSQL, static files, security)
+
+### Survey Redesign Plan (Session 8)
+
+The current survey system supports a single Likert scale shared across all questions. The redesign extends this to support a wider range of question types used in psychological research.
+
+#### New question types
+- **Likert** — per-question scale with its own range and labels (replaces the current survey-level scale)
+- **Binary** — yes/no or true/false (two fixed options)
+- **Multiple choice** — select one from a list of researcher-defined text options
+- **Conditional** — a question that is only shown if a previous question's answer meets a condition
+
+#### Subscales / question groups
+- A new `QuestionGroup` model allows questions to be organised into named sections within a survey (e.g. VVIQ has 4 groups of 4 questions)
+- Each group can optionally override the survey-level Likert scale with its own `min_value`, `max_value`, and `scale_labels`
+- Questions without a group are rendered at the top level as before
+
+#### Conditional logic
+- A new `ConditionalRule` model links a question to a "trigger" question and a condition value
+- Supported operators: `equals`, `not_equals`, `greater_than`, `less_than`
+- If the condition is not met, the question is hidden from the participant and no response is required/stored
+
+#### New data models
+| Model | Purpose |
+|---|---|
+| `QuestionGroup` | Named section within a survey with optional scale override |
+| `QuestionOption` | Individual option for multiple choice / binary questions |
+| `ConditionalRule` | Show/hide rule linking one question's answer to another question's visibility |
+
+#### Migration strategy
+- Existing questions migrate as `question_type='likert'` with no group assigned
+- Survey-level `min_value`, `max_value`, `scale_labels` are retained as defaults; per-question overrides are additive
+- No existing response data is lost
+
+#### Authoring
+- Everything via Django admin
+- `QuestionGroup` inline on Survey
+- `QuestionOption` inline on Question (shown for multiple choice / binary types)
+- `ConditionalRule` inline on Question
 
 ## Data Protection & Research Integrity
 
