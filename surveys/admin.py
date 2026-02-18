@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from .models import ParticipantResponse, Question, Survey
+from .models import LikertScale, ParticipantResponse, Question, Survey
 from accounts.models import User
 
 
@@ -19,10 +19,18 @@ class SurveyAdminForm(forms.ModelForm):
         self.fields['researcher'].queryset = User.objects.filter(is_staff=True)
 
 
+class LikertScaleInline(admin.TabularInline):
+    model = LikertScale
+    extra = 1
+    fields = ["name", "min_value", "max_value", "scale_labels"]
+    verbose_name = "Likert Scale"
+    verbose_name_plural = "Likert Scales"
+
+
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["text", "order", "required", "reverse_coded"]
+    fields = ["text", "order", "likert_scale", "required", "reverse_coded"]
 
     def get_queryset(self, request):
         """
@@ -31,6 +39,18 @@ class QuestionInline(admin.TabularInline):
         qs = super().get_queryset(request)
         return qs.order_by("order")
 
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        """
+        Filter the likert_scale dropdown to only show scales belonging to this survey.
+        """
+        if db_field.name == "likert_scale":
+            # Get the survey from the parent object being edited
+            if hasattr(request, '_survey_obj'):
+                kwargs["queryset"] = LikertScale.objects.filter(survey=request._survey_obj)
+            else:
+                kwargs["queryset"] = LikertScale.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
 
 @admin.register(Survey)
 class SurveyAdmin(admin.ModelAdmin):
@@ -38,7 +58,7 @@ class SurveyAdmin(admin.ModelAdmin):
     list_display = ["title", "researcher", "domain", "is_active", "created_at"]
     list_filter = ["is_active", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
-    inlines = [QuestionInline]
+    inlines = [LikertScaleInline, QuestionInline]
     actions = ["normalize_question_order"]
     fieldsets = [
         (
@@ -46,22 +66,21 @@ class SurveyAdmin(admin.ModelAdmin):
             {"fields": ["title", "description", "researcher", "domain", "is_active", "randomize_questions"]},
         ),
         (
-            "Likert Scale Settings",
+            "Default Likert Scale",
             {
-                "fields": ["min_value", "max_value"],
-                "description": "Set the minimum and maximum values for the Likert scale used in all questions (e.g., 1-5, 1-7, etc.)",
-            },
-        ),
-        (
-            "Scale Labels",
-            {
-                "fields": ["scale_labels"],
-                "description": "Optional: Add labels for each scale value. Use JSON format with the value as key and label as value. "
-                'Example: {"1": "Strongly Disagree", "2": "Disagree", "3": "Neutral", "4": "Agree", "5": "Strongly Agree"}',
-                "classes": ["collapse"],
+                "fields": ["min_value", "max_value", "scale_labels"],
+                "description": (
+                    "Fallback scale used for any question that does not have a specific Likert Scale assigned. "
+                    'Labels use JSON format: {"1": "Strongly Disagree", "2": "Disagree", "3": "Neutral", "4": "Agree", "5": "Strongly Agree"}'
+                ),
             },
         ),
     ]
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Store the survey object on the request so QuestionInline can filter scales
+        request._survey_obj = obj
+        return super().get_form(request, obj, **kwargs)
 
     @admin.action(description="Normalize question order (renumber 1, 2, 3...)")
     def normalize_question_order(self, request, queryset):

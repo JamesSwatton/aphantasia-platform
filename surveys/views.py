@@ -29,15 +29,9 @@ def survey_preview(request, pk):
         random.shuffle(questions)
         random.seed()  # Reset seed for other random operations
 
-    # Add scale ranges and labels to each question for template rendering
-    scale_range = range(survey.min_value, survey.max_value + 1)
-    scale_options = [
-        (value, survey.get_label_for_value(value))
-        for value in scale_range
-    ]
+    # Attach per-question scale options for template rendering
     for question in questions:
-        question.scale_range = scale_range
-        question.scale_options = scale_options
+        question.scale_options = question.get_scale_options()
 
     # Check if this is a POST request (test mode submission)
     test_mode = request.GET.get('test_mode', 'false') == 'true'
@@ -55,27 +49,22 @@ def survey_preview(request, pk):
             if q.required and not answer:
                 errors.append(f"Question {index} is required.")
             elif answer:
-                # Validate that answer is within the Likert scale range
+                # Validate that answer is within this question's scale range
                 try:
                     answer_int = int(answer)
-                    if answer_int < survey.min_value or answer_int > survey.max_value:
+                    if answer_int < q.effective_min() or answer_int > q.effective_max():
                         errors.append(
                             f"Question {index}: Answer must be between "
-                            f"{survey.min_value} and {survey.max_value}."
+                            f"{q.effective_min()} and {q.effective_max()}."
                         )
                     else:
-                        # Apply reverse coding if enabled
-                        if q.reverse_coded:
-                            stored_value = (survey.max_value + survey.min_value) - answer_int
-                        else:
-                            stored_value = answer_int
-
-                        # Store the response with its label
+                        stored_value = q.apply_reverse_coding(answer_int) if q.reverse_coded else answer_int
+                        scale_labels = q.likert_scale.scale_labels if q.likert_scale else None
                         responses.append({
                             'order': index,
                             'question_text': q.text,
                             'answer_value': answer_int,
-                            'answer_label': survey.get_label_for_value(answer_int),
+                            'answer_label': survey.get_label_for_value(answer_int, scale_labels),
                             'stored_value': stored_value,
                             'reverse_coded': q.reverse_coded
                         })
@@ -137,15 +126,9 @@ def survey_take(request, pk):
         random.shuffle(questions)
         random.seed()  # Reset seed for other random operations
 
-    # Add scale ranges and labels to each question for template rendering
-    scale_range = range(survey.min_value, survey.max_value + 1)
-    scale_options = [
-        (value, survey.get_label_for_value(value))
-        for value in scale_range
-    ]
+    # Attach per-question scale options for template rendering
     for question in questions:
-        question.scale_range = scale_range
-        question.scale_options = scale_options
+        question.scale_options = question.get_scale_options()
 
     # Check if user has already completed this survey
     existing_responses = ParticipantResponse.objects.filter(
@@ -165,13 +148,13 @@ def survey_take(request, pk):
             if q.required and not answer:
                 errors.append(f"Question {index} is required.")
             elif answer:
-                # Validate that answer is within the Likert scale range
+                # Validate that answer is within this question's scale range
                 try:
                     answer_int = int(answer)
-                    if answer_int < survey.min_value or answer_int > survey.max_value:
+                    if answer_int < q.effective_min() or answer_int > q.effective_max():
                         errors.append(
                             f"Question {index}: Answer must be between "
-                            f"{survey.min_value} and {survey.max_value}."
+                            f"{q.effective_min()} and {q.effective_max()}."
                         )
                     else:
                         responses[q] = answer_int
@@ -185,11 +168,7 @@ def survey_take(request, pk):
             # Save responses to database
             with transaction.atomic():
                 for question, answer_value in responses.items():
-                    # Apply reverse coding if enabled
-                    if question.reverse_coded:
-                        stored_value = (survey.max_value + survey.min_value) - answer_value
-                    else:
-                        stored_value = answer_value
+                    stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
 
                     ParticipantResponse.objects.update_or_create(
                         survey=survey,

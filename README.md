@@ -495,42 +495,37 @@ fetch('/tasks/${TASK_ID}/submit/', {
 14. **Add data visualization** for research insights
 15. **Configure production settings** (PostgreSQL, static files, security)
 
-### Survey Redesign Plan (Session 8)
+### Survey Redesign Plan (Session 8+)
 
-The current survey system supports a single Likert scale shared across all questions. The redesign extends this to support a wider range of question types used in psychological research.
+The survey system is being extended incrementally to support richer question types. Each type is built, tested, and committed before the next is started.
 
-#### New question types
-- **Likert** — per-question scale with its own range and labels (replaces the current survey-level scale)
-- **Binary** — yes/no or true/false (two fixed options)
-- **Multiple choice** — select one from a list of researcher-defined text options
-- **Conditional** — a question that is only shown if a previous question's answer meets a condition
+#### Completed: Per-question Likert scales (Session 8)
+- New `LikertScale` model — named, reusable scales defined per survey (e.g. "Agreement 1–5", "Vividness 0–10")
+- Researchers define scales once as an inline on the Survey admin page using JSON labels
+- Each question has a dropdown to select which scale to use; falls back to the survey-level default if none selected
+- Scale resolution chain: question's assigned scale → survey default `min_value`/`max_value`/`scale_labels`
+- Helper methods on `Question`: `effective_min()`, `effective_max()`, `get_scale_options()`, `apply_reverse_coding()`
+- Views and templates updated to use per-question scale options
+- Pre-existing bugs in `survey_take` view fixed (scale variable reference, response variable name)
 
-#### Subscales / question groups
-- A new `QuestionGroup` model allows questions to be organised into named sections within a survey (e.g. VVIQ has 4 groups of 4 questions)
-- Each group can optionally override the survey-level Likert scale with its own `min_value`, `max_value`, and `scale_labels`
-- Questions without a group are rendered at the top level as before
+#### Still to implement (in order)
+1. **Binary yes/no** — two-option questions using `QuestionOption` for the choices
+2. **Multiple choice** — select one from a researcher-defined list of options
+3. **Free text** — open-ended text input
+4. **Question groups / subscales** — named sections within a survey (e.g. VVIQ's 4 groups of 4), each optionally inheriting or overriding the survey's default scale
+5. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
 
-#### Conditional logic
-- A new `ConditionalRule` model links a question to a "trigger" question and a condition value
-- Supported operators: `equals`, `not_equals`, `greater_than`, `less_than`
-- If the condition is not met, the question is hidden from the participant and no response is required/stored
-
-#### New data models
+#### Planned data models (still to add)
 | Model | Purpose |
 |---|---|
+| `QuestionOption` | Individual option for binary / multiple choice questions |
 | `QuestionGroup` | Named section within a survey with optional scale override |
-| `QuestionOption` | Individual option for multiple choice / binary questions |
-| `ConditionalRule` | Show/hide rule linking one question's answer to another question's visibility |
+| `ConditionalRule` | Show/hide rule: show this question if another question's answer meets a condition |
 
-#### Migration strategy
-- Existing questions migrate as `question_type='likert'` with no group assigned
-- Survey-level `min_value`, `max_value`, `scale_labels` are retained as defaults; per-question overrides are additive
-- No existing response data is lost
-
-#### Authoring
+#### Authoring approach
 - Everything via Django admin
+- `QuestionOption` inline on Question (for binary / multiple choice types)
 - `QuestionGroup` inline on Survey
-- `QuestionOption` inline on Question (shown for multiple choice / binary types)
 - `ConditionalRule` inline on Question
 
 ## Data Protection & Research Integrity

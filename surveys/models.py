@@ -74,6 +74,49 @@ class Survey(models.Model):
                 question.save()
 
 
+class LikertScale(models.Model):
+    """
+    A named, reusable Likert scale defined within a survey.
+    Questions can select one of these scales via a dropdown.
+    If no scale is selected on a question, the survey-level defaults are used.
+    """
+    survey = models.ForeignKey(
+        Survey,
+        on_delete=models.CASCADE,
+        related_name='likert_scales'
+    )
+    name = models.CharField(
+        max_length=200,
+        help_text="Descriptive name for this scale, e.g. 'Agreement 1-5' or 'Vividness 0-10'"
+    )
+    min_value = models.IntegerField(default=1)
+    max_value = models.IntegerField(default=5)
+    scale_labels = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='Labels for each scale value. Example: {"1": "Never", "2": "Rarely", "3": "Sometimes", "4": "Often", "5": "Always"}'
+    )
+
+    class Meta:
+        ordering = ['survey', 'name']
+        verbose_name = 'Likert Scale'
+        verbose_name_plural = 'Likert Scales'
+
+    def __str__(self):
+        return f"{self.name} ({self.min_value}–{self.max_value})"
+
+    def get_label_for_value(self, value):
+        if self.scale_labels and str(value) in self.scale_labels:
+            return self.scale_labels[str(value)]
+        return str(value)
+
+    def get_scale_options(self):
+        return [
+            (v, self.get_label_for_value(v))
+            for v in range(self.min_value, self.max_value + 1)
+        ]
+
+
 class Question(models.Model):
     """
     Individual questions that belong to a single survey.
@@ -83,6 +126,14 @@ class Question(models.Model):
         Survey,
         on_delete=models.CASCADE,
         related_name='questions'
+    )
+    likert_scale = models.ForeignKey(
+        LikertScale,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='questions',
+        help_text="Select a Likert scale for this question. Leave blank to use the survey default."
     )
     text = models.TextField()
     required = models.BooleanField(default=True)
@@ -104,6 +155,40 @@ class Question(models.Model):
 
     def __str__(self):
         return f"{self.survey.title} - Q{self.order}: {self.text[:50]}"
+
+    def effective_scale(self):
+        """
+        Returns the LikertScale to use for this question, or None if using survey defaults.
+        """
+        return self.likert_scale
+
+    def effective_min(self):
+        if self.likert_scale:
+            return self.likert_scale.min_value
+        return self.survey.min_value
+
+    def effective_max(self):
+        if self.likert_scale:
+            return self.likert_scale.max_value
+        return self.survey.max_value
+
+    def get_scale_options(self):
+        """
+        Returns list of (value, label) tuples for Likert rendering.
+        Uses the question's assigned scale, falling back to survey defaults.
+        """
+        if self.likert_scale:
+            return self.likert_scale.get_scale_options()
+        return [
+            (v, self.survey.get_label_for_value(v))
+            for v in range(self.survey.min_value, self.survey.max_value + 1)
+        ]
+
+    def apply_reverse_coding(self, answer_int):
+        """
+        Apply reverse coding to a numeric answer value.
+        """
+        return (self.effective_max() + self.effective_min()) - answer_int
 
     def save(self, *args, **kwargs):
         """
