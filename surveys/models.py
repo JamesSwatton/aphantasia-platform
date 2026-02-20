@@ -120,12 +120,25 @@ class LikertScale(models.Model):
 class Question(models.Model):
     """
     Individual questions that belong to a single survey.
-    The Likert scale settings are defined at the survey level.
+    Supports multiple question types: Likert scales, multiple choice, and free text.
     """
+    QUESTION_TYPES = [
+        ('likert', 'Likert Scale'),
+        ('multiple_choice_single', 'Multiple Choice (Select One)'),
+        ('multiple_choice_multi', 'Multiple Choice (Select Multiple)'),
+        ('free_text', 'Free Text'),
+    ]
+
     survey = models.ForeignKey(
         Survey,
         on_delete=models.CASCADE,
         related_name='questions'
+    )
+    question_type = models.CharField(
+        max_length=30,
+        choices=QUESTION_TYPES,
+        default='likert',
+        help_text='Type of question'
     )
     likert_scale = models.ForeignKey(
         LikertScale,
@@ -133,13 +146,18 @@ class Question(models.Model):
         null=True,
         blank=True,
         related_name='questions',
-        help_text="Select a Likert scale for this question. Leave blank to use the survey default."
+        help_text="(Likert only) Select a Likert scale for this question. Leave blank to use the survey default."
     )
     text = models.TextField()
     required = models.BooleanField(default=True)
     reverse_coded = models.BooleanField(
         default=False,
-        help_text='Reverse code this question (invert scale values before storing). Useful for detecting response patterns.'
+        help_text='(Likert only) Reverse code this question (invert scale values before storing). Useful for detecting response patterns.'
+    )
+    options = models.JSONField(
+        default=dict,
+        blank=True,
+        help_text='(Multiple choice only) Options for multiple choice questions. Format: {"1": "Option A", "2": "Option B", "3": "Option C"}'
     )
     order = models.PositiveIntegerField(
         default=0,
@@ -187,8 +205,55 @@ class Question(models.Model):
     def apply_reverse_coding(self, answer_int):
         """
         Apply reverse coding to a numeric answer value.
+        Only applicable to Likert scale questions.
         """
         return (self.effective_max() + self.effective_min()) - answer_int
+
+    def get_multiple_choice_options(self):
+        """
+        Returns list of (value, label) tuples for multiple choice rendering.
+        Only applicable to multiple choice questions.
+        """
+        if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi'] or not self.options:
+            return []
+
+        # Sort by key (numeric value) for consistent ordering
+        return sorted(
+            [(int(k), v) for k, v in self.options.items()],
+            key=lambda x: x[0]
+        )
+
+    def validate_multiple_choice_answer(self, answer_values):
+        """
+        Validate that all answer values are valid options for this question.
+        answer_values can be a single value or a list of values.
+        Returns (is_valid, error_message)
+        """
+        if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi']:
+            return True, None
+
+        if not self.options:
+            return False, "This question has no options configured."
+
+        # Ensure answer_values is a list
+        if not isinstance(answer_values, list):
+            answer_values = [answer_values]
+
+        # Check if empty and required
+        if self.required and not answer_values:
+            return False, "This question is required."
+
+        # Check multiple selections allowed
+        if self.question_type == 'multiple_choice_single' and len(answer_values) > 1:
+            return False, "Only one selection is allowed for this question."
+
+        # Validate all values are valid options
+        valid_values = set(self.options.keys())
+        for val in answer_values:
+            if str(val) not in valid_values:
+                return False, f"Invalid option: {val}"
+
+        return True, None
 
     def save(self, *args, **kwargs):
         """

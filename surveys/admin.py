@@ -30,7 +30,7 @@ class LikertScaleInline(admin.TabularInline):
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["text", "order", "likert_scale", "required", "reverse_coded"]
+    fields = ["question_type", "text", "order", "likert_scale", "required", "reverse_coded", "options"]
 
     def get_queryset(self, request):
         """

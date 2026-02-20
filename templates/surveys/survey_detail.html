@@ -60,6 +60,43 @@
         word-wrap: break-word;
     }
 
+    .multiple-choice-options {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+        margin-top: 1rem;
+    }
+
+    .multiple-choice-option {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        background-color: white;
+        border: 2px solid #e0e0e0;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .multiple-choice-option:hover {
+        border-color: #3498db;
+        background-color: #f8f9fa;
+    }
+
+    .multiple-choice-option input[type="checkbox"] {
+        width: 20px;
+        height: 20px;
+        cursor: pointer;
+        margin-right: 0.75rem;
+    }
+
+    .multiple-choice-option label {
+        cursor: pointer;
+        flex: 1;
+        font-size: 1rem;
+        color: #2c3e50;
+    }
+
     .scale-labels {
         display: flex;
         justify-content: space-between;
@@ -201,8 +238,20 @@
                             <tr>
                                 <td>{{ response.order }}</td>
                                 <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}</td>
-                                <td class="response-value">{{ response.answer_value }}</td>
-                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>{{ response.stored_value }}</td>
+                                <td class="response-value">
+                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                        {{ response.answer_value|join:", " }}
+                                    {% else %}
+                                        {{ response.answer_value }}
+                                    {% endif %}
+                                </td>
+                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
+                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                        {{ response.stored_value|join:", " }}
+                                    {% else %}
+                                        {{ response.stored_value }}
+                                    {% endif %}
+                                </td>
                                 <td>{{ response.answer_label }}</td>
                             </tr>
                         {% endfor %}
@@ -242,20 +291,48 @@
                             <div class="question-text">
                                 {{ forloop.counter }}. {{ question.text }}
                                 {% if question.required %}<span class="required-indicator">*</span>{% endif %}
+                                {% if question.question_type == 'multiple_choice_single' %}
+                                    <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one)</span>
+                                {% elif question.question_type == 'multiple_choice_multi' %}
+                                    <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one or more)</span>
+                                {% endif %}
                             </div>
-                            <div class="likert-scale">
-                                {% for value, label in question.scale_options %}
-                                    <div class="likert-option">
-                                        <input type="radio"
-                                               name="question_{{ question.id }}"
-                                               id="q{{ question.id }}_{{ value }}"
-                                               value="{{ value }}"
-                                               {% if question.required %}required{% endif %}>
-                                        <label for="q{{ question.id }}_{{ value }}">{{ value }}</label>
-                                        {% if label != value|stringformat:"s" %}<div class="likert-label">{{ label }}</div>{% endif %}
-                                    </div>
-                                {% endfor %}
-                            </div>
+
+                            {% if question.question_type == 'likert' %}
+                                <div class="likert-scale">
+                                    {% for value, label in question.scale_options %}
+                                        <div class="likert-option">
+                                            <input type="radio"
+                                                   name="question_{{ question.id }}"
+                                                   id="q{{ question.id }}_{{ value }}"
+                                                   value="{{ value }}"
+                                                   {% if question.required %}required{% endif %}>
+                                            <label for="q{{ question.id }}_{{ value }}">{{ value }}</label>
+                                            {% if label != value|stringformat:"s" %}<div class="likert-label">{{ label }}</div>{% endif %}
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                            {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
+                                <div class="multiple-choice-options">
+                                    {% for value, label in question.multiple_choice_options %}
+                                        <div class="multiple-choice-option">
+                                            <input type="checkbox"
+                                                   name="question_{{ question.id }}"
+                                                   id="q{{ question.id }}_{{ value }}"
+                                                   value="{{ value }}">
+                                            <label for="q{{ question.id }}_{{ value }}">{{ label }}</label>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+
+                            {% elif question.question_type == 'free_text' %}
+                                <textarea name="question_{{ question.id }}"
+                                          id="q{{ question.id }}"
+                                          rows="4"
+                                          style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
+                                          {% if question.required %}required{% endif %}></textarea>
+                            {% endif %}
                         </div>
                     {% endfor %}
                     <div style="margin-top: 2rem; text-align: center;">

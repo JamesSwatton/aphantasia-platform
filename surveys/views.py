@@ -29,9 +29,12 @@ def survey_preview(request, pk):
         random.shuffle(questions)
         random.seed()  # Reset seed for other random operations
 
-    # Attach per-question scale options for template rendering
+    # Attach per-question scale options or multiple choice options for template rendering
     for question in questions:
-        question.scale_options = question.get_scale_options()
+        if question.question_type == 'likert':
+            question.scale_options = question.get_scale_options()
+        elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
+            question.multiple_choice_options = question.get_multiple_choice_options()
 
     # Check if this is a POST request (test mode submission)
     test_mode = request.GET.get('test_mode', 'false') == 'true'
@@ -44,32 +47,76 @@ def survey_preview(request, pk):
 
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
-            answer = request.POST.get(field_name, '').strip()
 
-            if q.required and not answer:
-                errors.append(f"Question {index} is required.")
-            elif answer:
-                # Validate that answer is within this question's scale range
-                try:
-                    answer_int = int(answer)
-                    if answer_int < q.effective_min() or answer_int > q.effective_max():
-                        errors.append(
-                            f"Question {index}: Answer must be between "
-                            f"{q.effective_min()} and {q.effective_max()}."
-                        )
-                    else:
-                        stored_value = q.apply_reverse_coding(answer_int) if q.reverse_coded else answer_int
-                        scale_labels = q.likert_scale.scale_labels if q.likert_scale else None
-                        responses.append({
-                            'order': index,
-                            'question_text': q.text,
-                            'answer_value': answer_int,
-                            'answer_label': survey.get_label_for_value(answer_int, scale_labels),
-                            'stored_value': stored_value,
-                            'reverse_coded': q.reverse_coded
-                        })
-                except ValueError:
-                    errors.append(f"Question {index}: Invalid answer format.")
+            if q.question_type == 'likert':
+                answer = request.POST.get(field_name, '').strip()
+
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    # Validate that answer is within this question's scale range
+                    try:
+                        answer_int = int(answer)
+                        if answer_int < q.effective_min() or answer_int > q.effective_max():
+                            errors.append(
+                                f"Question {index}: Answer must be between "
+                                f"{q.effective_min()} and {q.effective_max()}."
+                            )
+                        else:
+                            stored_value = q.apply_reverse_coding(answer_int) if q.reverse_coded else answer_int
+                            # Get label from question's scale or survey default
+                            if q.likert_scale:
+                                answer_label = q.likert_scale.get_label_for_value(answer_int)
+                            else:
+                                answer_label = survey.get_label_for_value(answer_int)
+                            responses.append({
+                                'order': index,
+                                'question_text': q.text,
+                                'question_type': 'likert',
+                                'answer_value': answer_int,
+                                'answer_label': answer_label,
+                                'stored_value': stored_value,
+                                'reverse_coded': q.reverse_coded
+                            })
+                    except ValueError:
+                        errors.append(f"Question {index}: Invalid answer format.")
+
+            elif q.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
+                # Get all selected values (checkboxes return a list)
+                selected_values = request.POST.getlist(field_name)
+
+                # Validate using the model method
+                is_valid, error_msg = q.validate_multiple_choice_answer(selected_values)
+                if not is_valid:
+                    errors.append(f"Question {index}: {error_msg}")
+                elif selected_values:
+                    # Build labels for selected options
+                    labels = [q.options.get(str(v), str(v)) for v in selected_values]
+                    responses.append({
+                        'order': index,
+                        'question_text': q.text,
+                        'question_type': q.question_type,  # Will be either multiple_choice_single or multiple_choice_multi
+                        'answer_value': selected_values,
+                        'answer_label': ', '.join(labels),
+                        'stored_value': selected_values,
+                        'reverse_coded': False
+                    })
+
+            elif q.question_type == 'free_text':
+                answer = request.POST.get(field_name, '').strip()
+
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    responses.append({
+                        'order': index,
+                        'question_text': q.text,
+                        'question_type': 'free_text',
+                        'answer_value': answer[:50] + '...' if len(answer) > 50 else answer,
+                        'answer_label': '-',
+                        'stored_value': answer[:50] + '...' if len(answer) > 50 else answer,
+                        'reverse_coded': False
+                    })
 
         if errors:
             for error in errors:
@@ -126,9 +173,12 @@ def survey_take(request, pk):
         random.shuffle(questions)
         random.seed()  # Reset seed for other random operations
 
-    # Attach per-question scale options for template rendering
+    # Attach per-question scale options or multiple choice options for template rendering
     for question in questions:
-        question.scale_options = question.get_scale_options()
+        if question.question_type == 'likert':
+            question.scale_options = question.get_scale_options()
+        elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
+            question.multiple_choice_options = question.get_multiple_choice_options()
 
     # Check if user has already completed this survey
     existing_responses = ParticipantResponse.objects.filter(
@@ -143,23 +193,46 @@ def survey_take(request, pk):
 
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
-            answer = request.POST.get(field_name, '').strip()
 
-            if q.required and not answer:
-                errors.append(f"Question {index} is required.")
-            elif answer:
-                # Validate that answer is within this question's scale range
-                try:
-                    answer_int = int(answer)
-                    if answer_int < q.effective_min() or answer_int > q.effective_max():
-                        errors.append(
-                            f"Question {index}: Answer must be between "
-                            f"{q.effective_min()} and {q.effective_max()}."
-                        )
-                    else:
-                        responses[q] = answer_int
-                except ValueError:
-                    errors.append(f"Question {index}: Invalid answer format.")
+            if q.question_type == 'likert':
+                answer = request.POST.get(field_name, '').strip()
+
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    # Validate that answer is within this question's scale range
+                    try:
+                        answer_int = int(answer)
+                        if answer_int < q.effective_min() or answer_int > q.effective_max():
+                            errors.append(
+                                f"Question {index}: Answer must be between "
+                                f"{q.effective_min()} and {q.effective_max()}."
+                            )
+                        else:
+                            responses[q] = answer_int
+                    except ValueError:
+                        errors.append(f"Question {index}: Invalid answer format.")
+
+            elif q.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
+                # Get all selected values (checkboxes return a list)
+                selected_values = request.POST.getlist(field_name)
+
+                # Validate using the model method
+                is_valid, error_msg = q.validate_multiple_choice_answer(selected_values)
+                if not is_valid:
+                    errors.append(f"Question {index}: {error_msg}")
+                elif selected_values:
+                    # Store as JSON array
+                    import json
+                    responses[q] = json.dumps(selected_values)
+
+            elif q.question_type == 'free_text':
+                answer = request.POST.get(field_name, '').strip()
+
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    responses[q] = answer
 
         if errors:
             for error in errors:
@@ -168,14 +241,23 @@ def survey_take(request, pk):
             # Save responses to database
             with transaction.atomic():
                 for question, answer_value in responses.items():
-                    stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
-
-                    ParticipantResponse.objects.update_or_create(
-                        survey=survey,
-                        question=question,
-                        participant=request.user,
-                        defaults={'answer': str(stored_value)}
-                    )
+                    if question.question_type == 'likert':
+                        # Apply reverse coding for Likert questions
+                        stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
+                        ParticipantResponse.objects.update_or_create(
+                            survey=survey,
+                            question=question,
+                            participant=request.user,
+                            defaults={'answer': str(stored_value)}
+                        )
+                    else:
+                        # For multiple choice and free text, store as-is
+                        ParticipantResponse.objects.update_or_create(
+                            survey=survey,
+                            question=question,
+                            participant=request.user,
+                            defaults={'answer': answer_value}
+                        )
 
             messages.success(
                 request,
