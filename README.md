@@ -508,19 +508,30 @@ The survey system is being extended incrementally to support richer question typ
 - Views and templates updated to use per-question scale options
 - Pre-existing bugs in `survey_take` view fixed (scale variable reference, response variable name)
 
+#### Completed: Multiple choice questions (Session 9)
+- Added `question_type` field to Question model with choices: `likert`, `multiple_choice_single`, `multiple_choice_multi`, `free_text`
+- Two multiple choice variants:
+  - **Multiple Choice (Select One)**: participants select exactly one option (validated)
+  - **Multiple Choice (Select Multiple)**: participants select one or more options
+- Options stored as JSON in Question.options field (e.g. `{"1": "Option A", "2": "Option B"}`)
+- Checkbox-based UI for all multiple choice questions
+- Clear participant instructions: "(Select one)" or "(Select one or more)"
+- Responses stored as JSON arrays in ParticipantResponse.answer field
+- Validation ensures single-select questions only accept one answer
+- Helper methods: `get_multiple_choice_options()`, `validate_multiple_choice_answer()`
+- Binary yes/no questions can be created using a 2-value Likert scale OR multiple choice with two options
+
 #### Still to implement (in order)
-1. **Binary yes/no** — two-option questions using `QuestionOption` for the choices
-2. **Multiple choice** — select one from a researcher-defined list of options
-3. **Free text** — open-ended text input
-4. **Question groups / subscales** — named sections within a survey (e.g. VVIQ's 4 groups of 4), each optionally inheriting or overriding the survey's default scale
-5. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
+1. **Free text** — open-ended text input (template support added, needs backend validation)
+2. **Question groups / subscales** — named sections within a survey (e.g. VVIQ's 4 groups of 4), each optionally inheriting or overriding the survey's default scale
+3. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
 
 #### Planned data models (still to add)
-| Model | Purpose |
-|---|---|
-| `QuestionOption` | Individual option for binary / multiple choice questions |
-| `QuestionGroup` | Named section within a survey with optional scale override |
-| `ConditionalRule` | Show/hide rule: show this question if another question's answer meets a condition |
+| Model | Purpose | Status |
+|---|---|---|
+| ~~`QuestionOption`~~ | ~~Individual option for binary / multiple choice questions~~ | ✅ Not needed - using JSON field instead |
+| `QuestionGroup` | Named section within a survey with optional scale override | Pending |
+| `ConditionalRule` | Show/hide rule: show this question if another question's answer meets a condition | Pending |
 
 #### Authoring approach
 - Everything via Django admin
