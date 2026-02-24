@@ -521,16 +521,42 @@ The survey system is being extended incrementally to support richer question typ
 - Helper methods: `get_multiple_choice_options()`, `validate_multiple_choice_answer()`
 - Binary yes/no questions can be created using a 2-value Likert scale OR multiple choice with two options
 
+#### Completed: Free text questions (Session 9)
+- Already fully implemented alongside multiple choice
+- Backend validation ensures required fields are filled
+- Textarea UI with configurable rows
+- Responses stored as plain text in ParticipantResponse.answer field
+
+#### Completed: Question groups (Session 9)
+- New `QuestionGroup` model — named sections within surveys (e.g., "Think of a relative or friend")
+- Each group has:
+  - `group_code`: Short identifier (e.g., "1", "A", "demographics") used in question IDs
+  - `title`: The section heading displayed to participants
+  - `description`: Optional additional instructions
+  - `order`: Display order (auto-increments if set to 0)
+- Questions can optionally belong to a group via `group` ForeignKey
+- Questions in groups get meaningful `question_id` identifiers stored in database: `{group_code}_{question_number}` (e.g., "A_01", "A_02", "B_01")
+- Ungrouped questions use simple identifiers like "Q5"
+- `question_id` field is:
+  - Auto-generated on save from group_code and question_number
+  - Stored in database with index for efficient querying
+  - Displayed in admin as read-only field
+  - Hidden from participant view (clean UX)
+  - Used for data analysis and exports
+- Helper method: `question.get_question_identifier()` returns the composite ID
+- Template displays group headers with title and description before grouped questions
+- Admin interface includes QuestionGroup inline on Survey with dropdown filtering
+- Helper function `organize_questions_by_group()` structures questions by their groups for rendering
+
 #### Still to implement (in order)
-1. **Free text** — open-ended text input (template support added, needs backend validation)
-2. **Question groups / subscales** — named sections within a survey (e.g. VVIQ's 4 groups of 4), each optionally inheriting or overriding the survey's default scale
-3. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
+1. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
+2. **Subscales** — groups with optional scale overrides (different from visual grouping)
 
 #### Planned data models (still to add)
 | Model | Purpose | Status |
 |---|---|---|
 | ~~`QuestionOption`~~ | ~~Individual option for binary / multiple choice questions~~ | ✅ Not needed - using JSON field instead |
-| `QuestionGroup` | Named section within a survey with optional scale override | Pending |
+| ~~`QuestionGroup`~~ | ~~Named section within a survey~~ | ✅ Completed Session 9 |
 | `ConditionalRule` | Show/hide rule: show this question if another question's answer meets a condition | Pending |
 
 #### Authoring approach
@@ -545,15 +571,18 @@ The platform includes robust protections to prevent researcher data from contami
 
 ### Researcher Test Mode
 - **Automatic Redirection**: Researchers attempting to access participant survey URLs are automatically redirected to test mode
-- **No Data Saving**: Test mode validates responses but never saves to the database
-- **Clear Messaging**: Users receive informative messages explaining the redirection
+- **Test Data Flagging**: Test mode saves responses to the database flagged with `is_test=True` (consistent with task testing workflow)
+- **Clear Identification**: Test responses show "🧪 TEST" badge in admin panel
+- **Easy Cleanup**: Test data is filterable and deletable from admin panel
 - **Dashboard Separation**: Researchers cannot access the participant dashboard and are redirected to Survey Management
 
 ### How It Works
 1. **For Researchers — Surveys**:
    - Accessing `/surveys/<id>/take/` → Automatically redirected to `/surveys/<id>/preview/?test_mode=true`
    - Accessing `/dashboard/` → Automatically redirected to `/surveys/` (Survey Management)
-   - Can test surveys with full validation but data is never saved
+   - From Survey Management page: Click "Preview" (read-only) or "Test Mode" (submit test data)
+   - Test mode submissions saved to database with `is_test=True` flag
+   - Test responses can be reviewed in admin and deleted after verification
 
 2. **For Researchers — Lab.js Tasks**:
    - Researchers run tasks through the full submission pipeline (no redirect)
@@ -567,10 +596,12 @@ The platform includes robust protections to prevent researcher data from contami
 
 4. **Technical Implementation**:
    - View-level checks redirect researchers away from participant survey URLs (`surveys/views.py`)
-   - `task_submit` view sets `is_test` based on `request.user.is_researcher or request.user.is_staff`
-   - Researchers are automatically marked as participants (via signal) but survey data is never saved for them
+   - Test mode in `survey_preview` saves responses with `is_test=True` (surveys)
+   - `task_submit` view sets `is_test` based on `request.user.is_researcher or request.user.is_staff` (tasks)
+   - ParticipantResponse model has `is_test` BooleanField (default False)
+   - Admin interfaces show "🧪 TEST" badge and provide filtering by test status
 
-This design allows researchers to fully test the participant experience — including seeing real data in the admin — while keeping test data clearly identifiable and separate.
+This design allows researchers to fully test the participant experience — including seeing real data in the admin — while keeping test data clearly identifiable and separate. The approach is consistent across both surveys and tasks.
 
 ## Recent Updates
 

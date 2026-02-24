@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django import forms
 
-from .models import LikertScale, ParticipantResponse, Question, Survey
+from .models import LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
 from accounts.models import User
 
 
@@ -27,10 +27,26 @@ class LikertScaleInline(admin.TabularInline):
     verbose_name_plural = "Likert Scales"
 
 
+class QuestionGroupInline(admin.TabularInline):
+    model = QuestionGroup
+    extra = 1
+    fields = ["group_code", "title", "description", "order"]
+    verbose_name = "Question Group"
+    verbose_name_plural = "Question Groups"
+
+    def get_queryset(self, request):
+        """
+        Order groups by their order field when displaying in admin.
+        """
+        qs = super().get_queryset(request)
+        return qs.order_by("order")
+
+
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["question_type", "text", "order", "likert_scale", "required", "reverse_coded", "options"]
+    fields = ["question_type", "text", "order", "group", "question_number", "question_id", "likert_scale", "required", "reverse_coded", "options"]
+    readonly_fields = ["question_id"]
 
     def get_queryset(self, request):
         """
@@ -41,7 +57,7 @@ class QuestionInline(admin.TabularInline):
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         """
-        Filter the likert_scale dropdown to only show scales belonging to this survey.
+        Filter the likert_scale and group dropdowns to only show items belonging to this survey.
         """
         if db_field.name == "likert_scale":
             # Get the survey from the parent object being edited
@@ -49,6 +65,12 @@ class QuestionInline(admin.TabularInline):
                 kwargs["queryset"] = LikertScale.objects.filter(survey=request._survey_obj)
             else:
                 kwargs["queryset"] = LikertScale.objects.none()
+        elif db_field.name == "group":
+            # Filter groups to only show groups belonging to this survey
+            if hasattr(request, '_survey_obj'):
+                kwargs["queryset"] = QuestionGroup.objects.filter(survey=request._survey_obj)
+            else:
+                kwargs["queryset"] = QuestionGroup.objects.none()
         return super().formfield_for_foreignkey(db_field, request, **kwargs)
 
 
@@ -58,7 +80,7 @@ class SurveyAdmin(admin.ModelAdmin):
     list_display = ["title", "researcher", "domain", "is_active", "created_at"]
     list_filter = ["is_active", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
-    inlines = [LikertScaleInline, QuestionInline]
+    inlines = [LikertScaleInline, QuestionGroupInline, QuestionInline]
     actions = ["normalize_question_order"]
     fieldsets = [
         (
@@ -101,7 +123,14 @@ class SurveyAdmin(admin.ModelAdmin):
 
 @admin.register(ParticipantResponse)
 class ParticipantResponseAdmin(admin.ModelAdmin):
-    list_display = ["survey", "question", "participant", "answer", "created_at"]
-    list_filter = ["survey", "created_at"]
+    list_display = ["survey", "question", "participant", "answer", "test_badge", "created_at"]
+    list_filter = ["survey", "is_test", "created_at"]
     search_fields = ["participant__email", "survey__title", "question__text", "answer"]
     readonly_fields = ["created_at", "updated_at"]
+
+    def test_badge(self, obj):
+        """Display a TEST badge for test submissions"""
+        if obj.is_test:
+            return "🧪 TEST"
+        return ""
+    test_badge.short_description = "Test Data"

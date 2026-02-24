@@ -206,58 +206,43 @@
         font-weight: 600;
         color: #2e7d32;
     }
+
+    .group-header {
+        background-color: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 1.25rem;
+        margin-bottom: 1.5rem;
+        margin-top: 2rem;
+        border-radius: 4px;
+    }
+
+    .group-header:first-child {
+        margin-top: 0;
+    }
+
+    .group-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        color: #1565c0;
+        margin-bottom: 0.5rem;
+    }
+
+    .group-description {
+        font-size: 0.95rem;
+        color: #424242;
+        line-height: 1.5;
+        font-style: italic;
+    }
     </style>
 {% endblock %}
 {% block content %}
     <div class="survey-form">
         {% if is_preview %}
             {% if test_mode %}
-                <div class="test-mode-banner">🧪 TEST MODE - Responses will NOT be saved to the database</div>
+                <div class="test-mode-banner">🧪 TEST MODE - Submit to save test data to database (flagged as TEST)</div>
             {% else %}
                 <div class="preview-banner">👁️ PREVIEW MODE - This is how participants will see the survey</div>
             {% endif %}
-        {% endif %}
-
-        {% if test_responses %}
-            <div class="test-response-container">
-                <div class="test-response-header">
-                    ✅ Test Submission Data (Not Saved)
-                </div>
-                <table class="test-response-table">
-                    <thead>
-                        <tr>
-                            <th style="width: 8%;">Q#</th>
-                            <th style="width: 42%;">Question</th>
-                            <th style="width: 12%;">Selected</th>
-                            <th style="width: 12%;">Stored</th>
-                            <th style="width: 26%;">Label</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for response in test_responses %}
-                            <tr>
-                                <td>{{ response.order }}</td>
-                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}</td>
-                                <td class="response-value">
-                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
-                                        {{ response.answer_value|join:", " }}
-                                    {% else %}
-                                        {{ response.answer_value }}
-                                    {% endif %}
-                                </td>
-                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
-                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
-                                        {{ response.stored_value|join:", " }}
-                                    {% else %}
-                                        {{ response.stored_value }}
-                                    {% endif %}
-                                </td>
-                                <td>{{ response.answer_label }}</td>
-                            </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
         {% endif %}
         <div class="card">
             <h1 style="margin-bottom: 1rem; color: #2c3e50;">{{ survey.title }}</h1>
@@ -286,17 +271,29 @@
             <form method="post">
                 {% csrf_token %}
                 {% if questions %}
-                    {% for question in questions %}
-                        <div class="question-container">
-                            <div class="question-text">
-                                {{ forloop.counter }}. {{ question.text }}
-                                {% if question.required %}<span class="required-indicator">*</span>{% endif %}
-                                {% if question.question_type == 'multiple_choice_single' %}
-                                    <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one)</span>
-                                {% elif question.question_type == 'multiple_choice_multi' %}
-                                    <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one or more)</span>
-                                {% endif %}
-                            </div>
+                    {% for group_info, group_questions in grouped_questions.items %}
+                        {% with group=group_info.1 %}
+                            {% if group %}
+                                <div class="group-header">
+                                    <div class="group-title">{{ group.title }}</div>
+                                    {% if group.description %}
+                                        <div class="group-description">{{ group.description }}</div>
+                                    {% endif %}
+                                </div>
+                            {% endif %}
+                        {% endwith %}
+
+                        {% for question in group_questions %}
+                            <div class="question-container">
+                                <div class="question-text">
+                                    {{ question.text }}
+                                    {% if question.required %}<span class="required-indicator">*</span>{% endif %}
+                                    {% if question.question_type == 'multiple_choice_single' %}
+                                        <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one)</span>
+                                    {% elif question.question_type == 'multiple_choice_multi' %}
+                                        <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one or more)</span>
+                                    {% endif %}
+                                </div>
 
                             {% if question.question_type == 'likert' %}
                                 <div class="likert-scale">
@@ -334,6 +331,7 @@
                                           {% if question.required %}required{% endif %}></textarea>
                             {% endif %}
                         </div>
+                        {% endfor %}
                     {% endfor %}
                     <div style="margin-top: 2rem; text-align: center;">
                         {% if is_preview and not test_mode %}
@@ -341,7 +339,7 @@
                         {% else %}
                             <button type="submit" class="submit-button">
                                 {% if test_mode %}
-                                    Submit Test Survey
+                                    Submit Test Data
                                 {% else %}
                                     Submit Survey
                                 {% endif %}
@@ -369,9 +367,9 @@
                               text-decoration: none">Disable Test Mode</a>
                 {% endif %}
             {% else %}
-                <a href="{% url 'surveys:survey_list' %}"
+                <a href="{% url 'dashboard:participant_dashboard' %}"
                    style="color: #3498db;
-                          text-decoration: none">← Back to Survey List</a>
+                          text-decoration: none">← Back to Dashboard</a>
             {% endif %}
         </div>
     </div>

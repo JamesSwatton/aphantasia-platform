@@ -117,6 +117,64 @@ class LikertScale(models.Model):
         ]
 
 
+class QuestionGroup(models.Model):
+    """
+    Named section/group within a survey (e.g., "Think of a relative or friend").
+    Serves as a section header with optional instructions that appears before related questions.
+    Questions reference their group, and get a composite identifier like "1_01", "1_02", etc.
+    """
+    survey = models.ForeignKey(
+        Survey,
+        on_delete=models.CASCADE,
+        related_name='question_groups'
+    )
+    group_code = models.CharField(
+        max_length=50,
+        help_text="Short code for this group (e.g., '1', '2', 'demographics'). Used in question identifiers like '1_01', '1_02'."
+    )
+    title = models.CharField(
+        max_length=500,
+        help_text="The group heading/statement (e.g., 'Think of a relative or friend')"
+    )
+    description = models.TextField(
+        blank=True,
+        help_text="Optional additional instructions for this group of questions"
+    )
+    order = models.PositiveIntegerField(
+        default=0,
+        help_text='Display order of this group. Set to 0 for automatic ordering.'
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['survey', 'order', 'id']
+        verbose_name = 'Question Group'
+        verbose_name_plural = 'Question Groups'
+        unique_together = ['survey', 'group_code']
+
+    def __str__(self):
+        return f"{self.survey.title} - [{self.group_code}] {self.title}"
+
+    def save(self, *args, **kwargs):
+        """
+        Override save to auto-increment order if not specified (order=0).
+        """
+        if self.order == 0:
+            # Get the maximum order for this survey
+            max_order = QuestionGroup.objects.filter(
+                survey=self.survey
+            ).exclude(
+                pk=self.pk if self.pk else None
+            ).aggregate(
+                models.Max('order')
+            )['order__max']
+
+            self.order = (max_order or 0) + 1
+
+        super().save(*args, **kwargs)
+
+
 class Question(models.Model):
     """
     Individual questions that belong to a single survey.
@@ -133,6 +191,25 @@ class Question(models.Model):
         Survey,
         on_delete=models.CASCADE,
         related_name='questions'
+    )
+    group = models.ForeignKey(
+        QuestionGroup,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='questions',
+        help_text="Optional: Assign this question to a group. Questions in groups get identifiers like '1_01', '1_02', etc."
+    )
+    question_number = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text="Question number within the group (e.g., '01', '02'). Leave blank for ungrouped questions."
+    )
+    question_id = models.CharField(
+        max_length=50,
+        blank=True,
+        db_index=True,
+        help_text="Composite identifier stored in database (e.g., 'A_01', 'B_02', 'Q5'). Auto-generated from group_code and question_number."
     )
     question_type = models.CharField(
         max_length=30,
@@ -172,7 +249,16 @@ class Question(models.Model):
         verbose_name_plural = 'Questions'
 
     def __str__(self):
-        return f"{self.survey.title} - Q{self.order}: {self.text[:50]}"
+        identifier = self.get_question_identifier()
+        return f"{self.survey.title} - {identifier}: {self.text[:50]}"
+
+    def get_question_identifier(self):
+        """
+        Returns the question identifier (e.g., '1_01', '2_03', or 'Q5' for ungrouped).
+        """
+        if self.group and self.question_number:
+            return f"{self.group.group_code}_{self.question_number}"
+        return f"Q{self.order}"
 
     def effective_scale(self):
         """
@@ -258,6 +344,7 @@ class Question(models.Model):
     def save(self, *args, **kwargs):
         """
         Override save to auto-increment order if not specified (order=0).
+        Also auto-generates question_id from group_code and question_number.
 
         Note: Order is purely for display/rendering. Duplicate order numbers
         are allowed - use Survey.normalize_question_order() to clean up.
@@ -274,6 +361,9 @@ class Question(models.Model):
             )['order__max']
 
             self.order = (max_order or 0) + 1
+
+        # Auto-generate question_id
+        self.question_id = self.get_question_identifier()
 
         super().save(*args, **kwargs)
 
@@ -298,6 +388,10 @@ class ParticipantResponse(models.Model):
         related_name='survey_responses'
     )
     answer = models.TextField()
+    is_test = models.BooleanField(
+        default=False,
+        help_text="Marks this as test data submitted by researchers/staff"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
