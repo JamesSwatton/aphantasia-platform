@@ -1,71 +1,157 @@
 {% extends "base.html" %}
 
-{% block title %}Surveys - Research Platform{% endblock %}
+{% block title %}Survey Management - Research Platform{% endblock %}
+
+{% block extra_css %}
+<style>
+    .survey-card {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-left: 4px solid #3771c8;
+    }
+
+    .survey-card h3 {
+        margin-top: 0;
+        color: #2c3e50;
+    }
+
+    .survey-meta {
+        color: #7f8c8d;
+        font-size: 0.9rem;
+        margin: 0.5rem 0;
+    }
+
+    .survey-actions {
+        margin-top: 1rem;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+
+    .btn {
+        padding: 0.5rem 1rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 0.9rem;
+    }
+
+    .btn-primary {
+        background-color: #3771c8;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: #95a5a6;
+        color: white;
+    }
+
+    .btn-warning {
+        background-color: #e67e22;
+        color: white;
+    }
+
+    .btn-success {
+        background-color: #27ae60;
+        color: white;
+    }
+
+    .btn:hover {
+        opacity: 0.9;
+    }
+
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        font-weight: bold;
+    }
+
+    .status-active {
+        background-color: #d4edda;
+        color: #155724;
+    }
+
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #721c24;
+    }
+
+    .domain-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.85rem;
+        background-color: #d1ecf1;
+        color: #0c5460;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .no-surveys {
+        text-align: center;
+        padding: 3rem;
+        color: #7f8c8d;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1 style="margin-bottom: 2rem; color: #2c3e50;">
-        Survey Management
-    </h1>
+<div class="page-header">
+    <h1>Survey Management</h1>
+    <a href="/admin/surveys/survey/add/" class="btn btn-success">+ New Survey</a>
+</div>
 
-    <p style="color: #666; margin-bottom: 2rem;">
-        Manage all surveys, preview how they appear to participants, and test survey functionality.
-    </p>
+{% if surveys %}
+    {% for survey in surveys %}
+    <div class="survey-card">
+        <h3>{{ survey.title }}</h3>
+        <p>{{ survey.description|truncatewords:30 }}</p>
 
-    {% if surveys %}
-        <div style="display: flex; flex-direction: column; gap: 1rem;">
-            {% for survey in surveys %}
-                <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #fafafa;">
-                    <h2 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ survey.title }}</h2>
-
-                    <p style="color: #666; margin-bottom: 1rem;">{{ survey.description }}</p>
-
-                    <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem;">
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            {% if survey.is_active %}
-                                <span style="background-color: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">Active</span>
-                            {% else %}
-                                <span style="background-color: #f8d7da; color: #721c24; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">Inactive</span>
-                            {% endif %}
-
-                            {% if survey.domain %}
-                                <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">{{ survey.domain.name }}</span>
-                            {% endif %}
-                        </div>
-
-                        <div style="display: flex; gap: 0.5rem;">
-                            <a href="{% url 'surveys:survey_preview' survey.pk %}"
-                               style="display: inline-block; background-color: #9b59b6; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-size: 0.875rem;">
-                                Preview
-                            </a>
-                            <a href="{% url 'surveys:survey_preview' survey.pk %}?test_mode=true"
-                               style="display: inline-block; background-color: #e67e22; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-size: 0.875rem;">
-                                Test Mode
-                            </a>
-                            <a href="/admin/surveys/survey/{{ survey.pk }}/change/"
-                               style="display: inline-block; background-color: #95a5a6; color: white; padding: 0.5rem 1rem; border-radius: 4px; text-decoration: none; font-size: 0.875rem;">
-                                Edit
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            {% endfor %}
+        <div class="survey-meta">
+            <strong>Domain:</strong> {{ survey.domain|default:"Uncategorized" }} &nbsp;|&nbsp;
+            <strong>Researcher:</strong> {{ survey.researcher.email }} &nbsp;|&nbsp;
+            <strong>Created:</strong> {{ survey.created_at|date:"M d, Y" }} &nbsp;|&nbsp;
+            <span class="status-badge {% if survey.is_active %}status-active{% else %}status-inactive{% endif %}">
+                {% if survey.is_active %}Active{% else %}Inactive{% endif %}
+            </span>
         </div>
-    {% else %}
-        <p style="text-align: center; color: #666; padding: 2rem;">
-            No surveys have been created yet.
-        </p>
-    {% endif %}
 
-    <div style="margin-top: 2rem; padding-top: 2rem; border-top: 1px solid #ddd;">
-        <a href="/admin/surveys/survey/add/"
-           style="display: inline-block; background-color: #27ae60; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none;">
-            Create New Survey
+        <div class="survey-meta">
+            <strong>Questions:</strong> {{ survey.questions.count }} &nbsp;|&nbsp;
+            <strong>Scale:</strong> {{ survey.min_value }}–{{ survey.max_value }}
+            {% if survey.randomize_questions %}
+            &nbsp;|&nbsp; <strong>Randomized</strong>
+            {% endif %}
+        </div>
+
+        <div class="survey-actions">
+            <a href="{% url 'surveys:survey_preview' survey.pk %}" class="btn btn-primary">
+                Preview & Test
+            </a>
+            <a href="/admin/surveys/survey/{{ survey.pk }}/change/" class="btn btn-secondary">
+                Edit
+            </a>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div class="no-surveys">
+        <h2>No Surveys Yet</h2>
+        <p>Create your first survey to get started.</p>
+        <a href="/admin/surveys/survey/add/" class="btn btn-primary">
+            + Create Survey
         </a>
     </div>
-</div>
-
-<div style="margin-top: 1rem; text-align: center;">
-    <a href="/" style="color: #3498db; text-decoration: none;">← Back to Home</a>
-</div>
+{% endif %}
 {% endblock %}

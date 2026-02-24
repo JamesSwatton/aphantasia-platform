@@ -53,7 +53,7 @@ def organize_questions_by_group(questions, groups):
 def survey_preview(request, pk):
     """
     Preview view for researchers to see how the survey will be rendered.
-    With test_mode=true, researchers can submit the survey and data is saved with is_test=True.
+    Researchers can submit the survey and data is saved with is_test=True (similar to task preview).
     """
     survey = get_object_or_404(Survey, pk=pk)
 
@@ -81,13 +81,13 @@ def survey_preview(request, pk):
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
 
-    # Check if this is test mode
-    test_mode = request.GET.get('test_mode', 'false') == 'true'
+    test_responses = None
 
-    if request.method == 'POST' and test_mode:
-        # Process test mode submission - save to database with is_test=True
+    if request.method == 'POST':
+        # Process preview submission - save to database with is_test=True
         errors = []
         responses = {}  # Store as {question: answer_value}
+        display_responses = []  # For showing the summary table
 
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
@@ -107,6 +107,21 @@ def survey_preview(request, pk):
                             )
                         else:
                             responses[q] = answer_int
+                            # Build display data
+                            stored_value = q.apply_reverse_coding(answer_int) if q.reverse_coded else answer_int
+                            if q.likert_scale:
+                                answer_label = q.likert_scale.get_label_for_value(answer_int)
+                            else:
+                                answer_label = survey.get_label_for_value(answer_int)
+                            display_responses.append({
+                                'question_id': q.get_question_identifier(),
+                                'question_text': q.text,
+                                'question_type': 'likert',
+                                'answer_value': answer_int,
+                                'answer_label': answer_label,
+                                'stored_value': stored_value,
+                                'reverse_coded': q.reverse_coded
+                            })
                     except ValueError:
                         errors.append(f"Question {index}: Invalid answer format.")
 
@@ -118,6 +133,17 @@ def survey_preview(request, pk):
                 elif selected_values:
                     import json
                     responses[q] = json.dumps(selected_values)
+                    # Build display data
+                    labels = [q.options.get(str(v), str(v)) for v in selected_values]
+                    display_responses.append({
+                        'question_id': q.get_question_identifier(),
+                        'question_text': q.text,
+                        'question_type': q.question_type,
+                        'answer_value': selected_values,
+                        'answer_label': ', '.join(labels),
+                        'stored_value': selected_values,
+                        'reverse_coded': False
+                    })
 
             elif q.question_type == 'free_text':
                 answer = request.POST.get(field_name, '').strip()
@@ -125,6 +151,16 @@ def survey_preview(request, pk):
                     errors.append(f"Question {index} is required.")
                 elif answer:
                     responses[q] = answer
+                    # Build display data
+                    display_responses.append({
+                        'question_id': q.get_question_identifier(),
+                        'question_text': q.text,
+                        'question_type': 'free_text',
+                        'answer_value': answer[:50] + '...' if len(answer) > 50 else answer,
+                        'answer_label': '-',
+                        'stored_value': answer[:50] + '...' if len(answer) > 50 else answer,
+                        'reverse_coded': False
+                    })
 
         if errors:
             for error in errors:
@@ -151,16 +187,16 @@ def survey_preview(request, pk):
 
             messages.success(
                 request,
-                f"Test data saved for '{survey.title}'. This submission is flagged as TEST and can be reviewed/deleted in the admin panel."
+                f"Test data saved for '{survey.title}'. See below for the full response summary."
             )
-            return redirect('surveys:survey_list')
+            test_responses = display_responses
 
     context = {
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
         'is_preview': True,
-        'test_mode': test_mode,
+        'test_responses': test_responses,
     }
 
     return render(request, 'surveys/survey_detail.html', context)
@@ -174,14 +210,13 @@ def survey_take(request, pk):
     """
     survey = get_object_or_404(Survey, pk=pk)
 
-    # Redirect researchers to test mode
+    # Redirect researchers to preview
     if request.user.is_researcher or request.user.is_staff:
         messages.info(
             request,
-            "As a researcher, please use Test Mode from the Survey Management page to test surveys."
+            "As a researcher, please use Preview & Test from the Survey Management page to test surveys."
         )
-        preview_url = reverse('surveys:survey_preview', kwargs={'pk': pk})
-        return redirect(f'{preview_url}?test_mode=true')
+        return redirect('surveys:survey_preview', pk=pk)
 
     # Check if survey is active
     if not survey.is_active:

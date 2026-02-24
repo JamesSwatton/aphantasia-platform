@@ -122,14 +122,13 @@
         font-weight: 500;
     }
 
-    .test-mode-banner {
-        background-color: #f8d7da;
-        border: 2px solid #e67e22;
+    .preview-test-banner {
+        background-color: #fff3cd;
+        border: 2px solid #ffc107;
         border-radius: 8px;
         padding: 1rem;
         margin-bottom: 1.5rem;
-        text-align: center;
-        color: #721c24;
+        color: #856404;
         font-weight: 500;
     }
 
@@ -238,12 +237,53 @@
 {% block content %}
     <div class="survey-form">
         {% if is_preview %}
-            {% if test_mode %}
-                <div class="test-mode-banner">🧪 TEST MODE - Submit to save test data to database (flagged as TEST)</div>
-            {% else %}
-                <div class="preview-banner">👁️ PREVIEW MODE - This is how participants will see the survey</div>
-            {% endif %}
+            <div class="preview-test-banner">
+                🧪 <strong>Researcher Preview</strong> - You can submit this survey to test it. Your responses will be saved to the database and flagged as TEST data for review/deletion in the admin panel.
+            </div>
         {% endif %}
+
+        {% if test_responses %}
+            <div class="test-response-container">
+                <div class="test-response-header">
+                    ✅ Test Submission Saved to Database
+                </div>
+                <table class="test-response-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 10%;">ID</th>
+                            <th style="width: 40%;">Question</th>
+                            <th style="width: 12%;">Selected</th>
+                            <th style="width: 12%;">Stored</th>
+                            <th style="width: 26%;">Label</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for response in test_responses %}
+                            <tr>
+                                <td>{{ response.question_id }}</td>
+                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}</td>
+                                <td class="response-value">
+                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                        {{ response.answer_value|join:", " }}
+                                    {% else %}
+                                        {{ response.answer_value }}
+                                    {% endif %}
+                                </td>
+                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
+                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                        {{ response.stored_value|join:", " }}
+                                    {% else %}
+                                        {{ response.stored_value }}
+                                    {% endif %}
+                                </td>
+                                <td>{{ response.answer_label }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        {% endif %}
+
         <div class="card">
             <h1 style="margin-bottom: 1rem; color: #2c3e50;">{{ survey.title }}</h1>
             {% if survey.description %}
@@ -334,17 +374,13 @@
                         {% endfor %}
                     {% endfor %}
                     <div style="margin-top: 2rem; text-align: center;">
-                        {% if is_preview and not test_mode %}
-                            <button type="button" disabled class="submit-button">Submit Survey (Preview Mode - Disabled)</button>
-                        {% else %}
-                            <button type="submit" class="submit-button">
-                                {% if test_mode %}
-                                    Submit Test Data
-                                {% else %}
-                                    Submit Survey
-                                {% endif %}
-                            </button>
-                        {% endif %}
+                        <button type="submit" class="submit-button">
+                            {% if is_preview %}
+                                Submit Test Data
+                            {% else %}
+                                Submit Survey
+                            {% endif %}
+                        </button>
                     </div>
                 {% else %}
                     <p style="text-align: center; color: #666; padding: 2rem;">This survey has no questions yet.</p>
@@ -355,17 +391,7 @@
             {% if is_preview %}
                 <a href="{% url 'surveys:survey_list' %}"
                    style="color: #3498db;
-                          text-decoration: none;
-                          margin-right: 1rem">← Back to Survey List</a>
-                {% if not test_mode %}
-                    <a href="{% url 'surveys:survey_preview' survey.pk %}?test_mode=true"
-                       style="color: #e67e22;
-                              text-decoration: none">Enable Test Mode →</a>
-                {% else %}
-                    <a href="{% url 'surveys:survey_preview' survey.pk %}"
-                       style="color: #9b59b6;
-                              text-decoration: none">Disable Test Mode</a>
-                {% endif %}
+                          text-decoration: none">← Back to Survey Management</a>
             {% else %}
                 <a href="{% url 'dashboard:participant_dashboard' %}"
                    style="color: #3498db;
