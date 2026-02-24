@@ -45,7 +45,7 @@ class QuestionGroupInline(admin.TabularInline):
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_number", "question_id", "likert_scale", "required", "reverse_coded", "options"]
+    fields = ["question_type", "text", "order", "group", "question_number", "question_id", "likert_scale", "required", "reverse_coded", "options", "controls_next_n_questions", "trigger_value"]
     readonly_fields = ["question_id"]
 
     def get_queryset(self, request):

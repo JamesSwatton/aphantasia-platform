@@ -13,6 +13,24 @@
         border-radius: 8px;
         padding: 1.5rem;
         margin-bottom: 1.5rem;
+        transition: opacity 0.3s ease, background-color 0.3s ease;
+    }
+
+    .question-container.conditional-disabled {
+        opacity: 0.5;
+        background-color: #f5f5f5;
+        pointer-events: none;
+    }
+
+    .conditional-instruction {
+        font-size: 0.9rem;
+        color: #666;
+        font-style: italic;
+        margin-top: 0.5rem;
+        padding: 0.5rem;
+        background-color: #e3f2fd;
+        border-left: 3px solid #2196f3;
+        border-radius: 4px;
     }
 
     .question-text {
@@ -324,7 +342,14 @@
                         {% endwith %}
 
                         {% for question in group_questions %}
-                            <div class="question-container">
+                            <div class="question-container"
+                                 data-question-id="{{ question.id }}"
+                                 data-question-order="{{ question.order }}"
+                                 {% if question.controls_next_n_questions > 0 %}
+                                 data-is-trigger="true"
+                                 data-trigger-value="{{ question.trigger_value }}"
+                                 data-controls-count="{{ question.controls_next_n_questions }}"
+                                 {% endif %}>
                                 <div class="question-text">
                                     {{ question.text }}
                                     {% if question.required %}<span class="required-indicator">*</span>{% endif %}
@@ -334,6 +359,12 @@
                                         <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one or more)</span>
                                     {% endif %}
                                 </div>
+
+                                {% if question.controls_next_n_questions > 0 %}
+                                <div class="conditional-instruction">
+                                    ℹ️ If answering no, skip to the next {{ question.controls_next_n_questions }} question{{ question.controls_next_n_questions|pluralize }}
+                                </div>
+                                {% endif %}
 
                             {% if question.question_type == 'likert' %}
                                 <div class="likert-scale">
@@ -399,4 +430,94 @@
             {% endif %}
         </div>
     </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Handle N-questions trigger logic
+            const triggerQuestions = document.querySelectorAll('[data-is-trigger="true"]');
+            const allQuestions = Array.from(document.querySelectorAll('[data-question-order]'));
+
+            console.log('=== Conditional Logic Debug ===');
+            console.log('Found trigger questions:', triggerQuestions.length);
+            console.log('Found all questions:', allQuestions.length);
+
+            triggerQuestions.forEach(function(triggerContainer) {
+                const triggerValue = triggerContainer.getAttribute('data-trigger-value');
+                const controlsCount = parseInt(triggerContainer.getAttribute('data-controls-count'));
+                const triggerOrder = parseInt(triggerContainer.getAttribute('data-question-order'));
+
+                console.log('Trigger Q' + triggerOrder + ': controls=' + controlsCount + ', triggerValue=' + triggerValue);
+
+                // Find the N questions that follow this trigger question
+                const controlledQuestions = allQuestions.filter(function(q) {
+                    const qOrder = parseInt(q.getAttribute('data-question-order'));
+                    return qOrder > triggerOrder && qOrder <= triggerOrder + controlsCount;
+                });
+
+                console.log('  Controls questions:', controlledQuestions.map(q => 'Q' + q.getAttribute('data-question-order')).join(', '));
+
+                // Get all radio/checkbox/input elements for this trigger question
+                const triggerInputs = triggerContainer.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="text"], textarea');
+
+                // Function to update controlled questions
+                function updateControlledQuestions() {
+                    let selectedValue = null;
+
+                    // Get selected value based on input type
+                    const radioChecked = triggerContainer.querySelector('input[type="radio"]:checked');
+                    if (radioChecked) {
+                        selectedValue = radioChecked.value;
+                    }
+
+                    console.log('Q' + triggerOrder + ' selected value:', selectedValue, '(trigger value:', triggerValue + ')');
+
+                    controlledQuestions.forEach(function(controlledContainer) {
+                        const inputs = controlledContainer.querySelectorAll('input, textarea');
+
+                        if (selectedValue === triggerValue) {
+                            // Enable the question
+                            console.log('  Enabling Q' + controlledContainer.dataset.questionOrder);
+                            controlledContainer.classList.remove('conditional-disabled');
+                            // Enable all inputs and restore required attribute if it was originally required
+                            inputs.forEach(function(input) {
+                                input.disabled = false;
+                                // Restore required attribute if stored
+                                if (input.dataset.wasRequired === 'true') {
+                                    input.required = true;
+                                }
+                            });
+                        } else {
+                            // Disable the question
+                            console.log('  Disabling Q' + controlledContainer.dataset.questionOrder);
+                            controlledContainer.classList.add('conditional-disabled');
+                            // Clear and disable all inputs, and remove required attribute
+                            inputs.forEach(function(input) {
+                                if (input.type === 'radio' || input.type === 'checkbox') {
+                                    input.checked = false;
+                                } else {
+                                    input.value = '';
+                                }
+                                // Store if this was required before disabling (on first run)
+                                if (!input.dataset.wasRequired && input.required) {
+                                    input.dataset.wasRequired = 'true';
+                                    console.log('    Stored wasRequired for input, removing required attribute');
+                                }
+                                // Always remove required when disabling
+                                input.required = false;
+                                input.disabled = true;
+                            });
+                        }
+                    });
+                }
+
+                // Add change listeners to all inputs in the trigger question
+                triggerInputs.forEach(function(input) {
+                    input.addEventListener('change', updateControlledQuestions);
+                });
+
+                // Initialize state on page load
+                updateControlledQuestions();
+            });
+        });
+    </script>
 {% endblock %}

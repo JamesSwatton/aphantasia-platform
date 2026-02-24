@@ -240,6 +240,15 @@ class Question(models.Model):
         default=0,
         help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number will replace any question at that position.'
     )
+    controls_next_n_questions = models.PositiveIntegerField(
+        default=0,
+        help_text='Number of following questions controlled by this question. Set to 0 if not a trigger. Example: Set to 3 to control the next 3 questions.'
+    )
+    trigger_value = models.CharField(
+        max_length=50,
+        blank=True,
+        help_text='The answer value that enables controlled questions (e.g., "2" for Yes on a 1-2 scale). Leave blank if controls_next_n_questions is 0.'
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
