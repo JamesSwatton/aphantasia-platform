@@ -548,8 +548,27 @@ The survey system is being extended incrementally to support richer question typ
 - Admin interface includes QuestionGroup inline on Survey with dropdown filtering
 - Helper function `organize_questions_by_group()` structures questions by their groups for rendering
 
+#### In Progress: Conditional show/hide (Session 10 - HAS BUG)
+⚠️ **Implementation complete but has validation bug preventing form submission**
+
+- Added `controls_next_n_questions` field to Question model
+- Questions can control the next N questions in order (e.g., set to 3 to control next 3 questions)
+- Added `trigger_value` field - the answer value that enables controlled questions
+- JavaScript dynamically disables/enables questions based on trigger answer
+- Removes `required` attribute from disabled questions to prevent validation errors
+- Clears values when disabling questions
+- Shows instruction: "If answering no, skip to the next N question(s)"
+- CSS grays out disabled questions with `conditional-disabled` class
+
+**🐛 KNOWN BUG - MUST FIX NEXT SESSION:**
+Form validation fails even though JavaScript correctly removes `required` attribute from controlled questions. Debug session confirmed:
+- Controlled questions show `required=false, disabled=true` (correct)
+- Trigger questions answered correctly
+- But form submission still blocked by validation error
+- Need to identify: which field is blocking, browser vs Django validation, check for JS errors
+
 #### Still to implement (in order)
-1. **Conditional show/hide** — a question is only shown if a previous question's answer meets a condition (`equals`, `not_equals`, `greater_than`, `less_than`)
+1. **Fix conditional show/hide validation bug** ← PRIORITY
 2. **Subscales** — groups with optional scale overrides (different from visual grouping)
 
 #### Planned data models (still to add)
@@ -557,7 +576,7 @@ The survey system is being extended incrementally to support richer question typ
 |---|---|---|
 | ~~`QuestionOption`~~ | ~~Individual option for binary / multiple choice questions~~ | ✅ Not needed - using JSON field instead |
 | ~~`QuestionGroup`~~ | ~~Named section within a survey~~ | ✅ Completed Session 9 |
-| `ConditionalRule` | Show/hide rule: show this question if another question's answer meets a condition | Pending |
+| ~~`ConditionalRule`~~ | ~~Show/hide rule~~ | ✅ Not needed - using N-questions logic on Question model |
 
 #### Authoring approach
 - Everything via Django admin
@@ -605,7 +624,29 @@ This design allows researchers to fully test the participant experience — incl
 
 ## Recent Updates
 
-### Admin Trial Data Display, Test Submissions & Timing Fix (Session 7 - Latest)
+### Survey Management UX & Conditional Logic (WIP) (Session 10 - Latest)
+
+#### Survey Management Improvements ✅
+- **Unified styling with task management**: Survey management page now uses same card layout, buttons, badges as task page for visual cohesion
+- **Simplified test workflow**: Removed separate "Test Mode" button — now just "Preview & Test" (matches task workflow)
+- **Test response summary table**: After test submission, shows full overview of all captured data (question IDs, selected values, stored values, labels, reverse coding indicators)
+- **Better metadata display**: Shows question count, scale range, randomization status, researcher, created date
+- **Improved empty states**: "No Surveys Yet" message with create button
+
+#### Conditional Show/Hide Logic ⚠️ IN PROGRESS (HAS BUG)
+- **N-questions trigger approach**: Questions can control the next N questions in order (simpler than group-based or complex rule models)
+- **Fields added to Question model**: `controls_next_n_questions` (integer), `trigger_value` (answer that enables questions)
+- **JavaScript implementation**: Dynamically enables/disables questions based on trigger answer, removes `required` attribute from disabled questions, clears values when disabling
+- **Visual feedback**: Grayed out disabled questions, instruction text shows "If answering no, skip to the next N question(s)"
+
+**🐛 KNOWN BUG**: Form validation fails even though JavaScript correctly removes required attributes. Debug confirmed controlled questions have `required=false, disabled=true` but form won't submit. Need to identify blocking field and whether validation is browser or Django.
+
+#### Design Evolution This Session
+1. Started with group-based trigger logic (trigger question controls all questions in same group)
+2. Explored Option 1: Making QuestionGroup itself a question (rejected - causes data fragmentation with two response tables)
+3. Settled on Option 2: N-questions logic (any question controls next N questions, no group dependency)
+
+### Admin Trial Data Display, Test Submissions & Timing Fix (Session 7)
 
 #### Trial Data Filtering Improvements
 - **Generalised `get_trial_data()` filter**: Changed from `sender=='Trial' AND ended_on=='response'` to `ended_on=='response'` only, making it work across different lab.js task designs regardless of how researchers name their screens
