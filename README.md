@@ -548,8 +548,8 @@ The survey system is being extended incrementally to support richer question typ
 - Admin interface includes QuestionGroup inline on Survey with dropdown filtering
 - Helper function `organize_questions_by_group()` structures questions by their groups for rendering
 
-#### In Progress: Conditional show/hide (Session 10 - HAS BUG)
-⚠️ **Implementation complete but has validation bug preventing form submission**
+#### Completed: Conditional show/hide (Sessions 10 & 11) ✅
+**Implementation complete and validation bug fixed**
 
 - Added `controls_next_n_questions` field to Question model
 - Questions can control the next N questions in order (e.g., set to 3 to control next 3 questions)
@@ -559,17 +559,32 @@ The survey system is being extended incrementally to support richer question typ
 - Clears values when disabling questions
 - Shows instruction: "If answering no, skip to the next N question(s)"
 - CSS grays out disabled questions with `conditional-disabled` class
+- **Backend validation updated**: Views now check trigger conditions and skip validation for disabled questions
+- Both `survey_preview` and `survey_take` views handle conditional logic correctly
+- Removed all debug console.log statements
 
-**🐛 KNOWN BUG - MUST FIX NEXT SESSION:**
-Form validation fails even though JavaScript correctly removes `required` attribute from controlled questions. Debug session confirmed:
-- Controlled questions show `required=false, disabled=true` (correct)
-- Trigger questions answered correctly
-- But form submission still blocked by validation error
-- Need to identify: which field is blocking, browser vs Django validation, check for JS errors
+#### Completed: Scale factor (Session 11) ✅
+**Multiply Likert answers before storing**
+
+- Added `scale_factor` IntegerField to Question model (default=1, minimum value 1)
+- Applies to Likert questions only
+- Multiplies answer values before storing (e.g., factor of 2 converts 1-5 scale to 2-10)
+- Applied after reverse coding: reverse first, then multiply
+- Shown in test response table with "Factor" column (displays "×2", "×3", etc.)
+- Useful for normalizing different scales or converting to different ranges
+
+#### Completed: Improved question IDs (Session 11) ✅
+**Auto-generated, meaningful identifiers**
+
+- Group codes now auto-generated from group order (1, 2, 3...)
+- Questions in groups use alphabetic identifiers: `1_a`, `1_b`, `2_a`, `2_b`, etc.
+- Ungrouped questions use simple numbers: `5`, `10` (removed "Q" prefix)
+- `group_code` is read-only and hidden from admin interface
+- `question_number` hidden from admin (still used internally for ID generation)
+- System automatically assigns letters based on question position within group
 
 #### Still to implement (in order)
-1. **Fix conditional show/hide validation bug** ← PRIORITY
-2. **Subscales** — groups with optional scale overrides (different from visual grouping)
+1. **Subscales** — groups with optional scale overrides (different from visual grouping)
 
 #### Planned data models (still to add)
 | Model | Purpose | Status |
@@ -624,7 +639,61 @@ This design allows researchers to fully test the participant experience — incl
 
 ## Recent Updates
 
-### Survey Management UX & Conditional Logic (WIP) (Session 10 - Latest)
+### Bug Fixes, Scale Factor, Question IDs & CSV Export (Session 11 - Latest)
+
+#### Conditional Show/Hide Bug Fixed ✅
+**Root cause identified and resolved**
+- **Problem**: Backend validation was checking all required questions, including ones disabled by conditional logic
+- **Solution**: Added trigger condition checking in both `survey_preview` and `survey_take` views
+- Views now build a `disabled_questions` set based on trigger values and skip validation for those questions
+- Removed all debug console.log statements for cleaner code
+
+#### Scale Factor Implementation ✅
+**New feature for scaling Likert responses**
+- Added `scale_factor` field to Question model (IntegerField, default=1, min=1)
+- Multiplies answer values before storing: e.g., factor of 2 converts 1-5 → 2-10
+- Applied after reverse coding for correct order of operations
+- Test response table shows "Factor" column with "×2", "×3", etc.
+- Visible in admin inline for Likert questions
+- Use case: Normalizing different scales or converting to specific ranges
+
+#### Improved Question ID System ✅
+**Auto-generated, meaningful identifiers**
+- **Group codes**: Now auto-generated from group `order` (1, 2, 3...)
+- **Question IDs in groups**: Use alphabetic characters (1_a, 1_b, 2_a, 2_b, etc.)
+- **Ungrouped questions**: Simple numbers (5, 10) without "Q" prefix
+- `group_code` is read-only and hidden from admin (auto-set on save)
+- `question_number` hidden from admin (still used internally)
+- Letters assigned automatically based on question position within group
+
+#### Admin UI Improvements ✅
+**Better navigation and less clutter**
+- **Preview links**: Added to Survey list view and detail view (similar to tasks)
+- **Preview links**: Added to LabTask list view (matching survey implementation)
+- **Removed fields**: `question_number` and QuestionGroup `description` hidden from admin
+- **Cleaner interface**: Less clutter, more focus on essential fields
+
+#### CSV Export for Survey Responses ✅
+**Complete data export with full question metadata**
+
+New admin action: "Export responses as CSV (with full question metadata)"
+
+**Export includes per response:**
+- **Participant info**: email, ID
+- **Survey info**: title, ID
+- **Question metadata**: question_id, text, type, order, group_code, group_title
+- **Question settings**: required, reverse_coded, scale_factor, min_value, max_value, likert_scale_name
+- **Response data**: answer (stored value), is_test, created_at, updated_at
+
+**Usage:**
+1. Navigate to Admin → Participant Responses
+2. Filter/select responses to export
+3. Choose "Export responses as CSV" from Actions dropdown
+4. File downloads as: `survey_responses_{survey-name}_{date}.csv`
+
+**Use case**: One row per response, complete context for data analysis in R/Python/Excel
+
+### Survey Management UX & Conditional Logic (Session 10)
 
 #### Survey Management Improvements ✅
 - **Unified styling with task management**: Survey management page now uses same card layout, buttons, badges as task page for visual cohesion
@@ -633,15 +702,7 @@ This design allows researchers to fully test the participant experience — incl
 - **Better metadata display**: Shows question count, scale range, randomization status, researcher, created date
 - **Improved empty states**: "No Surveys Yet" message with create button
 
-#### Conditional Show/Hide Logic ⚠️ IN PROGRESS (HAS BUG)
-- **N-questions trigger approach**: Questions can control the next N questions in order (simpler than group-based or complex rule models)
-- **Fields added to Question model**: `controls_next_n_questions` (integer), `trigger_value` (answer that enables questions)
-- **JavaScript implementation**: Dynamically enables/disables questions based on trigger answer, removes `required` attribute from disabled questions, clears values when disabling
-- **Visual feedback**: Grayed out disabled questions, instruction text shows "If answering no, skip to the next N question(s)"
-
-**🐛 KNOWN BUG**: Form validation fails even though JavaScript correctly removes required attributes. Debug confirmed controlled questions have `required=false, disabled=true` but form won't submit. Need to identify blocking field and whether validation is browser or Django.
-
-#### Design Evolution This Session
+#### Design Evolution Session 10
 1. Started with group-based trigger logic (trigger question controls all questions in same group)
 2. Explored Option 1: Making QuestionGroup itself a question (rejected - causes data fragmentation with two response tables)
 3. Settled on Option 2: N-questions logic (any question controls next N questions, no group dependency)
