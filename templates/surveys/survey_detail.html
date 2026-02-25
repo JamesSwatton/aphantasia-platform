@@ -269,10 +269,11 @@
                     <thead>
                         <tr>
                             <th style="width: 10%;">ID</th>
-                            <th style="width: 40%;">Question</th>
-                            <th style="width: 12%;">Selected</th>
-                            <th style="width: 12%;">Stored</th>
-                            <th style="width: 26%;">Label</th>
+                            <th style="width: 35%;">Question</th>
+                            <th style="width: 10%;">Selected</th>
+                            <th style="width: 10%;">Factor</th>
+                            <th style="width: 10%;">Stored</th>
+                            <th style="width: 25%;">Label</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -285,6 +286,17 @@
                                         {{ response.answer_value|join:", " }}
                                     {% else %}
                                         {{ response.answer_value }}
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if response.question_type == 'likert' %}
+                                        {% if response.scale_factor and response.scale_factor != 1 %}
+                                            ×{{ response.scale_factor }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    {% else %}
+                                        -
                                     {% endif %}
                                 </td>
                                 <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
@@ -334,9 +346,6 @@
                             {% if group %}
                                 <div class="group-header">
                                     <div class="group-title">{{ group.title }}</div>
-                                    {% if group.description %}
-                                        <div class="group-description">{{ group.description }}</div>
-                                    {% endif %}
                                 </div>
                             {% endif %}
                         {% endwith %}
@@ -437,24 +446,16 @@
             const triggerQuestions = document.querySelectorAll('[data-is-trigger="true"]');
             const allQuestions = Array.from(document.querySelectorAll('[data-question-order]'));
 
-            console.log('=== Conditional Logic Debug ===');
-            console.log('Found trigger questions:', triggerQuestions.length);
-            console.log('Found all questions:', allQuestions.length);
-
             triggerQuestions.forEach(function(triggerContainer) {
                 const triggerValue = triggerContainer.getAttribute('data-trigger-value');
                 const controlsCount = parseInt(triggerContainer.getAttribute('data-controls-count'));
                 const triggerOrder = parseInt(triggerContainer.getAttribute('data-question-order'));
-
-                console.log('Trigger Q' + triggerOrder + ': controls=' + controlsCount + ', triggerValue=' + triggerValue);
 
                 // Find the N questions that follow this trigger question
                 const controlledQuestions = allQuestions.filter(function(q) {
                     const qOrder = parseInt(q.getAttribute('data-question-order'));
                     return qOrder > triggerOrder && qOrder <= triggerOrder + controlsCount;
                 });
-
-                console.log('  Controls questions:', controlledQuestions.map(q => 'Q' + q.getAttribute('data-question-order')).join(', '));
 
                 // Get all radio/checkbox/input elements for this trigger question
                 const triggerInputs = triggerContainer.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="text"], textarea');
@@ -469,16 +470,12 @@
                         selectedValue = radioChecked.value;
                     }
 
-                    console.log('Q' + triggerOrder + ' selected value:', selectedValue, '(trigger value:', triggerValue + ')');
-
                     controlledQuestions.forEach(function(controlledContainer) {
                         const inputs = controlledContainer.querySelectorAll('input, textarea');
 
                         if (selectedValue === triggerValue) {
                             // Enable the question
-                            console.log('  Enabling Q' + controlledContainer.dataset.questionOrder);
                             controlledContainer.classList.remove('conditional-disabled');
-                            // Enable all inputs and restore required attribute if it was originally required
                             inputs.forEach(function(input) {
                                 input.disabled = false;
                                 // Restore required attribute if stored
@@ -488,9 +485,7 @@
                             });
                         } else {
                             // Disable the question
-                            console.log('  Disabling Q' + controlledContainer.dataset.questionOrder);
                             controlledContainer.classList.add('conditional-disabled');
-                            // Clear and disable all inputs, and remove required attribute
                             inputs.forEach(function(input) {
                                 if (input.type === 'radio' || input.type === 'checkbox') {
                                     input.checked = false;
@@ -500,7 +495,6 @@
                                 // Store if this was required before disabling (on first run)
                                 if (!input.dataset.wasRequired && input.required) {
                                     input.dataset.wasRequired = 'true';
-                                    console.log('    Stored wasRequired for input, removing required attribute');
                                 }
                                 // Always remove required when disabling
                                 input.required = false;

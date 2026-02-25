@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MinValueValidator
 from core.models import Domain
 
 
@@ -136,10 +137,6 @@ class QuestionGroup(models.Model):
         max_length=500,
         help_text="The group heading/statement (e.g., 'Think of a relative or friend')"
     )
-    description = models.TextField(
-        blank=True,
-        help_text="Optional additional instructions for this group of questions"
-    )
     order = models.PositiveIntegerField(
         default=0,
         help_text='Display order of this group. Set to 0 for automatic ordering.'
@@ -159,6 +156,7 @@ class QuestionGroup(models.Model):
     def save(self, *args, **kwargs):
         """
         Override save to auto-increment order if not specified (order=0).
+        Also auto-generates group_code from order.
         """
         if self.order == 0:
             # Get the maximum order for this survey
@@ -171,6 +169,9 @@ class QuestionGroup(models.Model):
             )['order__max']
 
             self.order = (max_order or 0) + 1
+
+        # Auto-generate group_code from order
+        self.group_code = str(self.order)
 
         super().save(*args, **kwargs)
 
@@ -231,6 +232,11 @@ class Question(models.Model):
         default=False,
         help_text='(Likert only) Reverse code this question (invert scale values before storing). Useful for detecting response patterns.'
     )
+    scale_factor = models.IntegerField(
+        default=1,
+        validators=[MinValueValidator(1)],
+        help_text='(Likert only) Multiply the answer by this factor before storing. Applied after reverse coding. Example: factor of 2 converts 1-5 scale to 2-10.'
+    )
     options = models.JSONField(
         default=dict,
         blank=True,
@@ -263,11 +269,11 @@ class Question(models.Model):
 
     def get_question_identifier(self):
         """
-        Returns the question identifier (e.g., '1_01', '2_03', or 'Q5' for ungrouped).
+        Returns the question identifier (e.g., '1_a', '2_b', or '5' for ungrouped).
         """
         if self.group and self.question_number:
             return f"{self.group.group_code}_{self.question_number}"
-        return f"Q{self.order}"
+        return str(self.order)
 
     def effective_scale(self):
         """
@@ -303,6 +309,14 @@ class Question(models.Model):
         Only applicable to Likert scale questions.
         """
         return (self.effective_max() + self.effective_min()) - answer_int
+
+    def apply_scale_factor(self, answer_int):
+        """
+        Apply scale factor to a numeric answer value.
+        Should be called after reverse coding (if applicable).
+        Only applicable to Likert scale questions.
+        """
+        return answer_int * self.scale_factor
 
     def get_multiple_choice_options(self):
         """
@@ -353,7 +367,7 @@ class Question(models.Model):
     def save(self, *args, **kwargs):
         """
         Override save to auto-increment order if not specified (order=0).
-        Also auto-generates question_id from group_code and question_number.
+        Also auto-generates question_number (as letter) and question_id.
 
         Note: Order is purely for display/rendering. Duplicate order numbers
         are allowed - use Survey.normalize_question_order() to clean up.
@@ -370,6 +384,33 @@ class Question(models.Model):
             )['order__max']
 
             self.order = (max_order or 0) + 1
+
+        # Auto-generate question_number as letter (a-z) if question is in a group
+        if self.group:
+            # Get all questions in this group, ordered by order field
+            group_questions = Question.objects.filter(
+                survey=self.survey,
+                group=self.group
+            ).exclude(
+                pk=self.pk if self.pk else None
+            ).order_by('order', 'id')
+
+            # Find position of this question (0-indexed)
+            position = 0
+            for q in group_questions:
+                if q.order < self.order:
+                    position += 1
+                elif q.order == self.order and self.pk and q.id < self.pk:
+                    position += 1
+
+            # Convert position to letter (0=a, 1=b, etc.)
+            if position < 26:
+                self.question_number = chr(ord('a') + position)
+            else:
+                # Handle more than 26 questions: aa, ab, ac, etc.
+                first_letter = chr(ord('a') + (position // 26) - 1)
+                second_letter = chr(ord('a') + (position % 26))
+                self.question_number = f"{first_letter}{second_letter}"
 
         # Auto-generate question_id
         self.question_id = self.get_question_identifier()

@@ -28,7 +28,7 @@ class LabTaskAdminForm(forms.ModelForm):
 @admin.register(LabTask)
 class LabTaskAdmin(admin.ModelAdmin):
     form = LabTaskAdminForm
-    list_display = ['title', 'researcher', 'domain', 'is_active', 'unpacked_status', 'created_at']
+    list_display = ['title', 'researcher', 'domain', 'is_active', 'unpacked_status', 'preview_link_display', 'created_at']
     list_filter = ['is_active', 'domain', 'created_at']
     search_fields = ['title', 'description', 'researcher__email']
     readonly_fields = ['task_slug', 'task_directory', 'created_at', 'updated_at', 'preview_link']
@@ -70,7 +70,7 @@ class LabTaskAdmin(admin.ModelAdmin):
     unpacked_status.short_description = 'Status'
 
     def preview_link(self, obj):
-        """Show link to preview the task."""
+        """Show link to preview the task (for detail view)."""
         if obj.task_directory:
             url = obj.get_index_url()
             return format_html(
@@ -79,6 +79,17 @@ class LabTaskAdmin(admin.ModelAdmin):
             )
         return "Upload and save to generate preview link"
     preview_link.short_description = 'Preview'
+
+    def preview_link_display(self, obj):
+        """Show link to preview the task (for list view)."""
+        if obj.task_directory:
+            url = obj.get_index_url()
+            return format_html(
+                '<a href="{}" target="_blank">Preview →</a>',
+                url
+            )
+        return format_html('<span style="color: #999;">—</span>')
+    preview_link_display.short_description = 'Preview'
 
     def delete_queryset(self, request, queryset):
         """

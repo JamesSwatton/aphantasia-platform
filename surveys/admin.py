@@ -1,5 +1,7 @@
 from django.contrib import admin
 from django import forms
+from django.utils.html import format_html
+from django.urls import reverse
 
 from .models import LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
 from accounts.models import User
@@ -30,7 +32,7 @@ class LikertScaleInline(admin.TabularInline):
 class QuestionGroupInline(admin.TabularInline):
     model = QuestionGroup
     extra = 1
-    fields = ["group_code", "title", "description", "order"]
+    fields = ["title", "order"]
     verbose_name = "Question Group"
     verbose_name_plural = "Question Groups"
 
@@ -45,7 +47,7 @@ class QuestionGroupInline(admin.TabularInline):
 class QuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_number", "question_id", "likert_scale", "required", "reverse_coded", "options", "controls_next_n_questions", "trigger_value"]
+    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "controls_next_n_questions", "trigger_value"]
     readonly_fields = ["question_id"]
 
     def get_queryset(self, request):
@@ -77,15 +79,16 @@ class QuestionInline(admin.TabularInline):
 @admin.register(Survey)
 class SurveyAdmin(admin.ModelAdmin):
     form = SurveyAdminForm
-    list_display = ["title", "researcher", "domain", "is_active", "created_at"]
+    list_display = ["title", "researcher", "domain", "is_active", "preview_link_display", "created_at"]
     list_filter = ["is_active", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
+    readonly_fields = ["preview_link_field"]
     inlines = [LikertScaleInline, QuestionGroupInline, QuestionInline]
     actions = ["normalize_question_order"]
     fieldsets = [
         (
             "Survey Information",
-            {"fields": ["title", "description", "researcher", "domain", "is_active", "randomize_questions"]},
+            {"fields": ["title", "description", "researcher", "domain", "is_active", "randomize_questions", "preview_link_field"]},
         ),
         (
             "Default Likert Scale",
@@ -98,6 +101,26 @@ class SurveyAdmin(admin.ModelAdmin):
             },
         ),
     ]
+
+    def preview_link_display(self, obj):
+        """Show link to preview the survey (for list view)."""
+        url = reverse('surveys:survey_preview', args=[obj.pk])
+        return format_html(
+            '<a href="{}" target="_blank">Preview →</a>',
+            url
+        )
+    preview_link_display.short_description = 'Preview'
+
+    def preview_link_field(self, obj):
+        """Show link to preview the survey (for detail view)."""
+        if obj.pk:
+            url = reverse('surveys:survey_preview', args=[obj.pk])
+            return format_html(
+                '<a href="{}" target="_blank">Preview Survey →</a>',
+                url
+            )
+        return "Save survey first to generate preview link"
+    preview_link_field.short_description = 'Preview'
 
     def get_form(self, request, obj=None, **kwargs):
         # Store the survey object on the request so QuestionInline can filter scales

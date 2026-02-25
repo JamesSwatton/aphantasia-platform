@@ -89,8 +89,28 @@ def survey_preview(request, pk):
         responses = {}  # Store as {question: answer_value}
         display_responses = []  # For showing the summary table
 
+        # Build a map of which questions are disabled based on trigger logic
+        disabled_questions = set()
+        for trigger_q in questions:
+            if trigger_q.controls_next_n_questions > 0 and trigger_q.trigger_value:
+                # Get the trigger question's answer
+                trigger_field_name = f'question_{trigger_q.id}'
+                trigger_answer = request.POST.get(trigger_field_name, '').strip()
+
+                # If trigger answer doesn't match trigger_value, disable controlled questions
+                if trigger_answer != trigger_q.trigger_value:
+                    # Find the N questions that follow this trigger in order
+                    for potential_controlled in questions:
+                        if potential_controlled.order > trigger_q.order and \
+                           potential_controlled.order <= trigger_q.order + trigger_q.controls_next_n_questions:
+                            disabled_questions.add(potential_controlled.id)
+
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
+
+            # Skip validation for disabled questions
+            if q.id in disabled_questions:
+                continue
 
             if q.question_type == 'likert':
                 answer = request.POST.get(field_name, '').strip()
@@ -108,7 +128,9 @@ def survey_preview(request, pk):
                         else:
                             responses[q] = answer_int
                             # Build display data
+                            # Apply reverse coding first (if applicable), then scale factor
                             stored_value = q.apply_reverse_coding(answer_int) if q.reverse_coded else answer_int
+                            stored_value = q.apply_scale_factor(stored_value)
                             if q.likert_scale:
                                 answer_label = q.likert_scale.get_label_for_value(answer_int)
                             else:
@@ -120,7 +142,8 @@ def survey_preview(request, pk):
                                 'answer_value': answer_int,
                                 'answer_label': answer_label,
                                 'stored_value': stored_value,
-                                'reverse_coded': q.reverse_coded
+                                'reverse_coded': q.reverse_coded,
+                                'scale_factor': q.scale_factor
                             })
                     except ValueError:
                         errors.append(f"Question {index}: Invalid answer format.")
@@ -170,7 +193,9 @@ def survey_preview(request, pk):
             with transaction.atomic():
                 for question, answer_value in responses.items():
                     if question.question_type == 'likert':
+                        # Apply reverse coding first (if applicable), then scale factor
                         stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
+                        stored_value = question.apply_scale_factor(stored_value)
                         ParticipantResponse.objects.update_or_create(
                             survey=survey,
                             question=question,
@@ -254,8 +279,28 @@ def survey_take(request, pk):
         errors = []
         responses = {}  # Store as {question: answer_value}
 
+        # Build a map of which questions are disabled based on trigger logic
+        disabled_questions = set()
+        for trigger_q in questions:
+            if trigger_q.controls_next_n_questions > 0 and trigger_q.trigger_value:
+                # Get the trigger question's answer
+                trigger_field_name = f'question_{trigger_q.id}'
+                trigger_answer = request.POST.get(trigger_field_name, '').strip()
+
+                # If trigger answer doesn't match trigger_value, disable controlled questions
+                if trigger_answer != trigger_q.trigger_value:
+                    # Find the N questions that follow this trigger in order
+                    for potential_controlled in questions:
+                        if potential_controlled.order > trigger_q.order and \
+                           potential_controlled.order <= trigger_q.order + trigger_q.controls_next_n_questions:
+                            disabled_questions.add(potential_controlled.id)
+
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
+
+            # Skip validation for disabled questions
+            if q.id in disabled_questions:
+                continue
 
             if q.question_type == 'likert':
                 answer = request.POST.get(field_name, '').strip()
@@ -305,8 +350,9 @@ def survey_take(request, pk):
             with transaction.atomic():
                 for question, answer_value in responses.items():
                     if question.question_type == 'likert':
-                        # Apply reverse coding for Likert questions
+                        # Apply reverse coding first (if applicable), then scale factor
                         stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
+                        stored_value = question.apply_scale_factor(stored_value)
                         ParticipantResponse.objects.update_or_create(
                             survey=survey,
                             question=question,
