@@ -77,6 +77,12 @@ def survey_preview(request, pk):
             question.scale_options = question.get_scale_options()
         elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
             question.multiple_choice_options = question.get_multiple_choice_options()
+        elif question.question_type == 'dropdown_year':
+            question.year_options = question.get_year_options()
+        elif question.question_type == 'dropdown_month':
+            question.month_options = question.get_month_options()
+        elif question.question_type == 'dropdown_country':
+            question.country_options = question.get_country_options()
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
@@ -108,8 +114,43 @@ def survey_preview(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Skip validation for disabled questions
+            # Auto-fill disabled questions with default values
             if q.id in disabled_questions:
+                if q.question_type == 'likert':
+                    # Use minimum value of the scale
+                    auto_value = q.effective_min()
+                    responses[q] = auto_value
+                    # Build display data for auto-filled response
+                    stored_value = q.apply_reverse_coding(auto_value) if q.reverse_coded else auto_value
+                    stored_value = q.apply_scale_factor(stored_value)
+                    if q.likert_scale:
+                        answer_label = q.likert_scale.get_label_for_value(auto_value)
+                    else:
+                        answer_label = survey.get_label_for_value(auto_value)
+                    display_responses.append({
+                        'question_id': q.get_question_identifier(),
+                        'question_text': q.text,
+                        'question_type': 'likert',
+                        'answer_value': auto_value,
+                        'answer_label': answer_label,
+                        'stored_value': stored_value,
+                        'reverse_coded': q.reverse_coded,
+                        'scale_factor': q.scale_factor,
+                        'is_auto_filled': True
+                    })
+                else:
+                    # For non-Likert questions, store "NULL"
+                    responses[q] = "NULL"
+                    display_responses.append({
+                        'question_id': q.get_question_identifier(),
+                        'question_text': q.text,
+                        'question_type': q.question_type,
+                        'answer_value': "NULL",
+                        'answer_label': '-',
+                        'stored_value': "NULL",
+                        'reverse_coded': False,
+                        'is_auto_filled': True
+                    })
                 continue
 
             if q.question_type == 'likert':
@@ -143,30 +184,70 @@ def survey_preview(request, pk):
                                 'answer_label': answer_label,
                                 'stored_value': stored_value,
                                 'reverse_coded': q.reverse_coded,
-                                'scale_factor': q.scale_factor
+                                'scale_factor': q.scale_factor,
+                                'is_auto_filled': False
                             })
                     except ValueError:
                         errors.append(f"Question {index}: Invalid answer format.")
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
+                        display_responses.append({
+                            'question_id': q.get_question_identifier(),
+                            'question_text': q.text,
+                            'question_type': 'likert',
+                            'answer_value': "NULL",
+                            'answer_label': '-',
+                            'stored_value': "NULL",
+                            'reverse_coded': False,
+                            'is_auto_filled': False
+                        })
 
             elif q.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
                 selected_values = request.POST.getlist(field_name)
-                is_valid, error_msg = q.validate_multiple_choice_answer(selected_values)
+                # Filter out any disabled options that might have been submitted
+                enabled_keys = q.get_enabled_option_keys()
+                filtered_values = [v for v in selected_values if str(v) in enabled_keys]
+
+                is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
-                elif selected_values:
+                elif filtered_values:
                     import json
-                    responses[q] = json.dumps(selected_values)
-                    # Build display data
-                    labels = [q.options.get(str(v), str(v)) for v in selected_values]
+                    responses[q] = json.dumps(filtered_values)
+                    # Build display data - extract labels properly
+                    labels = []
+                    for v in filtered_values:
+                        option_value = q.options.get(str(v), str(v))
+                        # If it's a list (disabled option), take first element; otherwise use as-is
+                        label = option_value[0] if isinstance(option_value, list) else option_value
+                        labels.append(label)
+
                     display_responses.append({
                         'question_id': q.get_question_identifier(),
                         'question_text': q.text,
                         'question_type': q.question_type,
-                        'answer_value': selected_values,
+                        'answer_value': filtered_values,
                         'answer_label': ', '.join(labels),
-                        'stored_value': selected_values,
-                        'reverse_coded': False
+                        'stored_value': filtered_values,
+                        'reverse_coded': False,
+                        'is_auto_filled': False
                     })
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
+                        display_responses.append({
+                            'question_id': q.get_question_identifier(),
+                            'question_text': q.text,
+                            'question_type': q.question_type,
+                            'answer_value': "NULL",
+                            'answer_label': '-',
+                            'stored_value': "NULL",
+                            'reverse_coded': False,
+                            'is_auto_filled': False
+                        })
 
             elif q.question_type == 'free_text':
                 answer = request.POST.get(field_name, '').strip()
@@ -182,8 +263,64 @@ def survey_preview(request, pk):
                         'answer_value': answer[:50] + '...' if len(answer) > 50 else answer,
                         'answer_label': '-',
                         'stored_value': answer[:50] + '...' if len(answer) > 50 else answer,
-                        'reverse_coded': False
+                        'reverse_coded': False,
+                        'is_auto_filled': False
                     })
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
+                        display_responses.append({
+                            'question_id': q.get_question_identifier(),
+                            'question_text': q.text,
+                            'question_type': 'free_text',
+                            'answer_value': "NULL",
+                            'answer_label': '-',
+                            'stored_value': "NULL",
+                            'reverse_coded': False,
+                            'is_auto_filled': False
+                        })
+
+            elif q.question_type in ['dropdown_year', 'dropdown_month', 'dropdown_country']:
+                answer = request.POST.get(field_name, '').strip()
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    responses[q] = answer
+                    # Build display data
+                    if q.question_type == 'dropdown_year':
+                        answer_label = answer  # Year displays as itself
+                    elif q.question_type == 'dropdown_month':
+                        # Get month name from number
+                        month_names = {str(i): name for i, name in q.get_month_options()}
+                        answer_label = month_names.get(answer, answer)
+                    else:  # dropdown_country
+                        answer_label = answer  # Country name displays as itself
+
+                    display_responses.append({
+                        'question_id': q.get_question_identifier(),
+                        'question_text': q.text,
+                        'question_type': q.question_type,
+                        'answer_value': answer,
+                        'answer_label': answer_label,
+                        'stored_value': answer,
+                        'reverse_coded': False,
+                        'is_auto_filled': False
+                    })
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
+                        display_responses.append({
+                            'question_id': q.get_question_identifier(),
+                            'question_text': q.text,
+                            'question_type': q.question_type,
+                            'answer_value': "NULL",
+                            'answer_label': '-',
+                            'stored_value': "NULL",
+                            'reverse_coded': False,
+                            'is_auto_filled': False
+                        })
 
         if errors:
             for error in errors:
@@ -192,7 +329,7 @@ def survey_preview(request, pk):
             # Save responses to database with is_test=True
             with transaction.atomic():
                 for question, answer_value in responses.items():
-                    if question.question_type == 'likert':
+                    if question.question_type == 'likert' and answer_value != "NULL":
                         # Apply reverse coding first (if applicable), then scale factor
                         stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
                         stored_value = question.apply_scale_factor(stored_value)
@@ -203,6 +340,7 @@ def survey_preview(request, pk):
                             defaults={'answer': str(stored_value), 'is_test': True}
                         )
                     else:
+                        # For multiple choice, free text, and NULL values, store as-is
                         ParticipantResponse.objects.update_or_create(
                             survey=survey,
                             question=question,
@@ -264,6 +402,12 @@ def survey_take(request, pk):
             question.scale_options = question.get_scale_options()
         elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
             question.multiple_choice_options = question.get_multiple_choice_options()
+        elif question.question_type == 'dropdown_year':
+            question.year_options = question.get_year_options()
+        elif question.question_type == 'dropdown_month':
+            question.month_options = question.get_month_options()
+        elif question.question_type == 'dropdown_country':
+            question.country_options = question.get_country_options()
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
@@ -298,8 +442,14 @@ def survey_take(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Skip validation for disabled questions
+            # Auto-fill disabled questions with default values
             if q.id in disabled_questions:
+                if q.question_type == 'likert':
+                    # Use minimum value of the scale
+                    responses[q] = q.effective_min()
+                else:
+                    # For non-Likert questions, store "NULL"
+                    responses[q] = "NULL"
                 continue
 
             if q.question_type == 'likert':
@@ -320,19 +470,30 @@ def survey_take(request, pk):
                             responses[q] = answer_int
                     except ValueError:
                         errors.append(f"Question {index}: Invalid answer format.")
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
 
             elif q.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
                 # Get all selected values (checkboxes return a list)
                 selected_values = request.POST.getlist(field_name)
+                # Filter out any disabled options that might have been submitted
+                enabled_keys = q.get_enabled_option_keys()
+                filtered_values = [v for v in selected_values if str(v) in enabled_keys]
 
                 # Validate using the model method
-                is_valid, error_msg = q.validate_multiple_choice_answer(selected_values)
+                is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
-                elif selected_values:
+                elif filtered_values:
                     # Store as JSON array
                     import json
-                    responses[q] = json.dumps(selected_values)
+                    responses[q] = json.dumps(filtered_values)
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
 
             elif q.question_type == 'free_text':
                 answer = request.POST.get(field_name, '').strip()
@@ -341,6 +502,22 @@ def survey_take(request, pk):
                     errors.append(f"Question {index} is required.")
                 elif answer:
                     responses[q] = answer
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
+
+            elif q.question_type in ['dropdown_year', 'dropdown_month', 'dropdown_country']:
+                answer = request.POST.get(field_name, '').strip()
+
+                if q.required and not answer:
+                    errors.append(f"Question {index} is required.")
+                elif answer:
+                    responses[q] = answer
+                else:
+                    # Optional question left blank - record as NULL
+                    if not q.required:
+                        responses[q] = "NULL"
 
         if errors:
             for error in errors:
@@ -349,7 +526,7 @@ def survey_take(request, pk):
             # Save responses to database (participant data only - is_test defaults to False)
             with transaction.atomic():
                 for question, answer_value in responses.items():
-                    if question.question_type == 'likert':
+                    if question.question_type == 'likert' and answer_value != "NULL":
                         # Apply reverse coding first (if applicable), then scale factor
                         stored_value = question.apply_reverse_coding(answer_value) if question.reverse_coded else answer_value
                         stored_value = question.apply_scale_factor(stored_value)
@@ -360,7 +537,7 @@ def survey_take(request, pk):
                             defaults={'answer': str(stored_value)}
                         )
                     else:
-                        # For multiple choice and free text, store as-is
+                        # For multiple choice, free text, and NULL values, store as-is
                         ParticipantResponse.objects.update_or_create(
                             survey=survey,
                             question=question,

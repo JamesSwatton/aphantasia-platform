@@ -278,11 +278,13 @@
                     </thead>
                     <tbody>
                         {% for response in test_responses %}
-                            <tr>
+                            <tr{% if response.is_auto_filled %} style="background-color: #fff9e6;"{% endif %}>
                                 <td>{{ response.question_id }}</td>
-                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}</td>
+                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}{% if response.is_auto_filled %} <span style="color: #ff9800; font-weight: bold;">[Auto]</span>{% endif %}</td>
                                 <td class="response-value">
-                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                    {% if response.answer_value == "NULL" %}
+                                        NULL
+                                    {% elif response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
                                         {{ response.answer_value|join:", " }}
                                     {% else %}
                                         {{ response.answer_value }}
@@ -300,7 +302,9 @@
                                     {% endif %}
                                 </td>
                                 <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
-                                    {% if response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
+                                    {% if response.stored_value == "NULL" %}
+                                        NULL
+                                    {% elif response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
                                         {{ response.stored_value|join:", " }}
                                     {% else %}
                                         {{ response.stored_value }}
@@ -343,7 +347,7 @@
                 {% if questions %}
                     {% for group_info, group_questions in grouped_questions.items %}
                         {% with group=group_info.1 %}
-                            {% if group %}
+                            {% if group and group.show_title %}
                                 <div class="group-header">
                                     <div class="group-title">{{ group.title }}</div>
                                 </div>
@@ -392,13 +396,14 @@
 
                             {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
                                 <div class="multiple-choice-options">
-                                    {% for value, label in question.multiple_choice_options %}
-                                        <div class="multiple-choice-option">
+                                    {% for value, label, is_disabled in question.multiple_choice_options %}
+                                        <div class="multiple-choice-option"{% if is_disabled %} style="opacity: 0.4; cursor: not-allowed;"{% endif %}>
                                             <input type="checkbox"
                                                    name="question_{{ question.id }}"
                                                    id="q{{ question.id }}_{{ value }}"
-                                                   value="{{ value }}">
-                                            <label for="q{{ question.id }}_{{ value }}">{{ label }}</label>
+                                                   value="{{ value }}"
+                                                   {% if is_disabled %}disabled{% endif %}>
+                                            <label for="q{{ question.id }}_{{ value }}"{% if is_disabled %} style="cursor: not-allowed; color: #999;"{% endif %}>{{ label }}</label>
                                         </div>
                                     {% endfor %}
                                 </div>
@@ -409,6 +414,39 @@
                                           rows="4"
                                           style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
                                           {% if question.required %}required{% endif %}></textarea>
+
+                            {% elif question.question_type == 'dropdown_year' %}
+                                <select name="question_{{ question.id }}"
+                                        id="q{{ question.id }}"
+                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
+                                        {% if question.required %}required{% endif %}>
+                                    <option value="">-- Select Year --</option>
+                                    {% for value, label in question.year_options %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+
+                            {% elif question.question_type == 'dropdown_month' %}
+                                <select name="question_{{ question.id }}"
+                                        id="q{{ question.id }}"
+                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
+                                        {% if question.required %}required{% endif %}>
+                                    <option value="">-- Select Month --</option>
+                                    {% for value, label in question.month_options %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+
+                            {% elif question.question_type == 'dropdown_country' %}
+                                <select name="question_{{ question.id }}"
+                                        id="q{{ question.id }}"
+                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
+                                        {% if question.required %}required{% endif %}>
+                                    <option value="">-- Select Country --</option>
+                                    {% for value, label in question.country_options %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
                             {% endif %}
                         </div>
                         {% endfor %}

@@ -120,9 +120,12 @@ class LikertScale(models.Model):
 
 class QuestionGroup(models.Model):
     """
-    Named section/group within a survey (e.g., "Think of a relative or friend").
-    Serves as a section header with optional instructions that appears before related questions.
-    Questions reference their group, and get a composite identifier like "1_01", "1_02", etc.
+    Named section/group within a survey, serving two purposes:
+    1. Visual grouping: Section headers with instructions (e.g., "Think of a relative or friend")
+    2. Subscales: Hidden grouping for scoring/analysis (e.g., "extraversion" subscale)
+
+    Questions in groups get composite identifiers like "1_a", "1_b", "2_a", "2_b", etc.
+    Use show_title=True for visible groups, show_title=False for hidden subscales.
     """
     survey = models.ForeignKey(
         Survey,
@@ -136,6 +139,10 @@ class QuestionGroup(models.Model):
     title = models.CharField(
         max_length=500,
         help_text="The group heading/statement (e.g., 'Think of a relative or friend')"
+    )
+    show_title = models.BooleanField(
+        default=True,
+        help_text="Show the group title to participants. Uncheck to use this group as a hidden subscale for scoring/analysis only."
     )
     order = models.PositiveIntegerField(
         default=0,
@@ -186,6 +193,9 @@ class Question(models.Model):
         ('multiple_choice_single', 'Multiple Choice (Select One)'),
         ('multiple_choice_multi', 'Multiple Choice (Select Multiple)'),
         ('free_text', 'Free Text'),
+        ('dropdown_year', 'Dropdown (Year)'),
+        ('dropdown_month', 'Dropdown (Month)'),
+        ('dropdown_country', 'Dropdown (Country)'),
     ]
 
     survey = models.ForeignKey(
@@ -226,7 +236,10 @@ class Question(models.Model):
         related_name='questions',
         help_text="(Likert only) Select a Likert scale for this question. Leave blank to use the survey default."
     )
-    text = models.TextField()
+    text = models.TextField(
+        blank=True,
+        help_text="Question text/label. Can be left blank for self-explanatory question types like dropdowns."
+    )
     required = models.BooleanField(default=True)
     reverse_coded = models.BooleanField(
         default=False,
@@ -240,7 +253,7 @@ class Question(models.Model):
     options = models.JSONField(
         default=dict,
         blank=True,
-        help_text='(Multiple choice only) Options for multiple choice questions. Format: {"1": "Option A", "2": "Option B", "3": "Option C"}'
+        help_text='(Multiple choice only) Options for multiple choice questions. Format: {"1": "Option A", "2": "Option B", "3": "Option C"}. To disable an option (visible but not selectable), use an array: {"1": "Option A", "2": ["Option B (disabled)"], "3": "Option C"}'
     )
     order = models.PositiveIntegerField(
         default=0,
@@ -320,17 +333,45 @@ class Question(models.Model):
 
     def get_multiple_choice_options(self):
         """
-        Returns list of (value, label) tuples for multiple choice rendering.
+        Returns list of (value, label, is_disabled) tuples for multiple choice rendering.
         Only applicable to multiple choice questions.
+
+        If an option value is an array like ["Option B"], it's disabled (visible but not selectable).
+        Regular string values like "Option A" are selectable.
         """
         if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi'] or not self.options:
             return []
 
+        options_list = []
+        for k, v in self.options.items():
+            # Check if value is an array (disabled option)
+            if isinstance(v, list):
+                # Extract label from array
+                label = v[0] if v else ""
+                is_disabled = True
+            else:
+                # Regular string value
+                label = v
+                is_disabled = False
+            options_list.append((int(k), label, is_disabled))
+
         # Sort by key (numeric value) for consistent ordering
-        return sorted(
-            [(int(k), v) for k, v in self.options.items()],
-            key=lambda x: x[0]
-        )
+        return sorted(options_list, key=lambda x: x[0])
+
+    def get_enabled_option_keys(self):
+        """
+        Returns a set of option keys that are enabled (selectable).
+        Disabled options (array values) are excluded.
+        """
+        if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi'] or not self.options:
+            return set()
+
+        enabled_keys = set()
+        for k, v in self.options.items():
+            # Only include non-array values (enabled options)
+            if not isinstance(v, list):
+                enabled_keys.add(k)
+        return enabled_keys
 
     def validate_multiple_choice_answer(self, answer_values):
         """
@@ -356,13 +397,92 @@ class Question(models.Model):
         if self.question_type == 'multiple_choice_single' and len(answer_values) > 1:
             return False, "Only one selection is allowed for this question."
 
-        # Validate all values are valid options
-        valid_values = set(self.options.keys())
+        # Validate all values are valid and enabled options (silently ignore disabled options)
+        enabled_values = self.get_enabled_option_keys()
+        valid_answers = []
         for val in answer_values:
-            if str(val) not in valid_values:
-                return False, f"Invalid option: {val}"
+            if str(val) in enabled_values:
+                valid_answers.append(val)
+            # Silently ignore disabled options if somehow submitted
+
+        # Check if we have any valid answers after filtering
+        if self.required and not valid_answers:
+            return False, "This question is required."
 
         return True, None
+
+    def get_year_options(self):
+        """
+        Returns list of (value, label) tuples for year dropdown.
+        Covers last 100 years from current year.
+        """
+        from datetime import datetime
+        current_year = datetime.now().year
+        # Generate years in descending order (most recent first)
+        return [(year, str(year)) for year in range(current_year, current_year - 100, -1)]
+
+    def get_month_options(self):
+        """
+        Returns list of (value, label) tuples for month dropdown.
+        Value is month number (1-12), label is month name.
+        """
+        months = [
+            (1, 'January'),
+            (2, 'February'),
+            (3, 'March'),
+            (4, 'April'),
+            (5, 'May'),
+            (6, 'June'),
+            (7, 'July'),
+            (8, 'August'),
+            (9, 'September'),
+            (10, 'October'),
+            (11, 'November'),
+            (12, 'December'),
+        ]
+        return months
+
+    def get_country_options(self):
+        """
+        Returns list of (value, label) tuples for country dropdown.
+        Comprehensive list of countries in alphabetical order.
+        Value and label are both the country name for readability.
+        """
+        countries = [
+            'Afghanistan', 'Albania', 'Algeria', 'Andorra', 'Angola', 'Antigua and Barbuda',
+            'Argentina', 'Armenia', 'Australia', 'Austria', 'Azerbaijan', 'Bahamas', 'Bahrain',
+            'Bangladesh', 'Barbados', 'Belarus', 'Belgium', 'Belize', 'Benin', 'Bhutan',
+            'Bolivia', 'Bosnia and Herzegovina', 'Botswana', 'Brazil', 'Brunei', 'Bulgaria',
+            'Burkina Faso', 'Burundi', 'Cambodia', 'Cameroon', 'Canada', 'Cape Verde',
+            'Central African Republic', 'Chad', 'Chile', 'China', 'Colombia', 'Comoros',
+            'Congo', 'Costa Rica', 'Croatia', 'Cuba', 'Cyprus', 'Czech Republic',
+            'Democratic Republic of the Congo', 'Denmark', 'Djibouti', 'Dominica',
+            'Dominican Republic', 'East Timor', 'Ecuador', 'Egypt', 'El Salvador',
+            'Equatorial Guinea', 'Eritrea', 'Estonia', 'Eswatini', 'Ethiopia', 'Fiji',
+            'Finland', 'France', 'Gabon', 'Gambia', 'Georgia', 'Germany', 'Ghana', 'Greece',
+            'Grenada', 'Guatemala', 'Guinea', 'Guinea-Bissau', 'Guyana', 'Haiti', 'Honduras',
+            'Hungary', 'Iceland', 'India', 'Indonesia', 'Iran', 'Iraq', 'Ireland', 'Israel',
+            'Italy', 'Ivory Coast', 'Jamaica', 'Japan', 'Jordan', 'Kazakhstan', 'Kenya',
+            'Kiribati', 'Kosovo', 'Kuwait', 'Kyrgyzstan', 'Laos', 'Latvia', 'Lebanon',
+            'Lesotho', 'Liberia', 'Libya', 'Liechtenstein', 'Lithuania', 'Luxembourg',
+            'Madagascar', 'Malawi', 'Malaysia', 'Maldives', 'Mali', 'Malta', 'Marshall Islands',
+            'Mauritania', 'Mauritius', 'Mexico', 'Micronesia', 'Moldova', 'Monaco', 'Mongolia',
+            'Montenegro', 'Morocco', 'Mozambique', 'Myanmar', 'Namibia', 'Nauru', 'Nepal',
+            'Netherlands', 'New Zealand', 'Nicaragua', 'Niger', 'Nigeria', 'North Korea',
+            'North Macedonia', 'Norway', 'Oman', 'Pakistan', 'Palau', 'Palestine', 'Panama',
+            'Papua New Guinea', 'Paraguay', 'Peru', 'Philippines', 'Poland', 'Portugal',
+            'Qatar', 'Romania', 'Russia', 'Rwanda', 'Saint Kitts and Nevis', 'Saint Lucia',
+            'Saint Vincent and the Grenadines', 'Samoa', 'San Marino', 'Sao Tome and Principe',
+            'Saudi Arabia', 'Senegal', 'Serbia', 'Seychelles', 'Sierra Leone', 'Singapore',
+            'Slovakia', 'Slovenia', 'Solomon Islands', 'Somalia', 'South Africa', 'South Korea',
+            'South Sudan', 'Spain', 'Sri Lanka', 'Sudan', 'Suriname', 'Sweden', 'Switzerland',
+            'Syria', 'Taiwan', 'Tajikistan', 'Tanzania', 'Thailand', 'Togo', 'Tonga',
+            'Trinidad and Tobago', 'Tunisia', 'Turkey', 'Turkmenistan', 'Tuvalu', 'Uganda',
+            'Ukraine', 'United Arab Emirates', 'United Kingdom', 'United States', 'Uruguay',
+            'Uzbekistan', 'Vanuatu', 'Vatican City', 'Venezuela', 'Vietnam', 'Yemen', 'Zambia',
+            'Zimbabwe'
+        ]
+        return [(country, country) for country in countries]
 
     def save(self, *args, **kwargs):
         """

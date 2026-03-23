@@ -35,7 +35,7 @@ class LikertScaleInline(admin.TabularInline):
 class QuestionGroupInline(admin.TabularInline):
     model = QuestionGroup
     extra = 1
-    fields = ["title", "order"]
+    fields = ["title", "show_title", "order"]
     verbose_name = "Question Group"
     verbose_name_plural = "Question Groups"
 

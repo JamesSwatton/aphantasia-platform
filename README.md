@@ -508,17 +508,22 @@ The survey system is being extended incrementally to support richer question typ
 - Views and templates updated to use per-question scale options
 - Pre-existing bugs in `survey_take` view fixed (scale variable reference, response variable name)
 
-#### Completed: Multiple choice questions (Session 9)
+#### Completed: Multiple choice questions (Sessions 9 & 12)
 - Added `question_type` field to Question model with choices: `likert`, `multiple_choice_single`, `multiple_choice_multi`, `free_text`
 - Two multiple choice variants:
   - **Multiple Choice (Select One)**: participants select exactly one option (validated)
   - **Multiple Choice (Select Multiple)**: participants select one or more options
 - Options stored as JSON in Question.options field (e.g. `{"1": "Option A", "2": "Option B"}`)
+- **Disabled options** (Session 12): Options can be made visible but unselectable using array syntax:
+  - Format: `{"1": "Option A", "2": ["Option B (disabled)"], "3": "Option C"}`
+  - Disabled options appear grayed out with disabled checkboxes
+  - Useful for "Not applicable" or contextual options
+  - Validation automatically filters out disabled options if submitted
 - Checkbox-based UI for all multiple choice questions
 - Clear participant instructions: "(Select one)" or "(Select one or more)"
 - Responses stored as JSON arrays in ParticipantResponse.answer field
 - Validation ensures single-select questions only accept one answer
-- Helper methods: `get_multiple_choice_options()`, `validate_multiple_choice_answer()`
+- Helper methods: `get_multiple_choice_options()`, `validate_multiple_choice_answer()`, `get_enabled_option_keys()`
 - Binary yes/no questions can be created using a 2-value Likert scale OR multiple choice with two options
 
 #### Completed: Free text questions (Session 9)
@@ -527,29 +532,31 @@ The survey system is being extended incrementally to support richer question typ
 - Textarea UI with configurable rows
 - Responses stored as plain text in ParticipantResponse.answer field
 
-#### Completed: Question groups (Session 9)
-- New `QuestionGroup` model — named sections within surveys (e.g., "Think of a relative or friend")
+#### Completed: Question groups & subscales (Sessions 9 & 11)
+- New `QuestionGroup` model — serves dual purpose for visual grouping and hidden subscales
 - Each group has:
-  - `group_code`: Short identifier (e.g., "1", "A", "demographics") used in question IDs
-  - `title`: The section heading displayed to participants
-  - `description`: Optional additional instructions
+  - `group_code`: Short identifier (auto-generated from order: "1", "2", "3", etc.)
+  - `title`: The group heading/subscale name
+  - `show_title`: Boolean to control visibility (True = show header to participants, False = hidden subscale)
   - `order`: Display order (auto-increments if set to 0)
+- **Use cases:**
+  - **Visible groups** (show_title=True): Section headers with instructions (e.g., "Think of a relative or friend")
+  - **Hidden subscales** (show_title=False): Organizational grouping for scoring/analysis (e.g., "extraversion", "agreeableness")
 - Questions can optionally belong to a group via `group` ForeignKey
-- Questions in groups get meaningful `question_id` identifiers stored in database: `{group_code}_{question_number}` (e.g., "A_01", "A_02", "B_01")
-- Ungrouped questions use simple identifiers like "Q5"
+- Questions in groups get meaningful `question_id` identifiers: `{group_code}_{question_number}` (e.g., "1_a", "1_b", "2_a", "2_b")
+- Ungrouped questions use simple identifiers like "5", "10"
 - `question_id` field is:
   - Auto-generated on save from group_code and question_number
   - Stored in database with index for efficient querying
   - Displayed in admin as read-only field
-  - Hidden from participant view (clean UX)
   - Used for data analysis and exports
 - Helper method: `question.get_question_identifier()` returns the composite ID
-- Template displays group headers with title and description before grouped questions
-- Admin interface includes QuestionGroup inline on Survey with dropdown filtering
+- Template conditionally displays group headers based on `show_title` field
+- Admin interface includes QuestionGroup inline on Survey with `show_title` checkbox
 - Helper function `organize_questions_by_group()` structures questions by their groups for rendering
 
-#### Completed: Conditional show/hide (Sessions 10 & 11) ✅
-**Implementation complete and validation bug fixed**
+#### Completed: Conditional show/hide (Sessions 10, 11 & 12) ✅
+**Implementation complete with auto-fill for disabled questions**
 
 - Added `controls_next_n_questions` field to Question model
 - Questions can control the next N questions in order (e.g., set to 3 to control next 3 questions)
@@ -560,6 +567,7 @@ The survey system is being extended incrementally to support richer question typ
 - Shows instruction: "If answering no, skip to the next N question(s)"
 - CSS grays out disabled questions with `conditional-disabled` class
 - **Backend validation updated**: Views now check trigger conditions and skip validation for disabled questions
+- **Auto-fill disabled questions** (Session 12): Likert questions auto-filled with minimum scale value, non-Likert with "NULL"
 - Both `survey_preview` and `survey_take` views handle conditional logic correctly
 - Removed all debug console.log statements
 
@@ -583,21 +591,31 @@ The survey system is being extended incrementally to support richer question typ
 - `question_number` hidden from admin (still used internally for ID generation)
 - System automatically assigns letters based on question position within group
 
-#### Still to implement (in order)
-1. **Subscales** — groups with optional scale overrides (different from visual grouping)
+#### Survey Redesign Complete! ✅
 
-#### Planned data models (still to add)
-| Model | Purpose | Status |
-|---|---|---|
-| ~~`QuestionOption`~~ | ~~Individual option for binary / multiple choice questions~~ | ✅ Not needed - using JSON field instead |
-| ~~`QuestionGroup`~~ | ~~Named section within a survey~~ | ✅ Completed Session 9 |
-| ~~`ConditionalRule`~~ | ~~Show/hide rule~~ | ✅ Not needed - using N-questions logic on Question model |
+All planned features for the incremental survey redesign have been implemented:
+- ✅ Per-question Likert scales with flexible min/max values
+- ✅ Multiple choice questions (single and multi-select) with disabled options
+- ✅ Free text questions
+- ✅ Dropdown questions (year, month, country)
+- ✅ Question groups with visible/subscale modes
+- ✅ Conditional show/hide logic with auto-fill
+- ✅ Scale factor for Likert responses
+- ✅ Reverse coding for Likert questions
+- ✅ Auto-generated question IDs (group_code + letter)
+- ✅ CSV export with full metadata
+- ✅ NULL recording for optional questions
+- ✅ Test mode for researcher preview
+
+The survey system now supports rich, flexible question authoring while maintaining clean data structures for analysis.
 
 #### Authoring approach
 - Everything via Django admin
-- `QuestionOption` inline on Question (for binary / multiple choice types)
-- `QuestionGroup` inline on Survey
-- `ConditionalRule` inline on Question
+- `LikertScale` inline on Survey for named, reusable scales
+- `QuestionGroup` inline on Survey for visible sections or hidden subscales
+- Question inline on Survey with all configuration options
+- Options stored as JSON (multiple choice, disabled options)
+- Preview & Test functionality for researchers
 
 ## Data Protection & Research Integrity
 
@@ -639,7 +657,64 @@ This design allows researchers to fully test the participant experience — incl
 
 ## Recent Updates
 
-### Bug Fixes, Scale Factor, Question IDs & CSV Export (Session 11 - Latest)
+### Complete Survey Redesign (Session 12 - Latest) 🎉
+
+**The survey system is now feature-complete!** All planned features for the incremental survey redesign have been successfully implemented.
+
+#### Hidden Subscales (Question Groups) ✅
+**Groups can now be visible or hidden for subscale scoring**
+- Added `show_title` BooleanField to QuestionGroup model (default=True)
+- **Visible groups** (show_title=True): Display section headers to participants (e.g., "Think of a relative or friend")
+- **Hidden subscales** (show_title=False): Organizational grouping for scoring/analysis only (e.g., "extraversion", "agreeableness")
+- Questions in both types retain meaningful identifiers (1_a, 1_b, 2_a, 2_b) for data analysis
+- Template conditionally displays group headers based on show_title field
+- Admin interface includes show_title checkbox in QuestionGroup inline
+
+#### Auto-fill Disabled Conditional Questions ✅
+**Complete data collection with automatic default values**
+- When trigger questions disable follow-up questions, those questions are now auto-filled instead of skipped
+- **Likert questions**: Auto-filled with minimum scale value (e.g., 1 for 1-5 scale, 0 for 0-10 scale)
+- **Non-Likert questions**: Auto-filled with "NULL"
+- Test response table shows `[Auto]` indicator in orange for auto-filled responses
+- Auto-filled rows have light yellow background for visual distinction
+- **Benefits**: Complete datasets, easier statistical analysis, minimum value represents "not applicable"
+- Applies to both `survey_preview` and `survey_take` views
+
+#### NULL Recording for Optional Questions ✅
+**Complete data matrix for all participants**
+- Optional questions (required=False) that are left blank now record "NULL" instead of being skipped
+- Applies to all question types: Likert, multiple choice, free text, and dropdowns
+- **Benefits**: Every participant has a response for every question, no missing data in analysis
+- Clear semantics: "NULL" = optional question not answered, minimum value = conditionally disabled question
+
+#### Disabled Multiple Choice Options ✅
+**Visible but unselectable options for context**
+- Multiple choice options can now be disabled using array syntax in JSON
+- **Format**: `{"1": "Option A", "2": ["Option B (disabled)"], "3": "Option C"}`
+- Disabled options appear grayed out (40% opacity) with disabled checkboxes
+- Validation automatically filters out disabled options if somehow submitted
+- **Use cases**: "Not applicable" options, showing full scale context, conditional availability
+- Helper methods: `get_enabled_option_keys()` returns only selectable options
+- Updated help text in admin with syntax example
+
+#### Dropdown Question Types ✅
+**Year, Month, and Country dropdowns**
+- Added three new question types: `dropdown_year`, `dropdown_month`, `dropdown_country`
+- **Year dropdown**: Last 100 years (most recent first) for birth years or event dates
+- **Month dropdown**: All 12 months, stores as numbers (1-12), displays as month names
+- **Country dropdown**: Comprehensive list of 195+ countries in alphabetical order
+- Clean dropdown UI with placeholder text ("-- Select Year --", etc.)
+- Optional question text field (can be left blank for self-explanatory dropdowns)
+- Consistent NULL handling when left blank
+- Helper methods: `get_year_options()`, `get_month_options()`, `get_country_options()`
+
+#### Question Text Now Optional ✅
+**Flexibility for self-explanatory question types**
+- `Question.text` field now allows `blank=True`
+- Useful for dropdown questions where the type is self-explanatory
+- Researchers can add custom labels if needed, or leave blank
+
+### Bug Fixes, Scale Factor, Question IDs & CSV Export (Session 11)
 
 #### Conditional Show/Hide Bug Fixed ✅
 **Root cause identified and resolved**
