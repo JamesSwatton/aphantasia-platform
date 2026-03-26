@@ -29,6 +29,68 @@ class User(AbstractUser):
     def __str__(self):
         return self.email or self.username
 
+    def get_survey_progress(self):
+        """
+        Calculate survey completion progress for this user.
+        Returns: (completed_count, total_count, percentage)
+        """
+        from surveys.models import Survey, ParticipantResponse
+
+        # Get all active surveys
+        total_surveys = Survey.objects.filter(is_active=True).count()
+
+        # Get surveys this user has completed (has at least one response)
+        completed_surveys = ParticipantResponse.objects.filter(
+            participant=self,
+            is_test=False
+        ).values('survey_id').distinct().count()
+
+        # Calculate percentage
+        percentage = int((completed_surveys / total_surveys * 100)) if total_surveys > 0 else 0
+
+        return (completed_surveys, total_surveys, percentage)
+
+    def get_task_progress(self):
+        """
+        Calculate task completion progress for this user.
+        Returns: (completed_count, total_count, percentage)
+        """
+        from tasks.models import LabTask, TaskSubmission
+
+        # Get all active tasks that have been unpacked
+        total_tasks = LabTask.objects.filter(
+            is_active=True,
+            task_directory__isnull=False
+        ).count()
+
+        # Get tasks this user has completed
+        completed_tasks = TaskSubmission.objects.filter(
+            participant=self,
+            status='completed',
+            is_test=False
+        ).count()
+
+        # Calculate percentage
+        percentage = int((completed_tasks / total_tasks * 100)) if total_tasks > 0 else 0
+
+        return (completed_tasks, total_tasks, percentage)
+
+    def get_overall_progress(self):
+        """
+        Calculate overall completion progress across surveys and tasks.
+        Returns: percentage (0-100)
+        """
+        survey_completed, survey_total, _ = self.get_survey_progress()
+        task_completed, task_total, _ = self.get_task_progress()
+
+        total_items = survey_total + task_total
+        completed_items = survey_completed + task_completed
+
+        if total_items == 0:
+            return 0
+
+        return int((completed_items / total_items * 100))
+
 
 class ConsentForm(models.Model):
     """

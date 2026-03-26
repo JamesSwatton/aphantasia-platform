@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from .models import Domain, Researcher, Participant, Progress, DataDownloadLog
+from .models import Domain, Researcher, Participant, DataDownloadLog
 from accounts.models import User
 
 
@@ -23,14 +23,6 @@ class ParticipantAdmin(admin.ModelAdmin):
     list_display = ['user', 'gender', 'country', 'consent_given', 'created_at']
     list_filter = ['gender', 'consent_given', 'country', 'created_at']
     search_fields = ['user__email', 'country']
-
-
-@admin.register(Progress)
-class ProgressAdmin(admin.ModelAdmin):
-    list_display = ['participant', 'content_type', 'object_id', 'status', 'progress_percentage', 'last_accessed']
-    list_filter = ['content_type', 'status', 'last_accessed']
-    search_fields = ['participant__email']
-    readonly_fields = ['created_at', 'last_accessed']
 
 
 class ResearcherFilter(SimpleListFilter):

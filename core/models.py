@@ -81,51 +81,6 @@ class Participant(models.Model):
         return f"{self.user.email}"
 
 
-class Progress(models.Model):
-    """
-    Tracks participant progress through surveys and tasks.
-    """
-    participant = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='progress_records'
-    )
-    content_type = models.CharField(
-        max_length=20,
-        choices=[
-            ('survey', 'Survey'),
-            ('task', 'Lab Task'),
-        ]
-    )
-    object_id = models.PositiveIntegerField(
-        help_text="ID of the survey or task"
-    )
-    status = models.CharField(
-        max_length=20,
-        choices=[
-            ('not_started', 'Not Started'),
-            ('in_progress', 'In Progress'),
-            ('completed', 'Completed'),
-        ],
-        default='not_started'
-    )
-    progress_percentage = models.PositiveIntegerField(
-        default=0,
-        help_text="Progress percentage (0-100)"
-    )
-    last_accessed = models.DateTimeField(auto_now=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-last_accessed']
-        verbose_name = 'Progress'
-        verbose_name_plural = 'Progress Records'
-        unique_together = ['participant', 'content_type', 'object_id']
-
-    def __str__(self):
-        return f"{self.participant.email} - {self.content_type} #{self.object_id} ({self.status})"
-
-
 class DataDownloadLog(models.Model):
     """
     Logs when researchers download participant data for compliance and auditing.

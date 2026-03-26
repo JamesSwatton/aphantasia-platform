@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     Admin configuration for custom User model.
     Note: Researchers should be appointed via invitation system, not manual promotion.
     """
-    list_display = ['username', 'email', 'is_researcher', 'is_participant', 'is_active', 'date_joined']
+    list_display = ['username', 'email', 'is_researcher', 'is_participant', 'survey_progress_display', 'task_progress_display', 'overall_progress_display', 'is_active', 'date_joined']
     list_filter = ['is_researcher', 'is_participant', 'is_active', 'date_joined']
 
     fieldsets = (
@@ -52,6 +52,54 @@ class UserAdmin(BaseUserAdmin):
             if 'is_researcher' not in readonly:
                 readonly.append('is_researcher')
         return readonly
+
+    def survey_progress_display(self, obj):
+        """Display survey completion progress."""
+        if not obj.is_participant:
+            return '—'
+        completed, total, percentage = obj.get_survey_progress()
+        from django.utils.html import format_html
+        return format_html(
+            '<span style="white-space: nowrap;">{}/{} ({}%)</span>',
+            completed, total, percentage
+        )
+    survey_progress_display.short_description = 'Survey Progress'
+
+    def task_progress_display(self, obj):
+        """Display task completion progress."""
+        if not obj.is_participant:
+            return '—'
+        completed, total, percentage = obj.get_task_progress()
+        from django.utils.html import format_html
+        return format_html(
+            '<span style="white-space: nowrap;">{}/{} ({}%)</span>',
+            completed, total, percentage
+        )
+    task_progress_display.short_description = 'Task Progress'
+
+    def overall_progress_display(self, obj):
+        """Display overall completion progress with visual indicator."""
+        if not obj.is_participant:
+            return '—'
+        percentage = obj.get_overall_progress()
+
+        # Add visual indicator based on progress
+        if percentage == 100:
+            indicator = '✓'
+            color = 'green'
+        elif percentage > 0:
+            indicator = '⧗'
+            color = 'orange'
+        else:
+            indicator = '✗'
+            color = 'red'
+
+        from django.utils.html import format_html
+        return format_html(
+            '<span style="color: {}; white-space: nowrap;">{} {}%</span>',
+            color, indicator, percentage
+        )
+    overall_progress_display.short_description = 'Overall Progress'
 
 
 @admin.register(ConsentForm)

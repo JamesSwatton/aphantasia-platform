@@ -3,7 +3,7 @@ from django.contrib.auth.models import Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from surveys.models import Survey, Question, ParticipantResponse
 from tasks.models import LabTask, TaskSubmission
-from core.models import Domain, Researcher, Participant, Progress, DataDownloadLog
+from core.models import Domain, Researcher, Participant, DataDownloadLog
 
 
 class Command(BaseCommand):
@@ -29,7 +29,7 @@ class Command(BaseCommand):
 
         models_view_only = [
             ParticipantResponse, TaskSubmission,
-            Participant, Progress
+            Participant
         ]
 
         models_with_log_access = [
