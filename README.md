@@ -477,6 +477,53 @@ fetch('/tasks/${TASK_ID}/submit/', {
 - `${TASK_ID}` is replaced automatically on upload
 - See `LABJS_INTEGRATION.md` for full instructions
 
+---
+
+## Session 13: Admin Dashboard Improvements (March 2026)
+
+### Domain-Based Filtering
+Added domain filtering to survey and task management pages for better organization:
+- Filter dropdown on survey list (`/surveys/`) and task list (`/tasks/`) pages
+- Filter by specific domain or "Uncategorized" (items with no domain)
+- "Clear Filter" link appears when filter is active
+- Filter state persists via URL query parameters (`?domain=X`)
+- **Implementation**: Updated `survey_list()` and `task_list()` views in `surveys/views.py` and `tasks/views.py`
+
+### Download Logging & Audit Trail
+Implemented comprehensive logging of all CSV data exports for compliance:
+- **Survey exports**: Logs created when researchers export survey responses via admin action
+- **Task exports**: Logs created for all 4 export methods (single trial/raw, bulk trial/raw)
+- **Log data**: Researcher, download type, file format, survey/task ID, participant count, timestamp
+- **Admin enhancements**:
+  - Added `object_title` column showing survey/task name (or "deleted" if removed)
+  - All fields readonly (audit log - no manual editing)
+  - Prevented manual creation of log entries
+  - Only superusers can delete logs (preserve audit trail)
+  - Custom `ResearcherFilter` shows only staff/researchers (excludes participants)
+- **Access**: Admin → Core → Data Download Logs
+
+### Participant Progress Tracking
+Added real-time progress tracking without redundant database tables:
+- **Removed unused `Progress` model** - redundant with existing `ParticipantResponse` and `TaskSubmission` tracking
+- **Added methods to `User` model**:
+  - `get_survey_progress()` - Returns (completed, total, percentage)
+  - `get_task_progress()` - Returns (completed, total, percentage)
+  - `get_overall_progress()` - Returns combined percentage
+- **Enhanced User admin** with new columns:
+  - Survey Progress: "3/5 (60%)"
+  - Task Progress: "1/2 (50%)"
+  - Overall Progress: "✓ 100%" / "⧗ 55%" / "✗ 0%" (color-coded)
+- Progress calculated from active surveys/tasks only, excludes test responses
+- Real-time accuracy - always reflects current completion state
+
+### Other Improvements
+- Created test consent form for development/testing
+- Cleaned up unused models to reduce confusion
+
+**Branch**: `feature-admin-dashboard`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -487,13 +534,12 @@ fetch('/tasks/${TASK_ID}/submit/', {
 6. ~~**Display filtered trial data in admin panel** for task submissions~~ ✅ **Completed** (Session 7)
 7. ~~**Create researcher test mode** for task data~~ ✅ **Completed** (Session 7 — test submissions flagged with `is_test`)
 8. ~~**Add CSV export** for task results in admin panel~~ ✅ **Completed** (Session 8 — list action + per-submission download buttons)
-9. **Redesign survey system** to support richer question types ⚠️ **In progress (feature-surveys branch)**
-10. **Create researcher dashboard** with data analytics
+9. ~~**Redesign survey system** to support richer question types~~ ✅ **Completed** (Sessions 8-12)
+10. ~~**Admin dashboard improvements**~~ ✅ **Completed** (Session 13 — domain filtering, download logging, progress tracking)
 11. **Integrate HTMX** for dynamic interactions
 12. **Add Alpine.js** for frontend interactivity
-13. **Implement data export** functionality (CSV, JSON, Excel) for surveys
-14. **Add data visualization** for research insights
-15. **Configure production settings** (PostgreSQL, static files, security)
+13. **Add data visualization** for research insights
+14. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Survey Redesign Plan (Session 8+)
 
