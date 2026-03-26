@@ -8,6 +8,7 @@ from datetime import date
 
 from .models import LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
 from accounts.models import User
+from core.models import DataDownloadLog
 
 
 class SurveyAdminForm(forms.ModelForm):
@@ -263,5 +264,20 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
             }
 
             writer.writerow(row)
+
+        # Log the download
+        survey_ids = queryset.values_list('survey_id', flat=True).distinct()
+        participant_ids = queryset.values_list('participant_id', flat=True).distinct()
+
+        # Determine object_id (survey ID if single survey, None if multiple)
+        object_id = survey_ids[0] if survey_ids.count() == 1 else None
+
+        DataDownloadLog.objects.create(
+            researcher=request.user,
+            download_type='survey_responses',
+            object_id=object_id,
+            file_format='csv',
+            participant_count=participant_ids.count()
+        )
 
         return response

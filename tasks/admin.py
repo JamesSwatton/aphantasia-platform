@@ -9,6 +9,7 @@ from django.utils.html import format_html
 from django import forms
 from .models import LabTask, TaskSubmission
 from accounts.models import User
+from core.models import DataDownloadLog
 
 
 class LabTaskAdminForm(forms.ModelForm):
@@ -280,6 +281,15 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
             row = {**meta, **{k: v for k, v in trial.items() if k in trial_columns}}
             writer.writerow(row)
 
+        # Log the download
+        DataDownloadLog.objects.create(
+            researcher=request.user,
+            download_type='task_results',
+            object_id=submission.task.id,
+            file_format='csv',
+            participant_count=1  # Single submission
+        )
+
         return response
 
     def export_single_raw_csv(self, request, pk):
@@ -313,6 +323,15 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         }
         for row in raw_rows:
             writer.writerow({**meta, **row})
+
+        # Log the download
+        DataDownloadLog.objects.create(
+            researcher=request.user,
+            download_type='task_results',
+            object_id=submission.task.id,
+            file_format='csv',
+            participant_count=1  # Single submission
+        )
 
         return response
 
@@ -367,6 +386,19 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
                     row = {**meta, **{k: v for k, v in trial.items() if k in trial_columns}}
                     writer.writerow(row)
 
+        # Log the download
+        task_ids = queryset.values_list('task_id', flat=True).distinct()
+        participant_ids = queryset.values_list('participant_id', flat=True).distinct()
+        object_id = task_ids[0] if task_ids.count() == 1 else None
+
+        DataDownloadLog.objects.create(
+            researcher=request.user,
+            download_type='task_results',
+            object_id=object_id,
+            file_format='csv',
+            participant_count=participant_ids.count()
+        )
+
         return response
 
     @admin.action(description='Export raw data as CSV (all lab.js rows)')
@@ -409,5 +441,18 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
             else:
                 for row in raw_rows:
                     writer.writerow({**meta, **row})
+
+        # Log the download
+        task_ids = queryset.values_list('task_id', flat=True).distinct()
+        participant_ids = queryset.values_list('participant_id', flat=True).distinct()
+        object_id = task_ids[0] if task_ids.count() == 1 else None
+
+        DataDownloadLog.objects.create(
+            researcher=request.user,
+            download_type='task_results',
+            object_id=object_id,
+            file_format='csv',
+            participant_count=participant_ids.count()
+        )
 
         return response
