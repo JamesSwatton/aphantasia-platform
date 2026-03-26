@@ -103,6 +103,41 @@
         padding: 3rem;
         color: #7f8c8d;
     }
+
+    .filter-bar {
+        background: white;
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        margin-bottom: 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .filter-bar label {
+        font-weight: 500;
+        color: #2c3e50;
+    }
+
+    .filter-bar select {
+        padding: 0.5rem 1rem;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        min-width: 200px;
+    }
+
+    .filter-bar .clear-filter {
+        margin-left: auto;
+        font-size: 0.85rem;
+        color: #3771c8;
+        text-decoration: none;
+    }
+
+    .filter-bar .clear-filter:hover {
+        text-decoration: underline;
+    }
 </style>
 {% endblock %}
 
@@ -110,6 +145,23 @@
 <div class="page-header">
     <h1>Survey Management</h1>
     <a href="/admin/surveys/survey/add/" class="btn btn-success">+ New Survey</a>
+</div>
+
+<!-- Domain Filter Bar -->
+<div class="filter-bar">
+    <label for="domain-filter">Filter by Domain:</label>
+    <select id="domain-filter" onchange="window.location.href='?domain=' + this.value">
+        <option value="">All Domains</option>
+        {% for domain in domains %}
+            <option value="{{ domain.id }}" {% if selected_domain == domain.id|stringformat:"s" %}selected{% endif %}>
+                {{ domain.name }}
+            </option>
+        {% endfor %}
+        <option value="none" {% if selected_domain == "none" %}selected{% endif %}>Uncategorized</option>
+    </select>
+    {% if selected_domain %}
+        <a href="{% url 'surveys:survey_list' %}" class="clear-filter">Clear Filter</a>
+    {% endif %}
 </div>
 
 {% if surveys %}

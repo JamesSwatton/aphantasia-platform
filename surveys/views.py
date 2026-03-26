@@ -574,11 +574,27 @@ def survey_list(request):
         messages.error(request, "Only researchers can access the survey management page.")
         return redirect('dashboard:participant_dashboard')
 
-    # Researchers can see all surveys
+    # Start with all surveys
     surveys = Survey.objects.all()
+
+    # Apply domain filter if provided
+    domain_id = request.GET.get('domain')
+    if domain_id:
+        if domain_id == 'none':
+            # Filter for surveys with no domain
+            surveys = surveys.filter(domain__isnull=True)
+        else:
+            # Filter for specific domain
+            surveys = surveys.filter(domain_id=domain_id)
+
+    # Get all domains for the filter dropdown
+    from core.models import Domain
+    domains = Domain.objects.all()
 
     context = {
         'surveys': surveys,
+        'domains': domains,
+        'selected_domain': domain_id,
         'is_researcher': True,
     }
 
