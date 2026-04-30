@@ -20,67 +20,6 @@ class Domain(models.Model):
         return self.name
 
 
-class Researcher(models.Model):
-    """
-    Extended profile for users with researcher privileges.
-    """
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='researcher_profile'
-    )
-    institution = models.CharField(max_length=200, blank=True)
-    department = models.CharField(max_length=200, blank=True)
-    bio = models.TextField(blank=True)
-    domains = models.ManyToManyField(Domain, related_name='researchers', blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['user__email']
-        verbose_name = 'Researcher'
-        verbose_name_plural = 'Researchers'
-
-    def __str__(self):
-        return f"{self.user.email} - {self.institution}"
-
-
-class Participant(models.Model):
-    """
-    Extended profile for participants in research studies.
-    """
-    user = models.OneToOneField(
-        settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
-        related_name='participant_profile'
-    )
-    date_of_birth = models.DateField(null=True, blank=True)
-    gender = models.CharField(
-        max_length=50,
-        choices=[
-            ('male', 'Male'),
-            ('female', 'Female'),
-            ('non_binary', 'Non-binary'),
-            ('prefer_not_to_say', 'Prefer not to say'),
-            ('other', 'Other'),
-        ],
-        blank=True
-    )
-    country = models.CharField(max_length=100, blank=True)
-    consent_given = models.BooleanField(default=False)
-    consent_date = models.DateTimeField(null=True, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Participant'
-        verbose_name_plural = 'Participants'
-
-    def __str__(self):
-        return f"{self.user.email}"
-
-
 class DataDownloadLog(models.Model):
     """
     Logs when researchers download participant data for compliance and auditing.

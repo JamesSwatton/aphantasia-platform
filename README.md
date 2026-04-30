@@ -14,7 +14,7 @@ A Django-based research platform for collecting participant data through surveys
 ```
 research_platform/
 ├── accounts/          # User authentication and custom user model
-├── core/             # Core models (Domain, Researcher, Participant, Progress, DataDownloadLog)
+├── core/             # Core models (Domain, DataDownloadLog, Message)
 ├── surveys/          # Survey models and views
 ├── tasks/            # Lab.js task models and submissions
 ├── dashboard/        # Participant dashboard
@@ -31,16 +31,14 @@ research_platform/
 ## Apps and Models
 
 ### accounts
-- **User**: Custom user model with `is_researcher` and `is_participant` fields, and `consent_text` field to track the consent form version agreed to during registration
+- **User**: Custom user model with `is_researcher` and `is_participant` fields, and `consent_text` field to track the consent form version agreed to during registration. Includes progress tracking methods.
 - **ConsentForm**: Editable consent form text shown to participants during registration. Supports versioning and history tracking.
 - **ResearcherInvitation**: Invitation system for appointing new researchers. Tracks invitation tokens, expiration dates, and who invited whom.
 
 ### core
 - **Domain**: Research domains/categories
-- **Researcher**: Extended researcher profile
-- **Participant**: Extended participant profile
-- **Progress**: Tracks participant progress through surveys/tasks
 - **DataDownloadLog**: Audit log for data downloads
+- **Message**: Researcher-to-participant messaging system
 
 ### surveys
 - **Survey**: Survey definitions with configurable Likert scale settings (`min_value`, `max_value`, `scale_labels`) and optional question randomization
