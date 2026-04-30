@@ -124,3 +124,40 @@ class DataDownloadLog(models.Model):
 
     def __str__(self):
         return f"{self.researcher.email} - {self.download_type} ({self.downloaded_at.strftime('%Y-%m-%d %H:%M')})"
+
+
+class Message(models.Model):
+    """
+    Messages from researchers to participants.
+    Displayed in the participant messages page.
+    """
+    subject = models.CharField(
+        max_length=200,
+        help_text="Message subject line"
+    )
+    sender_name = models.CharField(
+        max_length=200,
+        help_text="Name of sender (e.g., 'Dr Bérengère Digard' or 'The Eye\'s Mind research team')"
+    )
+    body = models.TextField(
+        help_text="Message content. Supports basic HTML: <p>, <strong>, <em>, <a>, <h4>, <ul>, <li>"
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name='created_messages'
+    )
+    is_published = models.BooleanField(
+        default=False,
+        help_text="Only published messages are visible to participants"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = 'Message'
+        verbose_name_plural = 'Messages'
+
+    def __str__(self):
+        return f"{self.subject} (by {self.sender_name})"

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from .models import Domain, Researcher, Participant, DataDownloadLog
+from .models import Domain, Researcher, Participant, DataDownloadLog, Message
 from accounts.models import User
 
 
@@ -78,3 +78,31 @@ class DataDownloadLogAdmin(admin.ModelAdmin):
     def has_delete_permission(self, request, obj=None):
         """Only superusers can delete audit logs."""
         return request.user.is_superuser
+
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['subject', 'sender_name', 'is_published', 'created_by', 'created_at']
+    list_filter = ['is_published', 'created_at']
+    search_fields = ['subject', 'sender_name', 'body']
+    readonly_fields = ['created_by', 'created_at', 'updated_at']
+
+    fieldsets = [
+        ('Message Details', {
+            'fields': ['subject', 'sender_name', 'body']
+        }),
+        ('Publishing', {
+            'fields': ['is_published'],
+            'description': 'Only published messages are visible to participants.'
+        }),
+        ('Metadata', {
+            'fields': ['created_by', 'created_at', 'updated_at'],
+            'classes': ['collapse']
+        }),
+    ]
+
+    def save_model(self, request, obj, form, change):
+        """Automatically set created_by to the current user when creating a new message."""
+        if not change:  # Only set on creation
+            obj.created_by = request.user
+        super().save_model(request, obj, form, change)
