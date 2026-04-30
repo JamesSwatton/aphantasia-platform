@@ -151,6 +151,12 @@ class Message(models.Model):
         default=False,
         help_text="Only published messages are visible to participants"
     )
+    read_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL,
+        related_name='read_messages',
+        blank=True,
+        help_text="Participants who have marked this message as read"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
