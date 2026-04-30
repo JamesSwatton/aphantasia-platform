@@ -23,6 +23,10 @@ class Survey(models.Model):
         related_name='surveys'
     )
     is_active = models.BooleanField(default=True)
+    is_priority = models.BooleanField(
+        default=False,
+        help_text="Mark this survey as a priority. Priority surveys appear at the top of the list."
+    )
     randomize_questions = models.BooleanField(
         default=False,
         help_text="Randomize question order for each participant (using participant ID as seed for consistency)"
@@ -44,7 +48,7 @@ class Survey(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-is_priority', '-created_at']
         verbose_name = 'Survey'
         verbose_name_plural = 'Surveys'
 

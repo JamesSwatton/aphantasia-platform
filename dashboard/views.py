@@ -19,8 +19,8 @@ def participant_dashboard(request):
         )
         return redirect('surveys:survey_list')
 
-    # Get all active surveys
-    active_surveys = Survey.objects.filter(is_active=True).order_by('-created_at')
+    # Get all active surveys (ordered by priority, then by created_at via model Meta)
+    active_surveys = Survey.objects.filter(is_active=True)
 
     # Get surveys the participant has completed (has any response)
     completed_survey_ids = ParticipantResponse.objects.filter(
@@ -53,8 +53,8 @@ def participant_dashboard(request):
         else:
             available_surveys.append(survey_data)
 
-    # Get all active tasks
-    active_tasks = LabTask.objects.filter(is_active=True, task_directory__isnull=False).order_by('-created_at')
+    # Get all active tasks (ordered by priority, then by created_at via model Meta)
+    active_tasks = LabTask.objects.filter(is_active=True, task_directory__isnull=False)
 
     # Get tasks the participant has completed
     completed_task_ids = TaskSubmission.objects.filter(

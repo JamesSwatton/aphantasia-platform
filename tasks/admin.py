@@ -29,8 +29,8 @@ class LabTaskAdminForm(forms.ModelForm):
 @admin.register(LabTask)
 class LabTaskAdmin(admin.ModelAdmin):
     form = LabTaskAdminForm
-    list_display = ['title', 'researcher', 'domain', 'is_active', 'unpacked_status', 'preview_link_display', 'created_at']
-    list_filter = ['is_active', 'domain', 'created_at']
+    list_display = ['title', 'researcher', 'domain', 'is_active', 'is_priority', 'unpacked_status', 'preview_link_display', 'created_at']
+    list_filter = ['is_active', 'is_priority', 'domain', 'created_at']
     search_fields = ['title', 'description', 'researcher__email']
     readonly_fields = ['task_slug', 'task_directory', 'created_at', 'updated_at', 'preview_link']
 
@@ -55,7 +55,7 @@ class LabTaskAdmin(admin.ModelAdmin):
             '''
         }),
         ('Settings', {
-            'fields': ['is_active', 'time_limit_minutes', 'instructions', 'trial_sender_filter']
+            'fields': ['is_active', 'is_priority', 'time_limit_minutes', 'instructions', 'trial_sender_filter']
         }),
         ('Metadata', {
             'fields': ['created_at', 'updated_at'],

@@ -524,6 +524,35 @@ Added real-time progress tracking without redundant database tables:
 
 ---
 
+## Session 14: Priority Surveys and Tasks (April 2026)
+
+### Priority Flagging System
+Added ability to mark surveys and tasks as priority for better workflow management:
+- **New `is_priority` field** added to both `Survey` and `LabTask` models
+- **Updated model ordering**: Priority items appear first, then ordered by creation date
+  - `Meta.ordering = ['-is_priority', '-created_at']`
+- **Admin interface updates**:
+  - Priority checkbox in survey and task edit forms
+  - Priority column in list views
+  - Priority filter in admin list filters
+- **Visual indicators**: Red "Priority" badge in survey and task management pages
+  - Appears next to Active/Inactive badge
+  - Light red background (`#ffe5e5`) with dark red text (`#c0392b`) and border
+- **Automatic ordering**: Priority items automatically appear at top of:
+  - Survey management list (`/surveys/`)
+  - Task management list (`/tasks/`)
+  - Participant dashboard (`/dashboard/`)
+- **Implementation**:
+  - Models: `surveys/models.py`, `tasks/models.py`
+  - Admin: `surveys/admin.py`, `tasks/admin.py`
+  - Views: `dashboard/views.py`
+  - Templates: `templates/surveys/survey_list.html`, `templates/tasks/task_list.html`
+  - Migrations: `surveys/migrations/0021_*`, `tasks/migrations/0005_*`
+
+**Branch**: `feature-admin-dashboard`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

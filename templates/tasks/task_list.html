@@ -77,6 +77,12 @@
         color: #721c24;
     }
 
+    .status-priority {
+        background-color: #ffe5e5;
+        color: #c0392b;
+        border: 1px solid #e74c3c;
+    }
+
     .page-header {
         display: flex;
         justify-content: space-between;
@@ -163,6 +169,11 @@
             <span class="status-badge {% if task.is_active %}status-active{% else %}status-inactive{% endif %}">
                 {% if task.is_active %}Active{% else %}Inactive{% endif %}
             </span>
+            {% if task.is_priority %}
+            <span class="status-badge status-priority">
+                Priority
+            </span>
+            {% endif %}
         </div>
 
         {% if task.time_limit_minutes %}

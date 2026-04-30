@@ -74,6 +74,10 @@ class LabTask(models.Model):
         )
     )
     is_active = models.BooleanField(default=True)
+    is_priority = models.BooleanField(
+        default=False,
+        help_text="Mark this task as a priority. Priority tasks appear at the top of the list."
+    )
     time_limit_minutes = models.PositiveIntegerField(
         null=True,
         blank=True,
@@ -87,7 +91,7 @@ class LabTask(models.Model):
     updated_at = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering = ['-created_at']
+        ordering = ['-is_priority', '-created_at']
         verbose_name = 'Lab Task'
         verbose_name_plural = 'Lab Tasks'
 

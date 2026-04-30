@@ -83,8 +83,8 @@ class QuestionInline(admin.TabularInline):
 @admin.register(Survey)
 class SurveyAdmin(admin.ModelAdmin):
     form = SurveyAdminForm
-    list_display = ["title", "researcher", "domain", "is_active", "preview_link_display", "created_at"]
-    list_filter = ["is_active", "domain", "created_at"]
+    list_display = ["title", "researcher", "domain", "is_active", "is_priority", "preview_link_display", "created_at"]
+    list_filter = ["is_active", "is_priority", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
     readonly_fields = ["preview_link_field"]
     inlines = [LikertScaleInline, QuestionGroupInline, QuestionInline]
@@ -92,7 +92,7 @@ class SurveyAdmin(admin.ModelAdmin):
     fieldsets = [
         (
             "Survey Information",
-            {"fields": ["title", "description", "researcher", "domain", "is_active", "randomize_questions", "preview_link_field"]},
+            {"fields": ["title", "description", "researcher", "domain", "is_active", "is_priority", "randomize_questions", "preview_link_field"]},
         ),
         (
             "Default Likert Scale",

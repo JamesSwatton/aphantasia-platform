@@ -82,6 +82,12 @@
         color: #721c24;
     }
 
+    .status-priority {
+        background-color: #ffe5e5;
+        color: #c0392b;
+        border: 1px solid #e74c3c;
+    }
+
     .domain-badge {
         display: inline-block;
         padding: 0.25rem 0.75rem;
@@ -177,6 +183,11 @@
             <span class="status-badge {% if survey.is_active %}status-active{% else %}status-inactive{% endif %}">
                 {% if survey.is_active %}Active{% else %}Inactive{% endif %}
             </span>
+            {% if survey.is_priority %}
+            <span class="status-badge status-priority">
+                Priority
+            </span>
+            {% endif %}
         </div>
 
         <div class="survey-meta">
