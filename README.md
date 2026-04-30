@@ -553,6 +553,37 @@ Added ability to mark surveys and tasks as priority for better workflow manageme
 
 ---
 
+## Session 15: Messaging System Backend (April 2026)
+
+### Message Model and Admin Interface
+Implemented the backend infrastructure for researcher-to-participant messaging:
+- **New `Message` model** in `core/models.py` with fields:
+  - `subject` - Message subject line
+  - `sender_name` - Display name (e.g., "Dr Bérengère Digard")
+  - `body` - Message content (supports basic HTML: `<p>`, `<strong>`, `<em>`, `<a>`, `<h4>`, `<ul>`, `<li>`)
+  - `created_by` - Automatically set to researcher creating the message
+  - `is_published` - Toggle to show/hide from participants
+  - `read_by` - ManyToManyField tracking which participants have read the message
+  - `created_at` / `updated_at` - Automatic timestamps
+- **Admin interface** for message management:
+  - Clean form with organized fieldsets
+  - List view: subject, sender, published status, creator, date
+  - Filters: published status, creation date
+  - Search: subject, sender name, body content
+  - Auto-sets `created_by` to logged-in researcher
+- **Read/unread tracking**:
+  - Simple ManyToMany approach (no timestamp needed)
+  - Supports "mark as read" and "mark all as read" functionality
+  - Ready for unread badge counts when frontend is implemented
+- **Migrations**: `core/migrations/0003_message.py`, `core/migrations/0004_message_read_by.py`
+- **Mockup reference**: `mockups/messages.html` - design for future participant-facing page
+
+**Note**: Participant-facing messages view will be implemented later with the design system.
+
+**Branch**: `feature-messages`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
