@@ -512,20 +512,17 @@ class Question(models.Model):
         # Auto-generate question_number as letter (a-z) if question is in a group
         if self.group:
             # Get all questions in this group, ordered by order field
-            group_questions = Question.objects.filter(
+            # This gives us all existing questions in the group
+            group_questions = list(Question.objects.filter(
                 survey=self.survey,
                 group=self.group
             ).exclude(
                 pk=self.pk if self.pk else None
-            ).order_by('order', 'id')
+            ).order_by('order', 'id'))
 
-            # Find position of this question (0-indexed)
-            position = 0
-            for q in group_questions:
-                if q.order < self.order:
-                    position += 1
-                elif q.order == self.order and self.pk and q.id < self.pk:
-                    position += 1
+            # Find position of this question within the group (0-indexed)
+            # We simply count how many questions in the group come before this one
+            position = len([q for q in group_questions if q.order < self.order or (q.order == self.order and self.pk and q.id < self.pk)])
 
             # Convert position to letter (0=a, 1=b, etc.)
             if position < 26:
@@ -536,8 +533,11 @@ class Question(models.Model):
                 second_letter = chr(ord('a') + (position % 26))
                 self.question_number = f"{first_letter}{second_letter}"
 
-        # Auto-generate question_id
-        self.question_id = self.get_question_identifier()
+            # Generate question_id for grouped questions
+            self.question_id = f"{self.group.group_code}_{self.question_number}"
+        else:
+            # For ungrouped questions, use order as the identifier
+            self.question_id = str(self.order)
 
         super().save(*args, **kwargs)
 

@@ -584,6 +584,41 @@ Implemented the backend infrastructure for researcher-to-participant messaging:
 
 ---
 
+## Session 16: Survey Bug Fixes (May 2026)
+
+### Question Group Bug Fixes
+Fixed two critical bugs affecting question groups in surveys:
+
+#### 1. Question ID Generation Bug
+**Problem**: Questions in groups were getting incorrect `question_id` values stored in the database (e.g., `1_a`, `3_b` instead of `3_a`, `3_b`).
+
+**Root cause**: The `save()` method in `Question` model was calling `get_question_identifier()` to generate `question_id`, but the position calculation was based on existing database queries that didn't account for the current save operation properly.
+
+**Fix** (`surveys/models.py`):
+- Modified `Question.save()` to directly generate `question_id` inline instead of calling `get_question_identifier()`
+- For grouped questions: `question_id = f"{self.group.group_code}_{self.question_number}"`
+- For ungrouped questions: `question_id = str(self.order)`
+- Position calculation now correctly counts questions in the group that come before the current question based on order
+
+**Impact**: New questions now get correct IDs on creation. Preview mode (which uses `get_question_identifier()` on-the-fly) was already showing correct values, but stored database values were wrong.
+
+#### 2. Question Rendering Order Bug
+**Problem**: Question groups were rendering before ungrouped questions, regardless of their order values (e.g., questions at order 1-2 appeared after a group at order 3).
+
+**Root cause**: The `organize_questions_by_group()` helper function in `surveys/views.py` was adding all ungrouped questions with a sort key of `float('inf')`, placing them at the end after all groups.
+
+**Fix** (`surveys/views.py`):
+- Rewrote `organize_questions_by_group()` to interleave groups and ungrouped questions based on their order values
+- Groups use the minimum order of their questions as the sort key
+- Ungrouped questions use `order - 0.5` as the sort key (ensures they appear before groups at the same order)
+- All items are sorted together, maintaining proper order throughout the survey
+
+**Impact**: Questions and groups now render in the correct order based on their order field, matching researcher expectations.
+
+**Testing**: Both fixes verified with SWSQ survey containing 2 ungrouped questions (order 1-2) and 1 question group with 2 questions (order 3-4).
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

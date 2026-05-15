@@ -13,11 +13,11 @@ def organize_questions_by_group(questions, groups):
     """
     Organize questions into groups for display.
     Returns an OrderedDict where:
-    - Keys are (group_order, group_obj or None)
+    - Keys are (sort_key, group_obj or None)
     - Values are lists of questions
 
     This maintains the order of groups and questions, with ungrouped questions
-    appearing in their order position relative to groups.
+    interleaved based on their order position relative to groups.
     """
     # Create a dict mapping group_id to group object
     group_dict = {g.id: g for g in groups}
@@ -34,17 +34,29 @@ def organize_questions_by_group(questions, groups):
         else:
             ungrouped_questions.append(q)
 
-    # Build ordered structure
-    result = OrderedDict()
+    # Build ordered structure by interleaving groups and ungrouped questions
+    items_to_sort = []
 
-    # Add all groups in order with their questions
-    for group in sorted(groups, key=lambda g: (g.order, g.id)):
+    # Add groups with their questions
+    for group in groups:
         if group.id in grouped_questions:
-            result[(group.order, group)] = grouped_questions[group.id]
+            # Get the minimum order of questions in this group to determine placement
+            group_min_order = min(q.order for q in grouped_questions[group.id])
+            items_to_sort.append((group_min_order, group, grouped_questions[group.id]))
 
-    # Add ungrouped questions at the end (or we could interleave based on order)
-    if ungrouped_questions:
-        result[(float('inf'), None)] = ungrouped_questions
+    # Add ungrouped questions
+    for q in ungrouped_questions:
+        # Use the question's order as the sort key
+        # Subtract 0.5 so ungrouped questions appear before groups at the same order
+        items_to_sort.append((q.order - 0.5, None, [q]))
+
+    # Sort all items by their order
+    items_to_sort.sort(key=lambda x: x[0])
+
+    # Build the result OrderedDict with (order, group_obj) as key
+    result = OrderedDict()
+    for sort_key, group_obj, qs in items_to_sort:
+        result[(sort_key, group_obj)] = qs
 
     return result
 
