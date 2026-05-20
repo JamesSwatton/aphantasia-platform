@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin import SimpleListFilter
-from .models import Domain, Researcher, Participant, DataDownloadLog, Message
+from .models import Domain, DataDownloadLog, Message
 from accounts.models import User
 
 
@@ -8,21 +8,6 @@ from accounts.models import User
 class DomainAdmin(admin.ModelAdmin):
     list_display = ['name', 'created_at']
     search_fields = ['name', 'description']
-
-
-@admin.register(Researcher)
-class ResearcherAdmin(admin.ModelAdmin):
-    list_display = ['user', 'institution', 'department', 'created_at']
-    list_filter = ['institution', 'created_at']
-    search_fields = ['user__email', 'institution', 'department']
-    filter_horizontal = ['domains']
-
-
-@admin.register(Participant)
-class ParticipantAdmin(admin.ModelAdmin):
-    list_display = ['user', 'gender', 'country', 'consent_given', 'created_at']
-    list_filter = ['gender', 'consent_given', 'country', 'created_at']
-    search_fields = ['user__email', 'country']
 
 
 class ResearcherFilter(SimpleListFilter):
