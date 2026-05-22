@@ -1,126 +1,69 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Research Platform{% endblock %}</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f5f5f5;
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        header {
-            background-color: #2c3e50;
-            color: white;
-            padding: 1rem 0;
-            margin-bottom: 2rem;
-        }
-
-        header .container {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        header h1 {
-            font-size: 1.5rem;
-        }
-
-        nav a {
-            color: white;
-            text-decoration: none;
-            margin-left: 1rem;
-        }
-
-        nav a:hover {
-            text-decoration: underline;
-        }
-
-        .card {
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            padding: 2rem;
-            margin-bottom: 2rem;
-        }
-
-        .messages {
-            list-style: none;
-            margin-bottom: 1rem;
-        }
-
-        .messages li {
-            padding: 0.75rem;
-            margin-bottom: 0.5rem;
-            border-radius: 4px;
-        }
-
-        .messages .success {
-            background-color: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
-        }
-
-        .messages .error {
-            background-color: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
-        }
-
-        .messages .warning {
-            background-color: #fff3cd;
-            color: #856404;
-            border: 1px solid #ffeaa7;
-        }
-
-        .messages .info {
-            background-color: #d1ecf1;
-            color: #0c5460;
-            border: 1px solid #bee5eb;
-        }
-    </style>
-    {% block extra_css %}{% endblock %}
-</head>
-<body>
-    <header>
-        <div class="container">
-            <h1>Research Platform</h1>
-            <nav>
-                {% if user.is_authenticated %}
-                    <a href="{% url 'account_logout' %}">Logout</a>
-                {% else %}
-                    <a href="{% url 'account_login' %}">Login</a>
-                    <a href="{% url 'account_signup' %}">Sign Up</a>
-                {% endif %}
-            </nav>
-        </div>
+{% load static %}
+<!doctype html>
+<html lang="en"{% block html_attrs %}{% endblock %}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="{% block viewport %}width=device-width, initial-scale=1.0{% endblock %}" />
+    <title>{% block title %}Phantasia Research Hub{% endblock %}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Quattrocento:wght@400;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}" />
+    {% block extra_head %}{% endblock %}
+  </head>
+  <body>
+    <header class="topbar {% block topbar_class %}{% endblock %}">
+      <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+      <nav class="topbar__actions">
+        {% block topbar_nav %}
+          {% if user.is_authenticated %}
+            <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">
+              Messages
+              {# TODO: wire to core:messages URL once view exists #}
+            </a>
+            <a href="#" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
+              {# TODO: wire to accounts:account URL once view exists #}
+              {{ user.get_full_name|default:user.email|slice:":2"|upper }}
+            </a>
+          {% else %}
+            <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
+            <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
+          {% endif %}
+        {% endblock %}
+      </nav>
     </header>
 
-    <main class="container">
-        {% if messages %}
-            <ul class="messages">
-                {% for message in messages %}
-                    <li class="{{ message.tags }}">{{ message }}</li>
-                {% endfor %}
-            </ul>
-        {% endif %}
+    {% if messages %}
+      <div style="padding: 0 var(--page-padding-x);">
+        {% for message in messages %}
+          <div class="alert alert--{{ message.tags }}" role="alert">{{ message }}</div>
+        {% endfor %}
+      </div>
+    {% endif %}
 
-        {% block content %}{% endblock %}
-    </main>
-</body>
+    {% block body %}{% endblock %}
+
+    <footer class="footer">
+      <div class="crest">
+        <div class="crest__mark">UoE</div>
+        <div class="crest__text">
+          THE UNIVERSITY
+          <em>of EDINBURGH</em>
+        </div>
+      </div>
+    </footer>
+
+    <script>
+      (function () {
+        var topbar = document.querySelector(".topbar");
+        if (!topbar) return;
+        function updateShadow() {
+          topbar.classList.toggle("is-scrolled", window.scrollY > 0);
+        }
+        window.addEventListener("scroll", updateShadow, { passive: true });
+        updateShadow();
+      })();
+    </script>
+    {% block extra_js %}{% endblock %}
+  </body>
 </html>

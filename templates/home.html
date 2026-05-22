@@ -1,45 +1,367 @@
 {% extends "base.html" %}
+{% load static %}
 
-{% block title %}Home - Research Platform{% endblock %}
+{% block title %}Phantasia Research Hub{% endblock %}
+{% block html_attrs %} data-theme="dark"{% endblock %}
+{% block viewport %}width=device-width, initial-scale=1.0{% endblock %}
+{% block topbar_class %}topbar--static{% endblock %}
 
-{% block content %}
-<div class="card">
-    <h1 style="text-align: center; margin-bottom: 2rem; color: #2c3e50;">Welcome to the Research Platform</h1>
+{% block topbar_nav %}
+  <a href="#about" class="btn btn--outline">About</a>
+  <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
+  <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
+{% endblock %}
 
-    {% if user.is_authenticated %}
-        <div style="text-align: center;">
-            <p style="font-size: 1.1rem; margin-bottom: 1.5rem;">
-                Hello, <strong>{{ user.email }}</strong>!
-            </p>
+{% block extra_head %}
+  <style>
+    /* ----- 1. Hero ----- */
+    .hero {
+      position: relative;
+      height: calc(100vh - var(--topbar-h) + 2px);
+      min-height: 640px;
+      padding: 64px var(--page-padding-x);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .hero__bg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .hero > :not(.hero__bg) {
+      position: relative;
+      z-index: 1;
+    }
+    .hero__title {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 54px;
+      line-height: 1.15;
+      letter-spacing: -0.01em;
+      max-width: 18ch;
+    }
+    .feature-list { max-width: 720px; }
+    .feature-list__item {
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      padding: 16px 4px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+      font-size: 20px;
+    }
+    .feature-list__dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--ink);
+      flex-shrink: 0;
+    }
 
-            {% if user.is_participant and not user.is_researcher %}
-                <p style="margin-bottom: 1rem;">You are registered as a participant.</p>
-                <p style="margin-bottom: 1rem;">Available sections:</p>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="{% url 'dashboard:participant_dashboard' %}" style="display: inline-block; background-color: #3498db; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none;">My Dashboard</a>
-                    <a href="/tasks/" style="display: inline-block; background-color: #3498db; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none;">Tasks</a>
-                </div>
-            {% endif %}
+    /* ----- 2. Section headers ----- */
+    .section-header {
+      font-family: var(--font-display);
+      font-weight: 400;
+      font-size: 40px;
+      letter-spacing: -0.005em;
+      padding: 16px var(--page-padding-x);
+      border-top: 1px solid var(--rule);
+      border-bottom: 1px solid var(--rule);
+    }
+    .section-header__sep {
+      color: var(--ink-subtle);
+      margin: 0 18px;
+    }
 
-            {% if user.is_researcher %}
-                <p style="margin-bottom: 1rem;">You have researcher privileges.</p>
-                <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                    <a href="/admin/" style="display: inline-block; background-color: #27ae60; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none;">Admin Panel</a>
-                    <a href="{% url 'surveys:survey_list' %}" style="display: inline-block; background-color: #9b59b6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none;">Survey Management</a>
-                </div>
-            {% endif %}
+    /* ----- 3. Join the study ----- */
+    .join {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+    .join__visual {
+      position: relative;
+      min-height: 640px;
+      border-right: 1px solid var(--rule);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .join__visual img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      object-position: center;
+    }
+    .join__text {
+      padding: 60px;
+      max-width: 620px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .join__text p {
+      font-size: 15px;
+      line-height: 1.6;
+      color: var(--ink-muted);
+    }
+    .join__text p strong { color: var(--ink); font-weight: 600; }
+    .join__text p em { font-style: italic; }
+    .join__text ul {
+      margin: 4px 0;
+      padding-left: 20px;
+      color: var(--ink-muted);
+      font-size: 15px;
+      line-height: 1.6;
+      list-style: disc;
+    }
+    .join__text ul li { margin-bottom: 6px; }
+    .join__cta { margin-top: 32px; align-self: flex-start; }
+
+    /* ----- 4. About ----- */
+    .about {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      border-bottom: 1px solid var(--rule);
+    }
+    .goals {
+      border-right: 1px solid var(--rule);
+      padding: 48px 0 0 44px;
+    }
+    .goals__intro {
+      font-size: 14px;
+      line-height: 1.6;
+      color: var(--ink-muted);
+      padding: 0 60px 32px 44px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .goals__intro strong { color: var(--ink); font-weight: 600; }
+    .goal {
+      position: relative;
+      padding: 32px 60px 32px 44px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .goal:last-child { border-bottom: none; }
+    .goal__header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+    .goal__number { font-family: var(--font-body); font-size: 28px; font-weight: 400; }
+    .goal__marker { width: 14px; height: 14px; border-radius: 50%; background: var(--ink); }
+    .goal p { font-size: 14px; line-height: 1.6; color: var(--ink-muted); }
+
+    .people {
+      padding: 48px 44px 0 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .person {
+      padding: 0 44px 40px 60px;
+      border-bottom: 1px solid var(--rule);
+      margin-bottom: 40px;
+    }
+    .person:last-child { border-bottom: none; padding-bottom: 0; }
+    .person__head {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 24px;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .person__photo {
+      width: 140px;
+      height: 140px;
+      background: #222;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 28px;
+      color: var(--ink-muted);
+      font-weight: 400;
+    }
+    .person__name { font-family: var(--font-display); font-weight: 400; font-size: 30px; }
+    .person__title { font-size: 13px; color: var(--ink-muted); margin-bottom: 14px; line-height: 1.5; }
+    .person__bio { font-size: 13px; line-height: 1.6; color: var(--ink-muted); margin-bottom: 12px; }
+    .person__bio:last-child { margin-bottom: 0; }
+    .person__bio-more {
+      color: var(--ink-muted);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+    .person__bio-more:hover { color: var(--ink); }
+  </style>
+{% endblock %}
+
+{% block body %}
+  <section class="hero">
+    <img class="hero__bg" src="{% static 'images/hero-cloud.jpg' %}" alt="" />
+    <h2 class="hero__title">
+      Become a participant in the world's largest study to understand how we
+      create our inner world.
+    </h2>
+    <ul class="feature-list">
+      <li class="feature-list__item">
+        <span class="feature-list__dot"></span>Complete questionnaires and tasks.
+      </li>
+      <li class="feature-list__item">
+        <span class="feature-list__dot"></span>View detailed results.
+      </li>
+      <li class="feature-list__item">
+        <span class="feature-list__dot"></span>Learn about how you process the world around you.
+      </li>
+    </ul>
+  </section>
+
+  <h2 class="section-header">Join the study</h2>
+  <section class="join">
+    <div class="join__visual">
+      <img src="{% static 'images/join-cloud.jpg' %}" alt="" />
+    </div>
+    <div class="join__text">
+      <p>
+        <strong>Think about a pink elephant.</strong> Do you see it in your
+        mind's eye? We are all different in what we see in our mind's eye.
+        Mental imagery (imagining images, sounds, smells, etc.) varies
+        remarkably between people. Some people experience no imagery at all —
+        <em>aphantasia</em> — while others have imagery as vivid as real
+        perception — <em>hyperphantasia</em>. Most people fall somewhere in
+        between.
+      </p>
+      <p>
+        The Phantasia Research Hub is the most comprehensive and wide-ranging
+        research project examining these extremes of mental imagery. We aim to
+        understand how visual imagination interacts with broader cognitive
+        capacities — memory, creativity, and other mental processes — to shape
+        our inner experience. Our research investigates several related questions:
+      </p>
+      <ul>
+        <li>Are there subtypes of aphantasia and hyperphantasia, and, if so, what are their characteristics?</li>
+        <li>How do imagery extremes influence other areas of thinking?</li>
+        <li>How do imagery extremes interact with mental health?</li>
+      </ul>
+      <p>This Hub is a first step in answering those questions, and many more.</p>
+      <p>
+        Whatever you experience when thinking about a pink elephant, you can
+        contribute to the Phantasia Research Hub. We are the Edinburgh
+        University 'Eye's Mind' research team, and we look forward to working
+        with you as we advance our understanding of the human mind.
+      </p>
+      <a href="{% url 'account_signup' %}" class="btn btn--primary join__cta">Sign up</a>
+    </div>
+  </section>
+
+  <h2 id="about" class="section-header">
+    About<span class="section-header__sep">//</span>The Eye's Mind Study
+  </h2>
+  <section class="about">
+    <div class="goals">
+      <p class="goals__intro">
+        <strong>The Eye's Mind research group</strong> explores the basis of
+        mental imagery diversity and its role in people's lived experiences
+        and cultures. Our project builds upon our previous ground-breaking
+        work to examine imagery extremes in rich detail. We study links
+        between our brain, our mind, our experiences, science, and art.
+        <strong>We aim to address 3 main goals:</strong>
+      </p>
+      <ol>
+        <li class="goal">
+          <div class="goal__header">
+            <span class="goal__number">1</span>
+            <span class="goal__marker"></span>
+          </div>
+          <p>
+            Understand the cognitive profiles and experiences of people with
+            aphantasia and hyperphantasia. We know that aphantasic and
+            hyperphantasic people are not a monolith, and there are many
+            differences within each group. We want to understand whether
+            different kinds of aphantasia and hyperphantasia exist, and if so,
+            how these different kinds are alike and different.
+          </p>
+        </li>
+        <li class="goal">
+          <div class="goal__header">
+            <span class="goal__number">2</span>
+            <span class="goal__marker"></span>
+          </div>
+          <p>
+            Understand the relationships between mental imagery and other
+            psychological domains (i.e. memory, spatial navigation,
+            neurodiversity, mental health). We also wonder whether some of
+            these relationships are unique to aphantasia and hyperphantasia.
+          </p>
+        </li>
+        <li class="goal">
+          <div class="goal__header">
+            <span class="goal__number">3</span>
+            <span class="goal__marker"></span>
+          </div>
+          <p>
+            Identify which areas should be the priority for the next phase of
+            the international research community focused on imagery extremes.
+            Aphantasia and hyperphantasia have only been named in the last 10
+            years. They are both still drastically under-researched, but the
+            field is gaining more interest every year. Everything is still
+            left to be discovered, and this project will help us all know
+            which topics should be researched the most urgently.
+          </p>
+        </li>
+      </ol>
+    </div>
+
+    <div class="people">
+      <article class="person">
+        <div class="person__head">
+          <div class="person__photo">AZ</div>
+          <h3 class="person__name">Professor Adam Zeman</h3>
         </div>
-    {% else %}
-        <div style="text-align: center;">
-            <p style="font-size: 1.1rem; margin-bottom: 2rem;">
-                A platform for collecting participant data through surveys and research tasks.
-            </p>
+        <p class="person__title">
+          Professor of Cognitive and Behavioural Neurology at University of Exeter Medical School.
+        </p>
+        <p class="person__bio">
+          Professor Zeman trained in Medicine at Oxford University Medical
+          School, after a first degree in Philosophy and Psychology, then
+          worked as a consultant neurologist in Edinburgh, from 1996, and,
+          from 2005–2023, in Exeter, as Professor of Cognitive and Behavioural
+          Neurology. He is now based again in Edinburgh, working as an expert
+          witness, author and researcher.
+        </p>
+        <p class="person__bio">
+          His specialised clinical work is in cognitive and behavioural
+          neurology, including neurological disorders of sleep. His research
+          interests include amnesia …
+          <a href="#" class="person__bio-more">more</a>
+        </p>
+      </article>
 
-            <div style="display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;">
-                <a href="{% url 'account_signup' %}" style="display: inline-block; background-color: #3498db; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; font-weight: 500;">Register as Participant</a>
-                <a href="{% url 'account_login' %}" style="display: inline-block; background-color: #2c3e50; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; font-weight: 500;">Login</a>
-            </div>
+      <article class="person">
+        <div class="person__head">
+          <div class="person__photo">BD</div>
+          <h3 class="person__name">Dr Bérengère Digard</h3>
         </div>
-    {% endif %}
-</div>
+        <p class="person__title">
+          Postdoctoral research fellow at the Centre for Clinical Brain Sciences, University of Edinburgh.
+        </p>
+        <p class="person__bio">
+          Dr Digard studied Biology (BSc) and Neurosciences (MSc) at the
+          Université Claude Bernard Lyon 1, before completing a PhD in
+          Psychiatry at the University of Edinburgh under the supervision of
+          Prof. Sue Fletcher-Watson, Dr Andrew Stanfield, and Prof. Antonella
+          Sorace. Her research so far has focused on the cognitive profiles
+          and lived experiences of neurodiversity, in particular autism, with
+          her PhD thesis researching bilingualism in autism …
+          <a href="#" class="person__bio-more">more</a>
+        </p>
+      </article>
+    </div>
+  </section>
 {% endblock %}

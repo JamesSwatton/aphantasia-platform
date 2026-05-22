@@ -617,6 +617,53 @@ Fixed two critical bugs affecting question groups in surveys:
 
 ---
 
+## Session 17: Design System Port (May 2026)
+
+### CSS Design System Migration
+Ported the mockup design system into Django templates, replacing all inline styles with a shared stylesheet and consistent component classes.
+
+#### Design System (`static/css/styles.css`)
+- Copied `mockups/styles.css` verbatim as the shared stylesheet
+- Design tokens: `--bg-page`, `--bg-accent: #d8f24b` (lime-green), `--ink`, `--ink-muted`, `--ink-subtle`, `--rule`, `--font-display: "Quattrocento"`, `--font-body: "Helvetica"`, `--topbar-h: 72px`, `--page-padding-x: 44px`
+- Light/dark theme via `data-theme="dark"` on `<html>`
+- Components: topbar (sticky + static variants), footer, `.btn--primary`/`.btn--outline`, `.avatar`, `.section-label`, `.view-switch`, `.crest`
+
+#### `templates/base.html` (complete rewrite)
+- Quattrocento font loaded from Google Fonts
+- Topbar with sticky scroll-shadow behaviour (JS IIFE)
+- Authenticated state: Messages button + avatar initials; unauthenticated: Login + Sign up buttons
+- Extensible blocks: `html_attrs`, `viewport`, `topbar_class`, `topbar_nav`, `extra_head`, `body`, `extra_js`
+- Messages and account URLs use `#` placeholders pending view creation
+
+#### `templates/home.html` (complete rewrite)
+- Dark theme (`data-theme="dark"`), static topbar
+- Hero section with full-viewport background image
+- "Join the study" two-column section with image and copy
+- "About" section with research goals and researcher profiles
+- Hero images copied from `mockups/images/` to `static/images/`
+
+#### `templates/account/signup.html` (complete rewrite)
+- Two-column grid layout: left info panel, right signup form
+- Left column: switchable "Important Information" / "Consent Form" panels via `.view-switch`
+  - Important Information: verbatim text from mockup
+  - Consent Form: pulls live content from database via `{% get_active_consent_form %}`
+  - Scrolls internally (`position: absolute; inset: 0`) to match the form height
+- Right column: Name, Email, Password, Confirm password fields (no placeholders); single consent checkbox; submit disabled until consent ticked
+- Layout: form drives row height (`align-self: start`), left panel stretches to match
+
+#### `templates/account/login.html` (complete rewrite)
+- Same two-column grid structure as signup
+- Left column: brief brand/welcome copy, scrollable to match form height
+- Right column: Email, Password fields + Remember me checkbox + Log in button + forgot password link
+- Consistent field styles, custom checkbox, lime-green submit button
+
+#### `accounts/forms.py`
+- Added `name` field to `ParticipantSignupForm` (optional, splits into `first_name`/`last_name` on save)
+
+**Branch**: `feature-design-port`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

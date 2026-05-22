@@ -34,9 +34,11 @@ By checking the box below and creating an account, you acknowledge that you have
 
 
 class ParticipantSignupForm(SignupForm):
-    """
-    Custom signup form for participants that includes consent.
-    """
+    name = forms.CharField(
+        required=False,
+        max_length=150,
+        label="Name",
+    )
     consent = forms.BooleanField(
         required=True,
         label="I have read and agree to the research participation consent form",
@@ -62,9 +64,13 @@ class ParticipantSignupForm(SignupForm):
 
     def save(self, request):
         user = super().save(request)
-        # Store the consent text that was presented to the user
         user.consent_text = self.get_active_consent_form()
         user.is_participant = True
+        name = self.cleaned_data.get('name', '').strip()
+        if name:
+            parts = name.split(' ', 1)
+            user.first_name = parts[0]
+            user.last_name = parts[1] if len(parts) > 1 else ''
         user.save()
         return user
 
