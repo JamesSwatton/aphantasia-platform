@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from surveys.models import Survey, ParticipantResponse
 from tasks.models import LabTask, TaskSubmission
+from core.models import Domain
 
 
 @login_required
@@ -87,11 +88,20 @@ def participant_dashboard(request):
         else:
             available_tasks.append(task_data)
 
+    all_items = available_surveys + available_tasks + completed_surveys + completed_tasks
+    total_count = len(all_items)
+    completed_count = len(completed_surveys) + len(completed_tasks)
+
+    domains = Domain.objects.all()
+
     context = {
         'available_surveys': available_surveys,
         'completed_surveys': completed_surveys,
         'available_tasks': available_tasks,
         'completed_tasks': completed_tasks,
+        'domains': domains,
+        'total_count': total_count,
+        'completed_count': completed_count,
     }
 
     return render(request, 'dashboard/participant_dashboard.html', context)

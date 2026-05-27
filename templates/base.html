@@ -12,19 +12,26 @@
     {% block extra_head %}{% endblock %}
   </head>
   <body>
+    {% block header %}
     <header class="topbar {% block topbar_class %}{% endblock %}">
       <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
       <nav class="topbar__actions">
         {% block topbar_nav %}
           {% if user.is_authenticated %}
-            <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">
-              Messages
-              {# TODO: wire to core:messages URL once view exists #}
-            </a>
-            <a href="#" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
-              {# TODO: wire to accounts:account URL once view exists #}
+            {% if not user.is_staff and not user.is_researcher %}
+              <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">
+                Messages
+                {# TODO: wire to core:messages URL once view exists #}
+              </a>
+            {% endif %}
+            <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}#{% endif %}"
+               class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
               {{ user.get_full_name|default:user.email|slice:":2"|upper }}
             </a>
+            <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+              {% csrf_token %}
+              <button type="submit" class="btn btn--outline">Log out</button>
+            </form>
           {% else %}
             <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
             <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
@@ -32,17 +39,19 @@
         {% endblock %}
       </nav>
     </header>
+    {% endblock %}
 
-    {% if messages %}
-      <div style="padding: 0 var(--page-padding-x);">
-        {% for message in messages %}
-          <div class="alert alert--{{ message.tags }}" role="alert">{{ message }}</div>
-        {% endfor %}
-      </div>
-    {% endif %}
+    {% block flash_messages %}
+    {% for message in messages %}
+      {% if message.tags != 'success' %}
+        <div class="alert alert--{{ message.tags }}" role="alert">{{ message }}</div>
+      {% endif %}
+    {% endfor %}
+    {% endblock %}
 
     {% block body %}{% endblock %}
 
+    {% block footer %}
     <footer class="footer">
       <div class="crest">
         <div class="crest__mark">UoE</div>
@@ -52,6 +61,7 @@
         </div>
       </div>
     </footer>
+    {% endblock %}
 
     <script>
       (function () {

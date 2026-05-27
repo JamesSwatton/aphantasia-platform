@@ -664,6 +664,43 @@ Ported the mockup design system into Django templates, replacing all inline styl
 
 ---
 
+## Session 18: Participant Dashboard & Survey Management Port (May 2026)
+
+### Participant Dashboard (`templates/dashboard/participant_dashboard.html`)
+Complete rewrite matching the `mockups/index.html` design:
+- Two-column CSS grid (360px sidebar + 1fr main) with column separator rule
+- Topbar placed inside the grid (suppresses base.html header/footer blocks)
+- **Sidebar INFO panel**: static blurb about the Hub and how to navigate it
+- **Sidebar DOMAINS panel**: lists all `Domain` objects from the database with uppercase links
+- **Main area**: "QUESTIONNAIRES & TASKS" section label + completed/total counter
+- Unified task cards for surveys and lab tasks — available items first, completed items below a "COMPLETED" divider at reduced opacity
+- Task card variants: blue indicator dot (default), red/warn dot (priority), hollow dot (completed)
+- Empty state when no surveys or tasks are assigned
+- JS sidebar panel switcher (INFO ↔ DOMAINS)
+
+### Survey Management (`templates/surveys/survey_list.html`)
+Complete rewrite matching the dashboard layout and design language:
+- Same two-column grid as the participant dashboard for visual consistency
+- **Sidebar INFO panel**: researcher-facing instructions
+- **Sidebar DOMAINS panel**: domain links replace the old dropdown filter; active domain gets bold/italic/filled-dot treatment; auto-opens to Domains panel when a filter is active
+- **Survey cards**: title + description + action buttons (Preview & Test, Edit) on the left; status pills + meta info (domain, question count, scale) in the narrow right column
+- Priority pill uses `var(--warn)` red — consistent with the priority indicator dot on the participant dashboard
+- "New Survey" button in the section header row
+- Empty state with create prompt
+
+### Navigation & UX fixes
+- **Login redirect**: `LOGIN_REDIRECT_URL` changed from `/` to `/dashboard/` — participants land on the dashboard after signing in (researchers are redirected onward to `/surveys/` by the dashboard view)
+- **Logout button**: added to all topbars (base, dashboard, survey list) using a POST form to `account_logout`
+- **Home page topbar**: auth-aware — shows "Dashboard · Log out" when signed in, "Login · Sign up" when not
+- **Flash messages**: success alerts (login/logout confirmations) suppressed — the button state already communicates this; errors and warnings still shown
+- **Researcher topbar**: Messages button hidden for staff/researchers (participants keep it); avatar links to `/admin/` for staff/researchers, `#` placeholder for participants
+- **base.html**: added `{% block header %}`, `{% block flash_messages %}`, `{% block footer %}` wrappers so grid-layout pages (dashboard, survey list) can suppress them and own their full layout
+- **`static/css/styles.css`**: added `.alert` / `.alert--success/error/warning/info` styles for Django flash messages
+
+**Branch**: `feature-design-port`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

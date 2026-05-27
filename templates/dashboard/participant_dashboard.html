@@ -1,219 +1,443 @@
 {% extends "base.html" %}
+{% load static %}
+{% block title %}Dashboard — Phantasia Research Hub{% endblock %}
+{% block extra_head %}
+    <style>
+  /* =========================================================================
+     Page-specific styles for the participant dashboard.
+     Shared components (.topbar, .footer, .btn, .view-switch, .section-label,
+     .avatar, .crest, etc.) live in static/css/styles.css.
 
-{% block title %}My Dashboard - Research Platform{% endblock %}
+     Sections:
+       1. Page grid layout (rows + columns + section placements)
+       2. Sidebar panels (info / domains)
+       3. Task list
+       4. Task card
+     ========================================================================= */
 
-{% block content %}
-<div class="card">
-    <h1 style="margin-bottom: 2rem; color: #2c3e50;">Participant Dashboard</h1>
+  /* ----- 1. Page grid -----
+     Columns:  sidebar (360px)  |  main (1fr)
+     Rows:
+       1  topbar                       (auto, spans both cols)
+       2  switcher / section label     (auto)
+       3  spacer                       (64px)
+       4  list                         (auto)
+  */
 
-    <div style="margin-bottom: 1rem;">
-        <p style="color: #666; font-size: 1rem;">
-            Welcome, <strong>{{ user.email }}</strong>! Here you can view and complete available surveys and tasks.
-        </p>
-    </div>
+  .page {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto auto var(--content-spacing) auto;
+  }
 
-    <!-- Available Surveys Section -->
-    <div style="margin-bottom: 3rem;">
-        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #3498db;">
-            Available Surveys
-        </h2>
+  .page > .topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
 
-        {% if available_surveys %}
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                {% for item in available_surveys %}
-                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #fafafa;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.survey.title }}</h3>
-                                <p style="color: #666; margin-bottom: 1rem;">{{ item.survey.description }}</p>
+  .page > .view-switch {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+  }
 
-                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                    {% if item.survey.domain %}
-                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                            {{ item.survey.domain.name }}
-                                        </span>
-                                    {% endif %}
+  .page__tasks-header {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .page__tasks-counter {
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--ink-muted);
+  }
 
-                                    <span style="background-color: #e3f2fd; color: #1565c0; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                        {{ item.total_questions }} question{{ item.total_questions|pluralize }}
-                                    </span>
+  .page__sidebar {
+    grid-column: 1;
+    grid-row: 4;
+    padding: 0 var(--page-padding-x);
+  }
+  .page__main {
+    grid-column: 2;
+    grid-row: 4;
+  }
 
-                                    <span style="background-color: #f3e5f5; color: #6a1b9a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                        Scale: {{ item.survey.min_value }}-{{ item.survey.max_value }}
-                                    </span>
-                                </div>
-                            </div>
+  /* Column separator running from row 2 down through the lists */
+  .page::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 2 / -1;
+    border-right: 1px solid var(--rule);
+    pointer-events: none;
+  }
 
-                            <div>
-                                <a href="{% url 'surveys:survey_take' item.survey.pk %}"
-                                   style="display: inline-block; background-color: #3498db; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
-                                    Start Survey
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+  /* ----- 2. Sidebar panels (info / domains) ----- */
+
+  .sidebar-panel {
+    display: none;
+  }
+  .sidebar-panel.is-active {
+    display: block;
+  }
+
+  .info-content {
+    padding: 0 0 40px;
+  }
+  .info-content h3 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    margin-bottom: 12px;
+    letter-spacing: -0.01em;
+  }
+  .info-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+  .info-content p:last-child {
+    margin-bottom: 0;
+  }
+
+  .domain-list__item {
+    border-bottom: 1px solid var(--rule);
+  }
+  .domain-list__link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    text-transform: uppercase;
+  }
+  .domain-list__link:hover {
+    color: var(--ink-muted);
+  }
+  .domain-list__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    flex-shrink: 0;
+    transform: translateY(-1px);
+  }
+
+  /* ----- 3. Task list ----- */
+
+  .task-list {
+    padding: 0 var(--page-padding-x) 80px;
+  }
+
+  .task-list-items {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 680px;
+  }
+
+  .section-divider {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin: 32px 0 16px;
+  }
+  .section-divider:first-child {
+    margin-top: 0;
+  }
+
+  /* ----- 4. Task card ----- */
+
+  .task-card {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 24px 32px;
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .task-card:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+  }
+  .task-card:focus-visible {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+
+  .task-card--done {
+    opacity: 0.6;
+  }
+
+  .task-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    min-width: 0;
+  }
+  .task-card__head {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+  .task-card__indicator {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--blue);
+    flex-shrink: 0;
+  }
+  .task-card--priority .task-card__indicator {
+    background: var(--warn);
+  }
+  .task-card--done .task-card__indicator {
+    background: transparent;
+    border: 1.5px solid var(--ink-subtle);
+  }
+  .task-card__title {
+    font-size: 16px;
+    font-weight: 700;
+  }
+  .task-card__desc {
+    font-size: 14px;
+    line-height: 1.55;
+    color: var(--ink-muted);
+    max-width: 62ch;
+  }
+  .task-card__meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding-left: 32px;
+    border-left: 1px solid var(--rule-soft);
+    font-size: 13px;
+    color: var(--ink-muted);
+    min-width: 120px;
+  }
+
+  .empty-state {
+    padding: 60px 0;
+    font-size: 14px;
+    color: var(--ink-subtle);
+    max-width: 680px;
+  }
+    </style>
+{% endblock %}
+{% block header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block footer %}{% endblock %}
+{% block body %}
+    <div class="page">
+        <!-- Row 1: topbar (from base.html — re-declared here to sit in grid row 1) -->
+        <header class="topbar">
+            <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+            <nav class="topbar__actions">
+                <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">Messages</a>
+                <a href="#" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
+                    {{ user.get_full_name|default:user.email|slice:":2"|upper }}
+                </a>
+                <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn--outline">Log out</button>
+                </form>
+            </nav>
+        </header>
+        <!-- Row 2: view switcher (sidebar column) -->
+        <nav class="view-switch" aria-label="Sidebar view">
+            <ul>
+                <li>
+                    <a href="#" aria-current="true">INFO</a>
+                </li>
+                <li>
+                    <a href="#">DOMAINS</a>
+                </li>
+            </ul>
+        </nav>
+        <!-- Row 2: section header (main column) -->
+        <div class="page__tasks-header">
+            <h2 class="section-label">QUESTIONNAIRES &amp; TASKS</h2>
+            <span class="page__tasks-counter">{{ completed_count }} / {{ total_count }}</span>
+        </div>
+        <!-- Row 4: sidebar -->
+        <aside class="page__sidebar">
+            <!-- Info panel -->
+            <div class="sidebar-panel is-active" data-panel="info">
+                <div class="info-content">
+                    <p>
+                        The Phantasia Research Hub is organised into different domains,
+                        each exploring a specific aspect of cognition and how it relates
+                        to mental imagery.
+                    </p>
+                    <p>
+                        You're free to complete measures in any order. Start with
+                        whichever domain interests you most, or work through the
+                        available questionnaires and tasks at your own pace.
+                    </p>
+                    <p>
+                        Each measure takes between 1 and 10 minutes on average.
+                        Your progress is saved automatically, so you can pause
+                        and return at any time.
+                    </p>
+                </div>
             </div>
-        {% else %}
-            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
-                No new surveys available at this time. Check back later!
-            </p>
-        {% endif %}
-    </div>
-
-    <!-- Completed Surveys Section -->
-    <div style="margin-bottom: 3rem;">
-        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #27ae60;">
-            Completed Surveys
-        </h2>
-
-        {% if completed_surveys %}
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                {% for item in completed_surveys %}
-                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #f9f9f9;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.survey.title }}</h3>
-                                <p style="color: #666; margin-bottom: 1rem;">{{ item.survey.description }}</p>
-
-                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                    <span style="background-color: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                        ✓ Completed
-                                    </span>
-
-                                    {% if item.survey.domain %}
-                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                            {{ item.survey.domain.name }}
-                                        </span>
-                                    {% endif %}
-
-                                    <span style="color: #666; font-size: 0.875rem;">
-                                        {{ item.response_count }} of {{ item.total_questions }} question{{ item.total_questions|pluralize }} answered
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <a href="{% url 'surveys:survey_take' item.survey.pk %}"
-                                   style="display: inline-block; background-color: #95a5a6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
-                                    View/Edit
-                                </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+            <!-- Domains panel -->
+            <div class="sidebar-panel" data-panel="domains">
+                <ul class="domain-list">
+                    {% for domain in domains %}
+                        <li class="domain-list__item">
+                            <a class="domain-list__link" href="#">
+                                <span class="domain-list__dot"></span>{{ domain.name }}
+                            </a>
+                        </li>
+                    {% empty %}
+                        <li class="domain-list__item"
+                            style="padding: 18px 0;
+                                   font-size: 14px;
+                                   color: var(--ink-subtle)">No domains yet.</li>
+                    {% endfor %}
+                </ul>
             </div>
-        {% else %}
-            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
-                You haven't completed any surveys yet.
-            </p>
-        {% endif %}
-    </div>
-
-    <!-- Available Tasks Section -->
-    <div style="margin-bottom: 3rem;">
-        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #9b59b6;">
-            Available Tasks
-        </h2>
-
-        {% if available_tasks %}
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                {% for item in available_tasks %}
-                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #fafafa;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.task.title }}</h3>
-                                <p style="color: #666; margin-bottom: 1rem;">{{ item.task.description }}</p>
-
-                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                    {% if item.task.domain %}
-                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                            {{ item.task.domain.name }}
-                                        </span>
-                                    {% endif %}
-
-                                    {% if item.task.time_limit_minutes %}
-                                        <span style="background-color: #fff3cd; color: #856404; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                            ⏱️ {{ item.task.time_limit_minutes }} min
-                                        </span>
-                                    {% endif %}
-
-                                    <span style="background-color: #e1bee7; color: #6a1b9a; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                        Lab Task
-                                    </span>
-                                </div>
-                            </div>
-
-                            <div>
-                                <a href="{% url 'tasks:task_run' item.task.pk %}"
-                                   style="display: inline-block; background-color: #9b59b6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
-                                    Start Task
+        </aside>
+        <!-- Row 4: main task/survey list -->
+        <section class="page__main">
+            <div class="task-list">
+                <div class="task-list-items">
+                    {% if available_surveys or available_tasks %}
+                        {% if available_surveys %}
+                            {% for item in available_surveys %}
+                                <a class="task-card {% if item.survey.is_priority %}task-card--priority{% endif %}"
+                                   href="{% url 'surveys:survey_take' item.survey.pk %}">
+                                    <div class="task-card__body">
+                                        <div class="task-card__head">
+                                            <span class="task-card__indicator"></span>
+                                            <h3 class="task-card__title">{{ item.survey.title }}</h3>
+                                        </div>
+                                        {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description }}</p>{% endif %}
+                                    </div>
+                                    <div class="task-card__meta">
+                                        {% if item.total_questions %}
+                                            <span>{{ item.total_questions }} question{{ item.total_questions|pluralize }}</span>
+                                        {% endif %}
+                                        {% if item.survey.domain %}<span>{{ item.survey.domain.name }}</span>{% endif %}
+                                    </div>
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        {% else %}
-            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
-                No new tasks available at this time. Check back later!
-            </p>
-        {% endif %}
-    </div>
-
-    <!-- Completed Tasks Section -->
-    <div>
-        <h2 style="color: #2c3e50; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #e67e22;">
-            Completed Tasks
-        </h2>
-
-        {% if completed_tasks %}
-            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                {% for item in completed_tasks %}
-                    <div style="border: 1px solid #ddd; border-radius: 8px; padding: 1.5rem; background-color: #f9f9f9;">
-                        <div style="display: flex; justify-content: space-between; align-items: start; gap: 1rem;">
-                            <div style="flex: 1;">
-                                <h3 style="margin-bottom: 0.5rem; color: #2c3e50;">{{ item.task.title }}</h3>
-                                <p style="color: #666; margin-bottom: 1rem;">{{ item.task.description }}</p>
-
-                                <div style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
-                                    <span style="background-color: #d4edda; color: #155724; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                        ✓ Completed
-                                    </span>
-
-                                    {% if item.task.domain %}
-                                        <span style="background-color: #d1ecf1; color: #0c5460; padding: 0.25rem 0.75rem; border-radius: 4px; font-size: 0.875rem;">
-                                            {{ item.task.domain.name }}
-                                        </span>
-                                    {% endif %}
-
-                                    {% if item.submission.completed_at %}
-                                        <span style="color: #666; font-size: 0.875rem;">
-                                            Completed {{ item.submission.completed_at|date:"M d, Y" }}
-                                        </span>
-                                    {% endif %}
-                                </div>
-                            </div>
-
-                            <div>
-                                <a href="{% url 'tasks:task_run' item.task.pk %}"
-                                   style="display: inline-block; background-color: #95a5a6; color: white; padding: 0.75rem 1.5rem; border-radius: 4px; text-decoration: none; white-space: nowrap;">
-                                    Retake
+                            {% endfor %}
+                        {% endif %}
+                        {% if available_tasks %}
+                            {% for item in available_tasks %}
+                                <a class="task-card {% if item.task.is_priority %}task-card--priority{% endif %}"
+                                   href="{% url 'tasks:task_run' item.task.pk %}">
+                                    <div class="task-card__body">
+                                        <div class="task-card__head">
+                                            <span class="task-card__indicator"></span>
+                                            <h3 class="task-card__title">{{ item.task.title }}</h3>
+                                        </div>
+                                        {% if item.task.description %}<p class="task-card__desc">{{ item.task.description }}</p>{% endif %}
+                                    </div>
+                                    <div class="task-card__meta">
+                                        {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}
+                                        {% if item.task.domain %}<span>{{ item.task.domain.name }}</span>{% endif %}
+                                        <span>Lab task</span>
+                                    </div>
                                 </a>
-                            </div>
-                        </div>
-                    </div>
-                {% endfor %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                    {% if completed_surveys or completed_tasks %}
+                        <p class="section-divider">Completed</p>
+                        {% for item in completed_surveys %}
+                            <a class="task-card task-card--done"
+                               href="{% url 'surveys:survey_take' item.survey.pk %}">
+                                <div class="task-card__body">
+                                    <div class="task-card__head">
+                                        <span class="task-card__indicator"></span>
+                                        <h3 class="task-card__title">{{ item.survey.title }}</h3>
+                                    </div>
+                                    {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description }}</p>{% endif %}
+                                </div>
+                                <div class="task-card__meta">
+                                    {% if item.total_questions %}
+                                        <span>{{ item.total_questions }} question{{ item.total_questions|pluralize }}</span>
+                                    {% endif %}
+                                    {% if item.survey.domain %}<span>{{ item.survey.domain.name }}</span>{% endif %}
+                                    <span>Completed</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                        {% for item in completed_tasks %}
+                            <a class="task-card task-card--done"
+                               href="{% url 'tasks:task_run' item.task.pk %}">
+                                <div class="task-card__body">
+                                    <div class="task-card__head">
+                                        <span class="task-card__indicator"></span>
+                                        <h3 class="task-card__title">{{ item.task.title }}</h3>
+                                    </div>
+                                    {% if item.task.description %}<p class="task-card__desc">{{ item.task.description }}</p>{% endif %}
+                                </div>
+                                <div class="task-card__meta">
+                                    {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}
+                                    {% if item.task.domain %}<span>{{ item.task.domain.name }}</span>{% endif %}
+                                    <span>Completed</span>
+                                </div>
+                            </a>
+                        {% endfor %}
+                    {% endif %}
+                    {% if not available_surveys and not available_tasks and not completed_surveys and not completed_tasks %}
+                        <p class="empty-state">No questionnaires or tasks have been assigned yet. Check back soon.</p>
+                    {% endif %}
+                </div>
             </div>
-        {% else %}
-            <p style="text-align: center; color: #666; padding: 2rem; background-color: #f9f9f9; border-radius: 8px;">
-                You haven't completed any tasks yet.
-            </p>
-        {% endif %}
+        </section>
     </div>
-</div>
+    <footer class="footer">
+        <div class="crest">
+            <div class="crest__mark">UoE</div>
+            <div class="crest__text">
+                THE UNIVERSITY
+                <em>of EDINBURGH</em>
+            </div>
+        </div>
+    </footer>
+{% endblock %}
+{% block extra_js %}
+    <script>
+  (function () {
+    const panels = document.querySelectorAll(".sidebar-panel");
+    const navLinks = document.querySelectorAll(".view-switch a");
 
-<div style="margin-top: 1rem; text-align: center;">
-    <a href="/" style="color: #3498db; text-decoration: none;">← Back to Home</a>
-</div>
+    navLinks.forEach(function (link) {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        const target = link.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
+        panels.forEach(function (panel) {
+          panel.classList.toggle("is-active", panel.dataset.panel === target);
+        });
+        navLinks.forEach(function (a) {
+          const aTarget = a.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
+          if (aTarget === target) {
+            a.setAttribute("aria-current", "true");
+          } else {
+            a.removeAttribute("aria-current");
+          }
+        });
+      });
+    });
+  })();
+    </script>
 {% endblock %}
