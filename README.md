@@ -701,6 +701,51 @@ Complete rewrite matching the dashboard layout and design language:
 
 ---
 
+## Session 19: Survey Detail Design Port (June 2026)
+
+### `templates/surveys/survey_detail.html` (complete rewrite)
+Ported the survey detail/take page to the design system, matching the two-column grid layout used by the dashboard and survey list pages.
+
+#### Layout
+- Two-column CSS grid (360px sidebar + 1fr main), identical skeleton to dashboard/survey list
+- Topbar placed inside the grid (suppresses base.html header/footer blocks)
+- Sticky progress readout (answered / total) below topbar
+- Topbar progress fill bar (2px blue line on bottom edge, grows as questions are answered)
+- Sidebar INFO panel: survey description, domain, "How to answer" bullet list
+
+#### Question rendering
+- **Grouped Likert questions**: rendered as a single matrix card — group number as `q-num`, optional group title as `q-title`, radio buttons in a `<table class="matrix">` with `table-layout: fixed` and 44% first column for question stems
+- **Standalone (ungrouped) Likert questions**: rendered as `<table class="matrix matrix--standalone">` with no question-text column; `table-layout: fixed` retained so columns stay evenly distributed across all scale sizes
+- **Multiple choice** (single and multi): `.choice-list` fieldset with `.choice` rows
+- **Free text**: `.q-textarea`
+- **Dropdown** (year, month, country): `.q-select` with custom SVG arrow
+- Preview/test mode banner, existing-responses notice, test response table (with RC/Auto badges) all retained and restyled
+
+#### Banners and modals
+- Preview mode banner (warn colour) and existing-responses notice (blue)
+- Completion modal: shown server-side via `submitted=True` context var; `is-open` class triggers CSS transition; Escape + backdrop click dismiss it
+
+#### JS
+- Progress counter scans `[data-question-id]` elements (matrix rows for grouped, cards for ungrouped), excluding `.conditional-disabled` cards
+- Conditional disable: greys out next N cards when trigger answer doesn't match `trigger_value` (behaviour unchanged from pre-port)
+- Topbar scroll shadow
+- Modal open/close
+
+#### Bug fixes during port
+- `{% url 'home' %}` → `{% url 'core:home' %}` in template; `redirect('core:home')` in `surveys/views.py`
+- Multi-line `{# #}` Django comment rendered as literal text — collapsed to single-line comments
+- Multi-line `{% if %}` blocks inside HTML opening tags — collapsed to single lines
+- `survey_take` success path changed from redirect to re-render with `submitted=True` so the completion modal fires
+- Standalone Likert offset: removed sr-only first column (was claiming 44% width under `table-layout: fixed`)
+- `.matrix--standalone th:first-child` overrides inherited `width: 44%` / `text-align: left`
+
+#### TODO (next session)
+- **Conditional question rendering**: current implementation greys out controlled cards (`conditional-disabled`). The mockup uses a different pattern — the trigger question is a pill-button gate and controlled questions live **inside the same card** in a `.branch` div that slides open/closed with a left vertical rule. This needs a design decision on whether to change the data model (nest controlled questions) or group them in the view. See `memory/feedback_conditional_questions.md` for full context.
+
+**Branch**: `feature-design-port`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

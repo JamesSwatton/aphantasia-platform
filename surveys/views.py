@@ -396,7 +396,7 @@ def survey_take(request, pk):
     # Check if survey is active
     if not survey.is_active:
         messages.error(request, "This survey is not currently active.")
-        return redirect('home')
+        return redirect('core:home')
 
     # Get all questions and groups for this survey
     questions = list(survey.questions.all())
@@ -557,18 +557,21 @@ def survey_take(request, pk):
                             defaults={'answer': answer_value}
                         )
 
-            messages.success(
-                request,
-                f"Thank you! Your responses to '{survey.title}' have been recorded."
-            )
-            return redirect('home')
+            context = {
+                'survey': survey,
+                'questions': questions,
+                'grouped_questions': grouped_questions,
+                'is_preview': False,
+                'has_existing_responses': True,
+                'submitted': True,
+            }
+            return render(request, 'surveys/survey_detail.html', context)
 
     context = {
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
         'is_preview': False,
-        'test_mode': False,
         'has_existing_responses': existing_responses,
     }
 

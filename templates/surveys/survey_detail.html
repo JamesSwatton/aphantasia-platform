@@ -1,555 +1,1162 @@
 {% extends "base.html" %}
-{% block title %}{{ survey.title }} - Research Platform{% endblock %}
-{% block extra_css %}
-    <style>
-    .survey-form {
-        max-width: 900px;
-        margin: 0 auto;
-    }
+{% load static %}
 
-    .question-container {
-        background-color: #fafafa;
-        border: 1px solid #e0e0e0;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        transition: opacity 0.3s ease, background-color 0.3s ease;
-    }
+{% block title %}{{ survey.title }} — Phantasia Research Hub{% endblock %}
 
-    .question-container.conditional-disabled {
-        opacity: 0.5;
-        background-color: #f5f5f5;
-        pointer-events: none;
-    }
+{% block header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block footer %}{% endblock %}
 
-    .conditional-instruction {
-        font-size: 0.9rem;
-        color: #666;
-        font-style: italic;
-        margin-top: 0.5rem;
-        padding: 0.5rem;
-        background-color: #e3f2fd;
-        border-left: 3px solid #2196f3;
-        border-radius: 4px;
-    }
+{% block extra_head %}
+<style>
 
-    .question-text {
-        font-size: 1.1rem;
-        color: #2c3e50;
-        margin-bottom: 1rem;
-        font-weight: 500;
-    }
+  /* =========================================================================
+     Page grid — identical skeleton to dashboard / survey list.
+     Columns:  sidebar (360px) | main (1fr)
+     Rows:
+       1  topbar               (auto, spans both cols)
+       2  switcher / header    (auto)
+       3  spacer               (64px)
+       4  content              (auto)
+     ========================================================================= */
 
-    .likert-scale {
-        display: flex;
-        justify-content: space-between;
-        align-items: start;
-        gap: 0.5rem;
-        margin-top: 1rem;
-    }
+  .page {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto auto var(--content-spacing) auto;
+  }
 
-    .likert-option {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        flex: 1;
-    }
+  .page > .topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
 
-    .likert-option input[type="radio"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        margin-bottom: 0.25rem;
-    }
+  /* Progress fill sits on the topbar's bottom edge, grows as questions are answered. */
+  .topbar__progress {
+    position: absolute;
+    left: 0;
+    bottom: -1px;
+    height: 2px;
+    width: 100%;
+    background: transparent;
+    pointer-events: none;
+  }
+  .topbar__progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--blue);
+    transition: width 0.25s ease;
+  }
 
-    .likert-option label {
-        font-size: 0.875rem;
-        color: #666;
-        cursor: pointer;
-        text-align: center;
-    }
+  .page > .view-switch {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+  }
 
-    .likert-label {
-        font-size: 0.75rem;
-        color: #888;
-        margin-top: 0.25rem;
-        text-align: center;
-        max-width: 100px;
-        word-wrap: break-word;
-    }
+  .page__survey-header {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+  }
 
-    .multiple-choice-options {
-        display: flex;
-        flex-direction: column;
-        gap: 0.75rem;
-        margin-top: 1rem;
-    }
+  .page__sidebar {
+    grid-column: 1;
+    grid-row: 4;
+    padding: 0 var(--page-padding-x);
+  }
 
-    .multiple-choice-option {
-        display: flex;
-        align-items: center;
-        padding: 0.75rem;
-        background-color: white;
-        border: 2px solid #e0e0e0;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: all 0.2s;
-    }
+  .page__main {
+    grid-column: 2;
+    grid-row: 4;
+    padding: 0 var(--page-padding-x) 80px;
+    max-width: 860px;
+  }
 
-    .multiple-choice-option:hover {
-        border-color: #3498db;
-        background-color: #f8f9fa;
-    }
+  /* Column separator from row 2 to end */
+  .page::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 2 / -1;
+    border-right: 1px solid var(--rule);
+    pointer-events: none;
+  }
 
-    .multiple-choice-option input[type="checkbox"] {
-        width: 20px;
-        height: 20px;
-        cursor: pointer;
-        margin-right: 0.75rem;
-    }
+  /* =========================================================================
+     Sidebar
+     ========================================================================= */
 
-    .multiple-choice-option label {
-        cursor: pointer;
-        flex: 1;
-        font-size: 1rem;
-        color: #2c3e50;
-    }
+  .info-content {
+    padding: 0 0 40px;
+  }
+  .info-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+  .info-content p:last-child {
+    margin-bottom: 0;
+  }
 
-    .scale-labels {
-        display: flex;
-        justify-content: space-between;
-        margin-top: 0.5rem;
-        font-size: 0.875rem;
-        color: #666;
-        font-style: italic;
-    }
+  .info-block {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule);
+  }
+  .info-block .section-label {
+    margin-bottom: 14px;
+  }
+  .info-block li {
+    position: relative;
+    padding-left: 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 10px;
+  }
+  .info-block li:last-child { margin-bottom: 0; }
+  .info-block li::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 8px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--ink);
+  }
 
-    .required-indicator {
-        color: #e74c3c;
-        margin-left: 0.25rem;
-    }
+  /* =========================================================================
+     Progress readout (sticky below topbar)
+     ========================================================================= */
 
-    .preview-banner {
-        background-color: #fff3cd;
-        border: 2px solid #ffc107;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        text-align: center;
-        color: #856404;
-        font-weight: 500;
-    }
+  .survey-progress-readout {
+    position: sticky;
+    top: calc(var(--topbar-h) + 1px);
+    z-index: 5;
+    width: fit-content;
+    margin-left: auto;
+    padding: 6px 0 14px 16px;
+    font-size: 14px;
+    letter-spacing: 0.02em;
+    color: var(--ink-muted);
+    background: var(--bg-page);
+    font-variant-numeric: tabular-nums;
+  }
 
-    .preview-test-banner {
-        background-color: #fff3cd;
-        border: 2px solid #ffc107;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-bottom: 1.5rem;
-        color: #856404;
-        font-weight: 500;
-    }
+  /* =========================================================================
+     Banners (preview mode, existing responses notice)
+     ========================================================================= */
 
-    .submit-button {
-        background-color: #3498db;
-        color: white;
-        padding: 0.75rem 2rem;
-        border: none;
-        border-radius: 4px;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: background-color 0.2s;
-    }
+  .survey-banner {
+    padding: 14px 18px;
+    border-radius: var(--radius-card);
+    margin-bottom: 16px;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  .survey-banner--warn {
+    background: color-mix(in srgb, var(--warn) 10%, var(--bg-page));
+    border: 1px solid color-mix(in srgb, var(--warn) 35%, transparent);
+  }
+  .survey-banner--info {
+    background: color-mix(in srgb, var(--blue) 10%, var(--bg-page));
+    border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
+  }
 
-    .submit-button:hover {
-        background-color: #2980b9;
-    }
+  /* =========================================================================
+     Test response table (shown after researcher test submission)
+     ========================================================================= */
 
-    .submit-button:disabled {
-        background-color: #95a5a6;
-        cursor: not-allowed;
-    }
+  .test-result {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .test-result__heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 16px;
+    color: var(--ink);
+  }
+  .test-result__table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+  }
+  .test-result__table th {
+    text-align: left;
+    padding: 6px 10px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    border-bottom: 1px solid var(--rule);
+  }
+  .test-result__table td {
+    padding: 10px 10px;
+    border-bottom: 1px solid var(--rule-soft);
+    color: var(--ink);
+    vertical-align: top;
+  }
+  .test-result__table tr:last-child td { border-bottom: none; }
+  .test-result__table tr.is-autofill td { opacity: 0.6; }
+  .test-result__val { font-weight: 600; }
+  .badge--rc {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--warn);
+    border: 1px solid var(--warn);
+    border-radius: 3px;
+    padding: 1px 4px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
+  .badge--auto {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    color: var(--blue);
+    border: 1px solid var(--blue);
+    border-radius: 3px;
+    padding: 1px 4px;
+    vertical-align: middle;
+    margin-left: 4px;
+  }
 
-    .test-response-container {
-        background-color: #e8f5e9;
-        border: 2px solid #4caf50;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-    }
+  /* =========================================================================
+     Question cards
+     ========================================================================= */
 
-    .test-response-header {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: #2e7d32;
-        margin-bottom: 1rem;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
+  .q-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 28px 32px;
+    margin-bottom: 16px;
+  }
 
-    .test-response-table {
-        width: 100%;
-        background-color: white;
-        border-radius: 4px;
-        overflow: hidden;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+  .q-num {
+    font-family: var(--font-display);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    color: var(--ink-subtle);
+    margin-bottom: 6px;
+  }
+  .q-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 20px;
+    letter-spacing: -0.01em;
+    line-height: 1.3;
+  }
+  .q-instruction {
+    font-size: 14px;
+    color: var(--ink-muted);
+    margin-top: 8px;
+    font-style: italic;
+  }
 
-    .test-response-table th {
-        background-color: #f5f5f5;
-        padding: 0.75rem;
-        text-align: left;
-        font-weight: 600;
-        color: #333;
-        border-bottom: 2px solid #ddd;
-    }
+  /* Conditional-disabled: grey out cards that are gated off */
+  .q-card.conditional-disabled {
+    opacity: 0.4;
+    pointer-events: none;
+    transition: opacity 0.25s ease;
+  }
 
-    .test-response-table td {
-        padding: 0.75rem;
-        border-bottom: 1px solid #eee;
-        color: #555;
-    }
+  /* =========================================================================
+     Likert — standalone horizontal row
+     ========================================================================= */
 
-    .test-response-table tr:last-child td {
-        border-bottom: none;
-    }
+  .likert-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 4px;
+    margin-top: 20px;
+  }
+  .likert-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    flex: 1;
+  }
 
-    .test-response-table tr:hover {
-        background-color: #fafafa;
-    }
+  /* Custom circular radio dot — matches mockup exactly */
+  .radio {
+    display: flex;
+    justify-content: center;
+    position: relative;
+  }
+  .radio input {
+    position: absolute;
+    inset: 0;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .radio label {
+    display: block;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    cursor: pointer;
+    transition: background 0.12s ease;
+  }
+  .radio input:checked + label {
+    background: var(--ink);
+    box-shadow: inset 0 0 0 3px var(--bg-card);
+  }
+  .radio input:focus-visible + label {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
 
-    .response-value {
-        font-weight: 600;
-        color: #2e7d32;
-    }
+  .likert-value {
+    font-size: 13px;
+    color: var(--ink-subtle);
+  }
+  .likert-label-text {
+    font-size: 11px;
+    color: var(--ink-subtle);
+    text-align: center;
+    max-width: 72px;
+    line-height: 1.3;
+  }
 
-    .group-header {
-        background-color: #e3f2fd;
-        border-left: 4px solid #2196f3;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-        margin-top: 2rem;
-        border-radius: 4px;
-    }
+  /* =========================================================================
+     Likert matrix — for grouped questions sharing the same scale
+     ========================================================================= */
 
-    .group-header:first-child {
-        margin-top: 0;
-    }
+  .matrix {
+    width: 100%;
+    margin-top: 20px;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+  .matrix th {
+    font-size: 12px;
+    font-weight: 400;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    padding: 0 8px 12px;
+    text-align: center;
+    vertical-align: bottom;
+    line-height: 1.35;
+  }
+  .matrix th:first-child {
+    text-align: left;
+    width: 44%;
+  }
+  /* Standalone matrix: no question-text column, so all columns share equally */
+  .matrix--standalone th:first-child {
+    text-align: center;
+    width: auto;
+  }
+  .matrix td {
+    padding: 14px 0;
+    border-top: 1px solid var(--rule-soft);
+    vertical-align: middle;
+    text-align: center;
+  }
+  .matrix td:first-child {
+    text-align: left;
+    font-size: 14px;
+    color: var(--ink);
+    padding-right: 16px;
+  }
+  /* Strip fieldset chrome used for semantic grouping */
+  .matrix-stem {
+    border: 0;
+    padding: 0;
+    margin: 0;
+  }
+  .matrix legend {
+    font-size: 14px;
+    color: var(--ink);
+    padding: 0;
+  }
 
-    .group-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #1565c0;
-        margin-bottom: 0.5rem;
-    }
+  /* =========================================================================
+     Multiple choice — checkbox list
+     ========================================================================= */
 
-    .group-description {
-        font-size: 0.95rem;
-        color: #424242;
-        line-height: 1.5;
-        font-style: italic;
-    }
-    </style>
+  .choice-list {
+    margin-top: 20px;
+    border: 0;
+    padding: 0;
+  }
+  .choice {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px 0;
+    border-top: 1px solid var(--rule-soft);
+    cursor: pointer;
+    font-size: 15px;
+    color: var(--ink);
+    position: relative;
+  }
+  .choice:last-child {
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  /* Invisible native input covers the whole row for click area */
+  .choice input {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    opacity: 0;
+    cursor: pointer;
+  }
+  .choice__box {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--ink);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.12s ease;
+  }
+  .choice input:checked ~ .choice__box {
+    background: var(--ink);
+  }
+  .choice input:checked ~ .choice__box::after {
+    content: "";
+    width: 8px;
+    height: 4px;
+    border-left: 1.5px solid var(--bg-card);
+    border-bottom: 1.5px solid var(--bg-card);
+    transform: rotate(-45deg) translate(1px, -1px);
+  }
+  .choice input:focus-visible ~ .choice__box {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+  .choice--disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+  }
+  .choice--disabled input { pointer-events: none; }
+
+  /* =========================================================================
+     Free text
+     ========================================================================= */
+
+  .q-textarea {
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px 16px;
+    border: 1.5px solid var(--rule);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink);
+    background: var(--bg-page);
+    resize: vertical;
+    min-height: 100px;
+    transition: border-color 0.15s ease;
+  }
+  .q-textarea:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+
+  /* =========================================================================
+     Dropdowns
+     ========================================================================= */
+
+  .q-select {
+    width: 100%;
+    margin-top: 16px;
+    padding: 12px 40px 12px 16px;
+    border: 1.5px solid var(--rule);
+    border-radius: 6px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink);
+    background-color: var(--bg-page);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='7' viewBox='0 0 12 7'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238a8a8a' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    appearance: none;
+    cursor: pointer;
+    transition: border-color 0.15s ease;
+  }
+  .q-select:focus {
+    outline: none;
+    border-color: var(--blue);
+  }
+
+  /* =========================================================================
+     Submit row
+     ========================================================================= */
+
+  .survey-submit {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 8px;
+    padding: 0 4px;
+  }
+
+  /* =========================================================================
+     Completion modal
+     ========================================================================= */
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(20, 22, 28, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .modal-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.22s ease, visibility 0s;
+  }
+  .modal {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    max-width: 440px;
+    width: 100%;
+    padding: 40px 40px 36px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(20, 22, 28, 0.35);
+    transform: translateY(12px) scale(0.98);
+    transition: transform 0.24s ease;
+  }
+  .modal-overlay.is-open .modal {
+    transform: translateY(0) scale(1);
+  }
+  .modal__badge {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal__badge::after {
+    content: "";
+    width: 22px;
+    height: 11px;
+    border-left: 2.5px solid var(--bg-card);
+    border-bottom: 2.5px solid var(--bg-card);
+    transform: rotate(-45deg) translate(2px, -2px);
+  }
+  .modal__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .modal__body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+  }
+  .modal__actions .btn { width: 100%; }
+
+  /* =========================================================================
+     Utility
+     ========================================================================= */
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+</style>
 {% endblock %}
-{% block content %}
-    <div class="survey-form">
-        {% if is_preview %}
-            <div class="preview-test-banner">
-                🧪 <strong>Researcher Preview</strong> - You can submit this survey to test it. Your responses will be saved to the database and flagged as TEST data for review/deletion in the admin panel.
-            </div>
-        {% endif %}
 
-        {% if test_responses %}
-            <div class="test-response-container">
-                <div class="test-response-header">
-                    ✅ Test Submission Saved to Database
-                </div>
-                <table class="test-response-table">
+{% block body %}
+<div class="page">
+
+  <!-- ── Row 1: topbar ───────────────────────────────────────────────────── -->
+  <header class="topbar">
+    <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+    <nav class="topbar__actions">
+      {% if not request.user.is_staff and not request.user.is_researcher %}
+        <a href="#"><button type="button" class="btn btn--outline">Messages</button></a>
+      {% endif %}
+      {% if request.user.is_staff %}
+        <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
+          {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+        </a>
+      {% else %}
+        <div class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
+          {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+        </div>
+      {% endif %}
+      <form method="post" action="{% url 'account_logout' %}" style="margin:0">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--outline">Log out</button>
+      </form>
+    </nav>
+    <div class="topbar__progress" aria-hidden="true">
+      <div class="topbar__progress-fill" data-progress-fill></div>
+    </div>
+  </header>
+
+  <!-- ── Row 2 (left): sidebar switcher ─────────────────────────────────── -->
+  <nav class="view-switch" aria-label="Sidebar view">
+    <ul>
+      <li><a href="#" aria-current="true">INFO</a></li>
+    </ul>
+  </nav>
+
+  <!-- ── Row 2 (right): survey title label ──────────────────────────────── -->
+  <div class="page__survey-header">
+    <span class="section-label">{{ survey.title }}</span>
+  </div>
+
+  <!-- ── Row 4 (left): sidebar ──────────────────────────────────────────── -->
+  <aside class="page__sidebar">
+    <div class="info-content">
+      {% if survey.description %}
+        <p>{{ survey.description }}</p>
+      {% endif %}
+      {% if survey.domain %}
+        <p><strong>Domain:</strong> {{ survey.domain.name }}</p>
+      {% endif %}
+      <div class="info-block">
+        <h2 class="section-label">How to answer</h2>
+        <ul>
+          <li>Read each question carefully before responding.</li>
+          <li>Answer based on your honest first impression.</li>
+          <li>Questions marked <strong>*</strong> are required.</li>
+          <li>Complete the questionnaire in one sitting — your progress is shown at the top.</li>
+        </ul>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ── Row 4 (right): main content ───────────────────────────────────── -->
+  <main class="page__main">
+
+    <!-- Sticky answered count -->
+    <p class="survey-progress-readout">
+      <span data-progress-done>0</span>&thinsp;of&thinsp;<span data-progress-total>0</span> answered
+    </p>
+
+    <!-- Preview/test mode banner -->
+    {% if is_preview %}
+      <div class="survey-banner survey-banner--warn">
+        <strong>Researcher preview</strong> — responses will be saved as TEST data and won't affect real results.
+      </div>
+    {% endif %}
+
+    <!-- Existing responses notice (participants only) -->
+    {% if has_existing_responses and not is_preview %}
+      <div class="survey-banner survey-banner--info">
+        You've already submitted this survey. Submitting again will update your previous answers.
+      </div>
+    {% endif %}
+
+    <!-- Test response table (shown after a researcher test submission) -->
+    {% if test_responses %}
+      <div class="test-result">
+        <p class="test-result__heading">✓ Test submission saved</p>
+        <table class="test-result__table">
+          <thead>
+            <tr>
+              <th style="width:10%">ID</th>
+              <th>Question</th>
+              <th style="width:10%">Selected</th>
+              <th style="width:8%">Factor</th>
+              <th style="width:10%">Stored</th>
+              <th style="width:20%">Label</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for r in test_responses %}
+              <tr{% if r.is_auto_filled %} class="is-autofill"{% endif %}>
+                <td>{{ r.question_id }}</td>
+                <td>
+                  {{ r.question_text }}
+                  {% if r.reverse_coded %}<span class="badge--rc">RC</span>{% endif %}
+                  {% if r.is_auto_filled %}<span class="badge--auto">Auto</span>{% endif %}
+                </td>
+                <td class="test-result__val">
+                  {% if r.answer_value == "NULL" %}NULL
+                  {% elif r.question_type == 'multiple_choice_single' or r.question_type == 'multiple_choice_multi' %}{{ r.answer_value|join:", " }}
+                  {% else %}{{ r.answer_value }}{% endif %}
+                </td>
+                <td>
+                  {% if r.question_type == 'likert' and r.scale_factor and r.scale_factor != 1 %}×{{ r.scale_factor }}{% else %}—{% endif %}
+                </td>
+                <td class="test-result__val">
+                  {% if r.stored_value == "NULL" %}NULL
+                  {% elif r.question_type == 'multiple_choice_single' or r.question_type == 'multiple_choice_multi' %}{{ r.stored_value|join:", " }}
+                  {% else %}{{ r.stored_value }}{% endif %}
+                </td>
+                <td>{{ r.answer_label }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% endif %}
+
+    <!-- ── Survey form ───────────────────────────────────────────────────── -->
+    {% if questions %}
+    <form method="post" id="survey-form">
+      {% csrf_token %}
+
+      {% for group_info, group_questions in grouped_questions.items %}
+        {% with group=group_info.1 %}
+
+          {# Grouped questions — render as a single matrix card #}
+          {% if group %}
+            <section class="q-card">
+              <p class="q-num">Question {{ group.group_code }}</p>
+              {# Visible group title sits inside the card as q-title #}
+              {% if group.show_title %}
+                <h2 class="q-title">{{ group.title }}</h2>
+              {% endif %}
+              <table class="matrix">
+                <thead>
+                  <tr>
+                    <th><span class="sr-only">Question</span></th>
+                    {% for value, label in group_questions.0.scale_options %}
+                      <th>{{ label }}</th>
+                    {% endfor %}
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for question in group_questions %}
+                    <tr class="q-matrix-row" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
+                      <td>
+                        <fieldset class="matrix-stem">
+                          <legend>
+                            {{ question.text }}
+                            {% if question.required %}<span class="sr-only">(required)</span>{% endif %}
+                          </legend>
+                        </fieldset>
+                      </td>
+                      {% for value, label in question.scale_options %}
+                        <td>
+                          <span class="radio">
+                            <input type="radio"
+                                   name="question_{{ question.id }}"
+                                   id="q{{ question.id }}_{{ value }}"
+                                   value="{{ value }}"
+                                   {% if question.required %}required{% endif %}>
+                            <label for="q{{ question.id }}_{{ value }}" aria-label="{{ label }}"></label>
+                          </span>
+                        </td>
+                      {% endfor %}
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </section>
+
+          {% else %}
+            {# --- UNGROUPED QUESTIONS — each gets its own card --- #}
+            {% for question in group_questions %}
+              <section class="q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
+
+                <p class="q-num">Question {{ question.order }}</p>
+
+                {% if question.text %}
+                  <h2 class="q-title">
+                    {{ question.text }}{% if question.required %}<span aria-hidden="true" style="color:var(--warn);margin-left:3px">*</span>{% endif %}
+                  </h2>
+                {% endif %}
+
+                {% if question.question_type == 'multiple_choice_single' %}
+                  <p class="q-instruction">Select one.</p>
+                {% elif question.question_type == 'multiple_choice_multi' %}
+                  <p class="q-instruction">Select all that apply.</p>
+                {% endif %}
+
+                {% if question.controls_next_n_questions > 0 %}
+                  <p class="q-instruction">
+                    If answering no, skip the next {{ question.controls_next_n_questions }} question{{ question.controls_next_n_questions|pluralize }}.
+                  </p>
+                {% endif %}
+
+                {# ── Likert — matrix table so column widths are uniform and labels sit centred above dots ── #}
+                {% if question.question_type == 'likert' %}
+                  <table class="matrix matrix--standalone">
                     <thead>
-                        <tr>
-                            <th style="width: 10%;">ID</th>
-                            <th style="width: 35%;">Question</th>
-                            <th style="width: 10%;">Selected</th>
-                            <th style="width: 10%;">Factor</th>
-                            <th style="width: 10%;">Stored</th>
-                            <th style="width: 25%;">Label</th>
-                        </tr>
+                      <tr>
+                        {% for value, label in question.scale_options %}
+                          <th>{% if label != value|stringformat:"s" %}{{ label }}{% else %}{{ value }}{% endif %}</th>
+                        {% endfor %}
+                      </tr>
                     </thead>
                     <tbody>
-                        {% for response in test_responses %}
-                            <tr{% if response.is_auto_filled %} style="background-color: #fff9e6;"{% endif %}>
-                                <td>{{ response.question_id }}</td>
-                                <td>{{ response.question_text }}{% if response.reverse_coded %} <span style="color: #e67e22; font-weight: bold;">[RC]</span>{% endif %}{% if response.is_auto_filled %} <span style="color: #ff9800; font-weight: bold;">[Auto]</span>{% endif %}</td>
-                                <td class="response-value">
-                                    {% if response.answer_value == "NULL" %}
-                                        NULL
-                                    {% elif response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
-                                        {{ response.answer_value|join:", " }}
-                                    {% else %}
-                                        {{ response.answer_value }}
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    {% if response.question_type == 'likert' %}
-                                        {% if response.scale_factor and response.scale_factor != 1 %}
-                                            ×{{ response.scale_factor }}
-                                        {% else %}
-                                            -
-                                        {% endif %}
-                                    {% else %}
-                                        -
-                                    {% endif %}
-                                </td>
-                                <td class="response-value"{% if response.reverse_coded %} style="background-color: #fff3cd;"{% endif %}>
-                                    {% if response.stored_value == "NULL" %}
-                                        NULL
-                                    {% elif response.question_type == 'multiple_choice_single' or response.question_type == 'multiple_choice_multi' %}
-                                        {{ response.stored_value|join:", " }}
-                                    {% else %}
-                                        {{ response.stored_value }}
-                                    {% endif %}
-                                </td>
-                                <td>{{ response.answer_label }}</td>
-                            </tr>
+                      <tr>
+                        {% for value, label in question.scale_options %}
+                          <td>
+                            <span class="radio">
+                              <input type="radio"
+                                     name="question_{{ question.id }}"
+                                     id="q{{ question.id }}_{{ value }}"
+                                     value="{{ value }}"
+                                     {% if question.required %}required{% endif %}>
+                              <label for="q{{ question.id }}_{{ value }}" aria-label="{{ label }}"></label>
+                            </span>
+                          </td>
                         {% endfor %}
+                      </tr>
                     </tbody>
-                </table>
-            </div>
-        {% endif %}
+                  </table>
 
-        <div class="card">
-            <h1 style="margin-bottom: 1rem; color: #2c3e50;">{{ survey.title }}</h1>
-            {% if survey.description %}
-                <p style="color: #666; margin-bottom: 2rem; line-height: 1.6;">{{ survey.description }}</p>
-            {% endif %}
-            {% if survey.domain %}
-                <div style="margin-bottom: 2rem;">
-                    <span style="background-color: #d1ecf1;
-                                 color: #0c5460;
-                                 padding: 0.5rem 1rem;
-                                 border-radius: 4px;
-                                 font-size: 0.875rem">Domain: {{ survey.domain.name }}</span>
-                </div>
-            {% endif %}
-            {% if has_existing_responses and not is_preview %}
-                <div style="background-color: #d1ecf1;
-                            border: 1px solid #bee5eb;
-                            border-radius: 4px;
-                            padding: 1rem;
-                            margin-bottom: 2rem;
-                            color: #0c5460">
-                    ℹ️ You have already submitted responses to this survey. Submitting again will update your previous responses.
-                </div>
-            {% endif %}
-            <form method="post">
-                {% csrf_token %}
-                {% if questions %}
-                    {% for group_info, group_questions in grouped_questions.items %}
-                        {% with group=group_info.1 %}
-                            {% if group and group.show_title %}
-                                <div class="group-header">
-                                    <div class="group-title">{{ group.title }}</div>
-                                </div>
-                            {% endif %}
-                        {% endwith %}
-
-                        {% for question in group_questions %}
-                            <div class="question-container"
-                                 data-question-id="{{ question.id }}"
-                                 data-question-order="{{ question.order }}"
-                                 {% if question.controls_next_n_questions > 0 %}
-                                 data-is-trigger="true"
-                                 data-trigger-value="{{ question.trigger_value }}"
-                                 data-controls-count="{{ question.controls_next_n_questions }}"
-                                 {% endif %}>
-                                <div class="question-text">
-                                    {{ question.text }}
-                                    {% if question.required %}<span class="required-indicator">*</span>{% endif %}
-                                    {% if question.question_type == 'multiple_choice_single' %}
-                                        <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one)</span>
-                                    {% elif question.question_type == 'multiple_choice_multi' %}
-                                        <span style="font-size: 0.875rem; color: #666; font-style: italic; margin-left: 0.5rem;">(Select one or more)</span>
-                                    {% endif %}
-                                </div>
-
-                                {% if question.controls_next_n_questions > 0 %}
-                                <div class="conditional-instruction">
-                                    ℹ️ If answering no, skip to the next {{ question.controls_next_n_questions }} question{{ question.controls_next_n_questions|pluralize }}
-                                </div>
-                                {% endif %}
-
-                            {% if question.question_type == 'likert' %}
-                                <div class="likert-scale">
-                                    {% for value, label in question.scale_options %}
-                                        <div class="likert-option">
-                                            <input type="radio"
-                                                   name="question_{{ question.id }}"
-                                                   id="q{{ question.id }}_{{ value }}"
-                                                   value="{{ value }}"
-                                                   {% if question.required %}required{% endif %}>
-                                            <label for="q{{ question.id }}_{{ value }}">{{ value }}</label>
-                                            {% if label != value|stringformat:"s" %}<div class="likert-label">{{ label }}</div>{% endif %}
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                            {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
-                                <div class="multiple-choice-options">
-                                    {% for value, label, is_disabled in question.multiple_choice_options %}
-                                        <div class="multiple-choice-option"{% if is_disabled %} style="opacity: 0.4; cursor: not-allowed;"{% endif %}>
-                                            <input type="checkbox"
-                                                   name="question_{{ question.id }}"
-                                                   id="q{{ question.id }}_{{ value }}"
-                                                   value="{{ value }}"
-                                                   {% if is_disabled %}disabled{% endif %}>
-                                            <label for="q{{ question.id }}_{{ value }}"{% if is_disabled %} style="cursor: not-allowed; color: #999;"{% endif %}>{{ label }}</label>
-                                        </div>
-                                    {% endfor %}
-                                </div>
-
-                            {% elif question.question_type == 'free_text' %}
-                                <textarea name="question_{{ question.id }}"
-                                          id="q{{ question.id }}"
-                                          rows="4"
-                                          style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
-                                          {% if question.required %}required{% endif %}></textarea>
-
-                            {% elif question.question_type == 'dropdown_year' %}
-                                <select name="question_{{ question.id }}"
-                                        id="q{{ question.id }}"
-                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
-                                        {% if question.required %}required{% endif %}>
-                                    <option value="">-- Select Year --</option>
-                                    {% for value, label in question.year_options %}
-                                        <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-
-                            {% elif question.question_type == 'dropdown_month' %}
-                                <select name="question_{{ question.id }}"
-                                        id="q{{ question.id }}"
-                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
-                                        {% if question.required %}required{% endif %}>
-                                    <option value="">-- Select Month --</option>
-                                    {% for value, label in question.month_options %}
-                                        <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-
-                            {% elif question.question_type == 'dropdown_country' %}
-                                <select name="question_{{ question.id }}"
-                                        id="q{{ question.id }}"
-                                        style="width: 100%; padding: 0.75rem; border: 2px solid #e0e0e0; border-radius: 6px; font-size: 1rem;"
-                                        {% if question.required %}required{% endif %}>
-                                    <option value="">-- Select Country --</option>
-                                    {% for value, label in question.country_options %}
-                                        <option value="{{ value }}">{{ label }}</option>
-                                    {% endfor %}
-                                </select>
-                            {% endif %}
-                        </div>
-                        {% endfor %}
+                {# ── Multiple choice ── #}
+                {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
+                  <fieldset class="choice-list">
+                    <legend class="sr-only">{{ question.text }}</legend>
+                    {% for value, label, is_disabled in question.multiple_choice_options %}
+                      <label class="choice{% if is_disabled %} choice--disabled{% endif %}">
+                        <input type="checkbox"
+                               name="question_{{ question.id }}"
+                               value="{{ value }}"
+                               {% if is_disabled %}disabled{% endif %}>
+                        <span class="choice__box"></span>
+                        {{ label }}
+                      </label>
                     {% endfor %}
-                    <div style="margin-top: 2rem; text-align: center;">
-                        <button type="submit" class="submit-button">
-                            {% if is_preview %}
-                                Submit Test Data
-                            {% else %}
-                                Submit Survey
-                            {% endif %}
-                        </button>
-                    </div>
-                {% else %}
-                    <p style="text-align: center; color: #666; padding: 2rem;">This survey has no questions yet.</p>
+                  </fieldset>
+
+                {# ── Free text ── #}
+                {% elif question.question_type == 'free_text' %}
+                  <textarea class="q-textarea"
+                            name="question_{{ question.id }}"
+                            id="q{{ question.id }}"
+                            rows="4"
+                            {% if question.required %}required{% endif %}></textarea>
+
+                {# ── Year dropdown ── #}
+                {% elif question.question_type == 'dropdown_year' %}
+                  <select class="q-select"
+                          name="question_{{ question.id }}"
+                          id="q{{ question.id }}"
+                          {% if question.required %}required{% endif %}>
+                    <option value="">— Select year —</option>
+                    {% for value, label in question.year_options %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+
+                {# ── Month dropdown ── #}
+                {% elif question.question_type == 'dropdown_month' %}
+                  <select class="q-select"
+                          name="question_{{ question.id }}"
+                          id="q{{ question.id }}"
+                          {% if question.required %}required{% endif %}>
+                    <option value="">— Select month —</option>
+                    {% for value, label in question.month_options %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+
+                {# ── Country dropdown ── #}
+                {% elif question.question_type == 'dropdown_country' %}
+                  <select class="q-select"
+                          name="question_{{ question.id }}"
+                          id="q{{ question.id }}"
+                          {% if question.required %}required{% endif %}>
+                    <option value="">— Select country —</option>
+                    {% for value, label in question.country_options %}
+                      <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                  </select>
+
                 {% endif %}
-            </form>
-        </div>
-        <div style="margin-top: 1rem; text-align: center;">
-            {% if is_preview %}
-                <a href="{% url 'surveys:survey_list' %}"
-                   style="color: #3498db;
-                          text-decoration: none">← Back to Survey Management</a>
-            {% else %}
-                <a href="{% url 'dashboard:participant_dashboard' %}"
-                   style="color: #3498db;
-                          text-decoration: none">← Back to Dashboard</a>
-            {% endif %}
-        </div>
+              </section>
+            {% endfor %}
+          {% endif %}
+
+        {% endwith %}
+      {% endfor %}
+
+      <div class="survey-submit">
+        <button type="submit" class="btn btn--primary">
+          {% if is_preview %}Submit test data{% else %}Submit responses{% endif %}
+        </button>
+      </div>
+    </form>
+
+    <p style="margin-top:16px;font-size:14px;color:var(--ink-muted)">
+      {% if is_preview %}
+        <a href="{% url 'surveys:survey_list' %}" style="color:var(--ink-muted)">← Back to survey management</a>
+      {% else %}
+        <a href="{% url 'dashboard:participant_dashboard' %}" style="color:var(--ink-muted)">← Back to dashboard</a>
+      {% endif %}
+    </p>
+
+    {% else %}
+      <div class="q-card" style="color:var(--ink-muted)">
+        This survey has no questions yet.
+      </div>
+    {% endif %}
+
+  </main>
+</div>
+
+<!-- Footer -->
+<footer class="footer">
+  <div class="crest">
+    <div class="crest__mark">UoE</div>
+    <div class="crest__text">THE UNIVERSITY <em>of EDINBURGH</em></div>
+  </div>
+</footer>
+
+<!-- ── Completion modal ──────────────────────────────────────────────────── -->
+<div class="modal-overlay{% if submitted %} is-open{% endif %}"
+     data-completion-modal
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="completion-title"
+     aria-describedby="completion-body"
+     {% if not submitted %}hidden{% endif %}>
+  <div class="modal">
+    <div class="modal__badge" aria-hidden="true"></div>
+    <h2 class="modal__title" id="completion-title">Responses submitted</h2>
+    <p class="modal__body" id="completion-body">
+      Thank you — your answers have been recorded. There is nothing more you need to do for this questionnaire.
+    </p>
+    <div class="modal__actions">
+      <a href="{% url 'dashboard:participant_dashboard' %}" class="btn btn--primary">Return to dashboard</a>
     </div>
+  </div>
+</div>
+{% endblock %}
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Handle N-questions trigger logic
-            const triggerQuestions = document.querySelectorAll('[data-is-trigger="true"]');
-            const allQuestions = Array.from(document.querySelectorAll('[data-question-order]'));
+{% block extra_js %}
+<script>
+(function () {
+  /* =========================================================================
+     Progress — counts answered questions and updates topbar fill + readout.
+     Excludes cards with .conditional-disabled.
+     ========================================================================= */
+  var fill    = document.querySelector('[data-progress-fill]');
+  var doneEl  = document.querySelector('[data-progress-done]');
+  var totalEl = document.querySelector('[data-progress-total]');
 
-            triggerQuestions.forEach(function(triggerContainer) {
-                const triggerValue = triggerContainer.getAttribute('data-trigger-value');
-                const controlsCount = parseInt(triggerContainer.getAttribute('data-controls-count'));
-                const triggerOrder = parseInt(triggerContainer.getAttribute('data-question-order'));
+  function isAnswered(el) {
+    // Matrix row (grouped Likert): check for a checked radio in the row
+    if (el.tagName === 'TR') {
+      return el.querySelector('input[type="radio"]:checked') !== null;
+    }
+    // Card: check by input type present
+    var radios = el.querySelectorAll('input[type="radio"]');
+    if (radios.length) return el.querySelector('input[type="radio"]:checked') !== null;
 
-                // Find the N questions that follow this trigger question
-                const controlledQuestions = allQuestions.filter(function(q) {
-                    const qOrder = parseInt(q.getAttribute('data-question-order'));
-                    return qOrder > triggerOrder && qOrder <= triggerOrder + controlsCount;
-                });
+    var checkboxes = el.querySelectorAll('input[type="checkbox"]:not([disabled])');
+    if (checkboxes.length) return el.querySelector('input[type="checkbox"]:checked') !== null;
 
-                // Get all radio/checkbox/input elements for this trigger question
-                const triggerInputs = triggerContainer.querySelectorAll('input[type="radio"], input[type="checkbox"], input[type="text"], textarea');
+    var textarea = el.querySelector('textarea');
+    if (textarea) return textarea.value.trim().length > 0;
 
-                // Function to update controlled questions
-                function updateControlledQuestions() {
-                    let selectedValue = null;
+    var select = el.querySelector('select');
+    if (select) return select.value !== '';
 
-                    // Get selected value based on input type
-                    const radioChecked = triggerContainer.querySelector('input[type="radio"]:checked');
-                    if (radioChecked) {
-                        selectedValue = radioChecked.value;
-                    }
+    return false;
+  }
 
-                    controlledQuestions.forEach(function(controlledContainer) {
-                        const inputs = controlledContainer.querySelectorAll('input, textarea');
+  function refresh() {
+    // Gather all answerable units: ungrouped cards + matrix rows
+    var units = Array.prototype.slice.call(
+      document.querySelectorAll('[data-question-id]')
+    ).filter(function (el) {
+      // Exclude cards inside a disabled parent
+      var card = el.closest('.q-card');
+      return !card || !card.classList.contains('conditional-disabled');
+    });
 
-                        if (selectedValue === triggerValue) {
-                            // Enable the question
-                            controlledContainer.classList.remove('conditional-disabled');
-                            inputs.forEach(function(input) {
-                                input.disabled = false;
-                                // Restore required attribute if stored
-                                if (input.dataset.wasRequired === 'true') {
-                                    input.required = true;
-                                }
-                            });
-                        } else {
-                            // Disable the question
-                            controlledContainer.classList.add('conditional-disabled');
-                            inputs.forEach(function(input) {
-                                if (input.type === 'radio' || input.type === 'checkbox') {
-                                    input.checked = false;
-                                } else {
-                                    input.value = '';
-                                }
-                                // Store if this was required before disabling (on first run)
-                                if (!input.dataset.wasRequired && input.required) {
-                                    input.dataset.wasRequired = 'true';
-                                }
-                                // Always remove required when disabling
-                                input.required = false;
-                                input.disabled = true;
-                            });
-                        }
-                    });
-                }
+    var total = units.length;
+    var done  = units.filter(isAnswered).length;
 
-                // Add change listeners to all inputs in the trigger question
-                triggerInputs.forEach(function(input) {
-                    input.addEventListener('change', updateControlledQuestions);
-                });
+    doneEl.textContent  = done;
+    totalEl.textContent = total;
+    fill.style.width    = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+  }
 
-                // Initialize state on page load
-                updateControlledQuestions();
-            });
-        });
-    </script>
+  document.querySelectorAll('[data-question-id] input, [data-question-id] textarea, [data-question-id] select')
+    .forEach(function (el) {
+      el.addEventListener('change', refresh);
+      el.addEventListener('input',  refresh);
+    });
+
+  refresh();
+})();
+
+(function () {
+  /* =========================================================================
+     Conditional N-questions trigger — greys out next N cards when trigger
+     answer doesn't match trigger_value. Behaviour unchanged from original.
+     ========================================================================= */
+  var allCards = Array.prototype.slice.call(
+    document.querySelectorAll('[data-question-order]')
+  );
+
+  document.querySelectorAll('[data-is-trigger="true"]').forEach(function (trigger) {
+    var triggerValue  = trigger.getAttribute('data-trigger-value');
+    var controlsCount = parseInt(trigger.getAttribute('data-controls-count'), 10);
+    var triggerOrder  = parseInt(trigger.getAttribute('data-question-order'), 10);
+
+    var controlled = allCards.filter(function (el) {
+      var o = parseInt(el.getAttribute('data-question-order'), 10);
+      return o > triggerOrder && o <= triggerOrder + controlsCount;
+    });
+
+    function update() {
+      var radio = trigger.querySelector('input[type="radio"]:checked');
+      var active = radio && radio.value === triggerValue;
+
+      controlled.forEach(function (el) {
+        var card   = el.closest('.q-card') || el;
+        var inputs = card.querySelectorAll('input, textarea, select');
+
+        if (active) {
+          card.classList.remove('conditional-disabled');
+          inputs.forEach(function (i) {
+            i.disabled = false;
+            if (i.dataset.wasRequired === 'true') i.required = true;
+          });
+        } else {
+          card.classList.add('conditional-disabled');
+          inputs.forEach(function (i) {
+            if (!i.dataset.wasRequired && i.required) i.dataset.wasRequired = 'true';
+            i.required = false;
+            i.disabled = true;
+            if (i.type === 'radio' || i.type === 'checkbox') i.checked = false;
+            else i.value = '';
+          });
+        }
+      });
+
+      // Recount now disabled cards are excluded
+      document.dispatchEvent(new Event('survey:refresh'));
+    }
+
+    trigger.querySelectorAll('input[type="radio"]').forEach(function (r) {
+      r.addEventListener('change', update);
+    });
+    update();
+  });
+
+  document.addEventListener('survey:refresh', function () {
+    var fill   = document.querySelector('[data-progress-fill]');
+    var doneEl = document.querySelector('[data-progress-done]');
+    var totalEl= document.querySelector('[data-progress-total]');
+    if (!fill) return;
+
+    var units = Array.prototype.slice.call(
+      document.querySelectorAll('[data-question-id]')
+    ).filter(function (el) {
+      var card = el.closest('.q-card');
+      return !card || !card.classList.contains('conditional-disabled');
+    });
+
+    function isAnswered(el) {
+      if (el.tagName === 'TR') return el.querySelector('input[type="radio"]:checked') !== null;
+      var radios = el.querySelectorAll('input[type="radio"]');
+      if (radios.length) return el.querySelector('input[type="radio"]:checked') !== null;
+      var checkboxes = el.querySelectorAll('input[type="checkbox"]:not([disabled])');
+      if (checkboxes.length) return el.querySelector('input[type="checkbox"]:checked') !== null;
+      var ta = el.querySelector('textarea');
+      if (ta) return ta.value.trim().length > 0;
+      var sel = el.querySelector('select');
+      if (sel) return sel.value !== '';
+      return false;
+    }
+
+    var total = units.length;
+    var done  = units.filter(isAnswered).length;
+    doneEl.textContent  = done;
+    totalEl.textContent = total;
+    fill.style.width    = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
+  });
+})();
+
+(function () {
+  /* =========================================================================
+     Topbar scroll shadow
+     ========================================================================= */
+  var topbar = document.querySelector('.topbar');
+  if (!topbar) return;
+  function tick() { topbar.classList.toggle('is-scrolled', window.scrollY > 0); }
+  window.addEventListener('scroll', tick, { passive: true });
+  tick();
+})();
+
+(function () {
+  /* =========================================================================
+     Completion modal — opened server-side via .is-open on the overlay.
+     Handles Escape + backdrop click to dismiss.
+     ========================================================================= */
+  var overlay = document.querySelector('[data-completion-modal]');
+  if (!overlay) return;
+
+  var lastFocused = null;
+
+  function open() {
+    lastFocused = document.activeElement;
+    overlay.hidden = false;
+    void overlay.offsetWidth; // force reflow so transition runs
+    overlay.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+    var btn = overlay.querySelector('.btn');
+    if (btn) btn.focus();
+  }
+
+  function close() {
+    overlay.classList.remove('is-open');
+    document.body.style.overflow = '';
+    setTimeout(function () { overlay.hidden = true; }, 220);
+    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  }
+
+  if (overlay.classList.contains('is-open')) {
+    overlay.hidden = false;
+    document.body.style.overflow = 'hidden';
+  }
+
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
+  });
+})();
+</script>
 {% endblock %}
