@@ -16,17 +16,31 @@ def organize_questions_by_group(questions, groups):
     - Keys are (sort_key, group_obj or None)
     - Values are lists of questions
 
-    This maintains the order of groups and questions, with ungrouped questions
-    interleaved based on their order position relative to groups.
+    Trigger questions (controls_next_n_questions > 0) have their controlled
+    questions attached as q.branch_questions and removed from the top-level
+    list so the template can render them nested inside the trigger's card.
     """
-    # Create a dict mapping group_id to group object
-    group_dict = {g.id: g for g in groups}
+    # Attach branch_questions to each trigger and collect IDs to suppress
+    branch_question_ids = set()
+    sorted_questions = sorted(questions, key=lambda q: q.order)
 
-    # Separate grouped and ungrouped questions
+    for q in sorted_questions:
+        q.branch_questions = []
+        if q.controls_next_n_questions > 0 and not q.group_id:
+            for candidate in sorted_questions:
+                if (candidate.order > q.order and
+                        candidate.order <= q.order + q.controls_next_n_questions and
+                        not candidate.group_id):
+                    q.branch_questions.append(candidate)
+                    branch_question_ids.add(candidate.id)
+
+    # Separate grouped and ungrouped questions, excluding branch children
     grouped_questions = {}  # {group_id: [questions]}
     ungrouped_questions = []
 
     for q in questions:
+        if q.id in branch_question_ids:
+            continue  # rendered inside the trigger card, not as a top-level card
         if q.group_id:
             if q.group_id not in grouped_questions:
                 grouped_questions[q.group_id] = []
@@ -37,23 +51,16 @@ def organize_questions_by_group(questions, groups):
     # Build ordered structure by interleaving groups and ungrouped questions
     items_to_sort = []
 
-    # Add groups with their questions
     for group in groups:
         if group.id in grouped_questions:
-            # Get the minimum order of questions in this group to determine placement
             group_min_order = min(q.order for q in grouped_questions[group.id])
             items_to_sort.append((group_min_order, group, grouped_questions[group.id]))
 
-    # Add ungrouped questions
     for q in ungrouped_questions:
-        # Use the question's order as the sort key
-        # Subtract 0.5 so ungrouped questions appear before groups at the same order
         items_to_sort.append((q.order - 0.5, None, [q]))
 
-    # Sort all items by their order
     items_to_sort.sort(key=lambda x: x[0])
 
-    # Build the result OrderedDict with (order, group_obj) as key
     result = OrderedDict()
     for sort_key, group_obj, qs in items_to_sort:
         result[(sort_key, group_obj)] = qs

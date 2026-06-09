@@ -1,210 +1,384 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block title %}Task Management - Research Platform{% endblock %}
+{% block title %}Task Management — Phantasia Research Hub{% endblock %}
 
-{% block extra_css %}
+{% block extra_head %}
 <style>
-    .task-card {
-        background: white;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 1.5rem;
-        border-left: 4px solid #3771c8;
-    }
+  /* ----- Page grid (mirrors survey list) ----- */
+  .page {
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    grid-template-rows: auto auto var(--content-spacing) auto;
+  }
 
-    .task-card h3 {
-        margin-top: 0;
-        color: #2c3e50;
-    }
+  .page > .topbar {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
 
-    .task-meta {
-        color: #7f8c8d;
-        font-size: 0.9rem;
-        margin: 0.5rem 0;
-    }
+  .page > .view-switch {
+    grid-column: 1;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+  }
 
-    .task-actions {
-        margin-top: 1rem;
-        display: flex;
-        gap: 0.5rem;
-        flex-wrap: wrap;
-    }
+  .page__tasks-header {
+    grid-column: 2;
+    grid-row: 2;
+    padding: 32px var(--page-padding-x) 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
 
-    .btn {
-        padding: 0.5rem 1rem;
-        border: none;
-        border-radius: 4px;
-        cursor: pointer;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 0.9rem;
-    }
+  .page__sidebar {
+    grid-column: 1;
+    grid-row: 4;
+    padding: 0 var(--page-padding-x);
+  }
 
-    .btn-primary {
-        background-color: #3771c8;
-        color: white;
-    }
+  .page__main {
+    grid-column: 2;
+    grid-row: 4;
+  }
 
-    .btn-secondary {
-        background-color: #95a5a6;
-        color: white;
-    }
+  .page::before {
+    content: "";
+    grid-column: 1;
+    grid-row: 2 / -1;
+    border-right: 1px solid var(--rule);
+    pointer-events: none;
+  }
 
-    .btn-success {
-        background-color: #27ae60;
-        color: white;
-    }
+  /* ----- Sidebar panels ----- */
+  .sidebar-panel {
+    display: none;
+  }
+  .sidebar-panel.is-active {
+    display: block;
+  }
 
-    .btn:hover {
-        opacity: 0.9;
-    }
+  .info-content {
+    padding: 0 0 40px;
+  }
+  .info-content p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 16px;
+  }
+  .info-content p:last-child {
+    margin-bottom: 0;
+  }
 
-    .status-badge {
-        display: inline-block;
-        padding: 0.25rem 0.75rem;
-        border-radius: 12px;
-        font-size: 0.85rem;
-        font-weight: bold;
-    }
+  .domain-list__item {
+    border-bottom: 1px solid var(--rule);
+  }
+  .domain-list__link {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 18px 0;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.06em;
+    line-height: 1;
+    color: var(--ink);
+    text-decoration: none;
+    transition: color 0.15s ease;
+    text-transform: uppercase;
+  }
+  .domain-list__link:hover {
+    color: var(--ink-muted);
+  }
+  .domain-list__dot {
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    flex-shrink: 0;
+    transform: translateY(-1px);
+  }
+  .domain-list__item--active .domain-list__link {
+    font-weight: 700;
+    font-style: italic;
+  }
+  .domain-list__item--active .domain-list__dot {
+    background: var(--ink);
+  }
 
-    .status-active {
-        background-color: #d4edda;
-        color: #155724;
-    }
+  /* ----- Main area ----- */
+  .task-list-wrap {
+    padding: 0 var(--page-padding-x) 80px;
+  }
 
-    .status-inactive {
-        background-color: #f8d7da;
-        color: #721c24;
-    }
+  .task-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    max-width: 680px;
+  }
 
-    .status-priority {
-        background-color: #ffe5e5;
-        color: #c0392b;
-        border: 1px solid #e74c3c;
-    }
+  /* ----- Task card ----- */
+  .task-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 24px 32px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 32px;
+    align-items: stretch;
+  }
 
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-    }
+  .task-card__body {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+  }
+  .task-card__title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 0;
+  }
+  .task-card__desc {
+    font-size: 14px;
+    color: var(--ink-muted);
+    line-height: 1.5;
+    margin: 0;
+  }
+  .task-card__actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
 
-    .no-tasks {
-        text-align: center;
-        padding: 3rem;
-        color: #7f8c8d;
-    }
+  /* ----- Meta column (right side) ----- */
+  .task-card__meta {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 10px;
+    padding-left: 32px;
+    border-left: 1px solid var(--rule-soft);
+    font-size: 13px;
+    color: var(--ink-muted);
+    min-width: 120px;
+  }
 
-    .filter-bar {
-        background: white;
-        border-radius: 8px;
-        padding: 1rem 1.5rem;
-        margin-bottom: 1.5rem;
-        display: flex;
-        align-items: center;
-        gap: 1rem;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-    }
+  /* ----- Status pills ----- */
+  .pill {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    padding: 4px 10px 2px;
+    border-radius: var(--radius-pill);
+    line-height: 1;
+    vertical-align: middle;
+  }
+  .pill--active {
+    background: #d4f7e0;
+    color: #1a6e3a;
+  }
+  .pill--inactive {
+    background: #fde8e8;
+    color: #9b1c1c;
+  }
+  .pill--priority {
+    background: var(--warn);
+    color: #fff;
+  }
 
-    .filter-bar label {
-        font-weight: 500;
-        color: #2c3e50;
-    }
-
-    .filter-bar select {
-        padding: 0.5rem 1rem;
-        border: 1px solid #ddd;
-        border-radius: 4px;
-        font-size: 0.9rem;
-        min-width: 200px;
-    }
-
-    .filter-bar .clear-filter {
-        margin-left: auto;
-        font-size: 0.85rem;
-        color: #3771c8;
-        text-decoration: none;
-    }
-
-    .filter-bar .clear-filter:hover {
-        text-decoration: underline;
-    }
+  /* ----- Empty state ----- */
+  .empty-state {
+    padding: 80px 0;
+    color: var(--ink-muted);
+    max-width: 680px;
+  }
+  .empty-state h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .empty-state p {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
 </style>
 {% endblock %}
 
-{% block content %}
-<div class="page-header">
-    <h1>Task Management</h1>
-    <a href="/admin/tasks/labtask/add/" class="btn btn-success">+ New Task</a>
-</div>
+{% block header %}{% endblock %}
+{% block flash_messages %}{% endblock %}
+{% block footer %}{% endblock %}
 
-<!-- Domain Filter Bar -->
-<div class="filter-bar">
-    <label for="domain-filter">Filter by Domain:</label>
-    <select id="domain-filter" onchange="window.location.href='?domain=' + this.value">
-        <option value="">All Domains</option>
+{% block body %}
+<div class="page">
+
+  <!-- Row 1: topbar -->
+  <header class="topbar">
+    <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+    <nav class="topbar__actions">
+      <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
+        {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+      </a>
+      <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn btn--outline">Log out</button>
+      </form>
+    </nav>
+  </header>
+
+  <!-- Row 2: view switcher (sidebar) -->
+  <nav class="view-switch" aria-label="Sidebar view">
+    <ul>
+      <li><a href="#" aria-current="true">INFO</a></li>
+      <li><a href="#">DOMAINS</a></li>
+    </ul>
+  </nav>
+
+  <!-- Row 2: section header (main) -->
+  <div class="page__tasks-header">
+    <h2 class="section-label">TASK MANAGEMENT</h2>
+    <a href="/admin/tasks/labtask/add/" class="btn btn--primary">+ New Task</a>
+  </div>
+
+  <!-- Row 4: sidebar -->
+  <aside class="page__sidebar">
+
+    <!-- Info panel -->
+    <div class="sidebar-panel is-active" data-panel="info">
+      <div class="info-content">
+        <p>
+          Tasks are listed here in priority order. Use the Domains panel
+          to filter by research area, or click Edit to make changes in the
+          admin panel.
+        </p>
+        <p>
+          Use <strong>Preview</strong> to run through a task as a participant
+          would — submissions are saved as test data and won't affect real
+          results.
+        </p>
+      </div>
+    </div>
+
+    <!-- Domains panel -->
+    <div class="sidebar-panel" data-panel="domains">
+      <ul class="domain-list">
+        <li class="domain-list__item {% if not selected_domain %}domain-list__item--active{% endif %}">
+          <a class="domain-list__link" href="{% url 'tasks:task_list' %}">
+            <span class="domain-list__dot"></span>All Tasks
+          </a>
+        </li>
         {% for domain in domains %}
-            <option value="{{ domain.id }}" {% if selected_domain == domain.id|stringformat:"s" %}selected{% endif %}>
-                {{ domain.name }}
-            </option>
+        <li class="domain-list__item {% if selected_domain == domain.id|stringformat:"s" %}domain-list__item--active{% endif %}">
+          <a class="domain-list__link" href="?domain={{ domain.id }}">
+            <span class="domain-list__dot"></span>{{ domain.name }}
+          </a>
+        </li>
         {% endfor %}
-        <option value="none" {% if selected_domain == "none" %}selected{% endif %}>Uncategorized</option>
-    </select>
-    {% if selected_domain %}
-        <a href="{% url 'tasks:task_list' %}" class="clear-filter">Clear Filter</a>
-    {% endif %}
-</div>
+        <li class="domain-list__item {% if selected_domain == "none" %}domain-list__item--active{% endif %}">
+          <a class="domain-list__link" href="?domain=none">
+            <span class="domain-list__dot"></span>Uncategorized
+          </a>
+        </li>
+      </ul>
+    </div>
 
-{% if tasks %}
-    {% for task in tasks %}
-    <div class="task-card">
-        <h3>{{ task.title }}</h3>
-        <p>{{ task.description|truncatewords:30 }}</p>
+  </aside>
 
-        <div class="task-meta">
-            <strong>Domain:</strong> {{ task.domain|default:"Uncategorized" }} &nbsp;|&nbsp;
-            <strong>Researcher:</strong> {{ task.researcher.email }} &nbsp;|&nbsp;
-            <strong>Created:</strong> {{ task.created_at|date:"M d, Y" }} &nbsp;|&nbsp;
-            <span class="status-badge {% if task.is_active %}status-active{% else %}status-inactive{% endif %}">
-                {% if task.is_active %}Active{% else %}Inactive{% endif %}
+  <!-- Row 4: main task list -->
+  <section class="page__main">
+    <div class="task-list-wrap">
+
+      {% if tasks %}
+      <ul class="task-list">
+        {% for task in tasks %}
+        <li class="task-card">
+          <div class="task-card__body">
+            <h2 class="task-card__title">{{ task.title }}</h2>
+            {% if task.description %}
+              <p class="task-card__desc">{{ task.description|truncatewords:30 }}</p>
+            {% endif %}
+            <div class="task-card__actions">
+              <a href="{% url 'tasks:task_preview' task.pk %}" class="btn btn--primary">Preview</a>
+              <a href="/admin/tasks/labtask/{{ task.pk }}/change/" class="btn btn--outline">Edit</a>
+            </div>
+          </div>
+          <div class="task-card__meta">
+            <span class="pill {% if task.is_active %}pill--active{% else %}pill--inactive{% endif %}">
+              {% if task.is_active %}Active{% else %}Inactive{% endif %}
             </span>
             {% if task.is_priority %}
-            <span class="status-badge status-priority">
-                Priority
-            </span>
+              <span class="pill pill--priority">Priority</span>
             {% endif %}
-        </div>
+            {% if task.domain %}<span>{{ task.domain.name }}</span>{% endif %}
+            {% if task.time_limit_minutes %}<span>{{ task.time_limit_minutes }} min</span>{% endif %}
+            <span>{{ task.created_at|date:"d M Y" }}</span>
+          </div>
+        </li>
+        {% endfor %}
+      </ul>
 
-        {% if task.time_limit_minutes %}
-        <div class="task-meta">
-            <strong>Time Limit:</strong> {{ task.time_limit_minutes }} minutes
-        </div>
-        {% endif %}
-
-        {% if task.instructions %}
-        <div class="task-meta">
-            <strong>Instructions:</strong> {{ task.instructions|truncatewords:20 }}
-        </div>
-        {% endif %}
-
-        <div class="task-actions">
-            <a href="{% url 'tasks:task_preview' task.pk %}" class="btn btn-primary">
-                Preview
-            </a>
-            <a href="/admin/tasks/labtask/{{ task.pk }}/change/" class="btn btn-secondary">
-                Edit
-            </a>
-        </div>
-    </div>
-    {% endfor %}
-{% else %}
-    <div class="no-tasks">
-        <h2>No Tasks Yet</h2>
+      {% else %}
+      <div class="empty-state">
+        <h3>No tasks yet</h3>
         <p>Upload your first lab.js task to get started.</p>
-        <a href="/admin/tasks/labtask/add/" class="btn btn-primary">
-            + Upload Task
-        </a>
+        <a href="/admin/tasks/labtask/add/" class="btn btn--primary">+ Upload Task</a>
+      </div>
+      {% endif %}
+
     </div>
-{% endif %}
+  </section>
+
+</div>
+
+<footer class="footer">
+  <div class="crest">
+    <div class="crest__mark">UoE</div>
+    <div class="crest__text">THE UNIVERSITY <em>of EDINBURGH</em></div>
+  </div>
+</footer>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  (function () {
+    const panels = document.querySelectorAll(".sidebar-panel");
+    const navLinks = document.querySelectorAll(".view-switch a");
+
+    {% if selected_domain %}
+    panels.forEach(function (p) {
+      p.classList.toggle("is-active", p.dataset.panel === "domains");
+    });
+    navLinks.forEach(function (a) {
+      const isDomains = a.textContent.trim().toLowerCase() === "domains";
+      if (isDomains) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+    {% endif %}
+
+    navLinks.forEach(function (link) {
+      link.addEventListener("click", function (e) {
+        e.preventDefault();
+        const target = link.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
+        panels.forEach(function (panel) {
+          panel.classList.toggle("is-active", panel.dataset.panel === target);
+        });
+        navLinks.forEach(function (a) {
+          const aTarget = a.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
+          if (aTarget === target) a.setAttribute("aria-current", "true");
+          else a.removeAttribute("aria-current");
+        });
+      });
+    });
+  })();
+</script>
 {% endblock %}

@@ -263,11 +263,76 @@
     font-style: italic;
   }
 
-  /* Conditional-disabled: grey out cards that are gated off */
-  .q-card.conditional-disabled {
-    opacity: 0.4;
+  /* =========================================================================
+     Pill gate — trigger questions rendered as pill-button radio groups
+     ========================================================================= */
+
+  .pill-gate {
+    display: flex;
+    gap: 12px;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    position: relative;
+    border: 0;
+    padding: 0;
+    margin-left: 0;
+    margin-right: 0;
+  }
+  .pill-gate input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
     pointer-events: none;
-    transition: opacity 0.25s ease;
+  }
+  .pill-gate label {
+    font-size: 15px;
+    padding: 10px 32px;
+    border-radius: var(--radius-pill);
+    border: 1.5px solid var(--ink);
+    background: transparent;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+  }
+  .pill-gate label:hover {
+    background: var(--ink);
+    color: var(--bg-page);
+  }
+  .pill-gate input:checked + label {
+    background: var(--ink);
+    color: var(--bg-card);
+  }
+  .pill-gate input:focus-visible + label {
+    outline: 2px solid var(--blue);
+    outline-offset: 3px;
+  }
+
+  /* Conditional branch — follow-up revealed by a trigger answer.
+     Left vertical rule marks it as dependent on the gate above.
+     max-height drives the open/close transition; set well above the
+     tallest expected branch content. */
+  .branch {
+    padding-left: 28px;
+    position: relative;
+    overflow: hidden;
+    max-height: 0;
+    opacity: 0;
+    transition: max-height 0.32s ease, opacity 0.28s ease, margin-top 0.32s ease;
+  }
+  .branch.is-open {
+    max-height: 2000px;
+    opacity: 1;
+    margin-top: 24px;
+  }
+  .branch::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    top: 4px;
+    bottom: 4px;
+    width: 1.5px;
+    background: var(--ink);
   }
 
   /* =========================================================================
@@ -791,7 +856,7 @@
           {% else %}
             {# --- UNGROUPED QUESTIONS — each gets its own card --- #}
             {% for question in group_questions %}
-              <section class="q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
+              <section class="q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.branch_questions %}data-gate data-trigger-value="{{ question.trigger_value }}" data-controls="branch-{{ question.id }}"{% endif %}>
 
                 <p class="q-num">Question {{ question.order }}</p>
 
@@ -807,14 +872,21 @@
                   <p class="q-instruction">Select all that apply.</p>
                 {% endif %}
 
-                {% if question.controls_next_n_questions > 0 %}
-                  <p class="q-instruction">
-                    If answering no, skip the next {{ question.controls_next_n_questions }} question{{ question.controls_next_n_questions|pluralize }}.
-                  </p>
-                {% endif %}
-
-                {# ── Likert — matrix table so column widths are uniform and labels sit centred above dots ── #}
+                {# ── Likert — pills if gate question, matrix table otherwise ── #}
                 {% if question.question_type == 'likert' %}
+                  {% if question.branch_questions %}
+                    <fieldset class="pill-gate">
+                      <legend class="sr-only">{{ question.text }}</legend>
+                      {% for value, label in question.scale_options %}
+                        <input type="radio"
+                               name="question_{{ question.id }}"
+                               id="q{{ question.id }}_{{ value }}"
+                               value="{{ value }}"
+                               {% if question.required %}required{% endif %}>
+                        <label for="q{{ question.id }}_{{ value }}">{% if label != value|stringformat:"s" %}{{ label }}{% else %}{{ value }}{% endif %}</label>
+                      {% endfor %}
+                    </fieldset>
+                  {% else %}
                   <table class="matrix matrix--standalone">
                     <thead>
                       <tr>
@@ -840,6 +912,7 @@
                       </tr>
                     </tbody>
                   </table>
+                  {% endif %}
 
                 {# ── Multiple choice ── #}
                 {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
@@ -902,6 +975,89 @@
                   </select>
 
                 {% endif %}
+
+                {# ── Conditional branch — rendered inside the trigger card ── #}
+                {% if question.branch_questions %}
+                  <div class="branch" id="branch-{{ question.id }}" data-branch aria-hidden="true">
+                    {% for bq in question.branch_questions %}
+                      <div data-question-id="{{ bq.id }}" data-question-order="{{ bq.order }}" data-conditional style="margin-top: 20px;">
+                        {% if bq.text %}
+                          <p class="q-title" style="font-size:17px;margin-bottom:6px">{{ bq.text }}{% if bq.required %}<span aria-hidden="true" style="color:var(--warn);margin-left:3px">*</span>{% endif %}</p>
+                        {% endif %}
+
+                        {% if bq.question_type == 'likert' %}
+                          <table class="matrix matrix--standalone">
+                            <thead>
+                              <tr>
+                                {% for value, label in bq.scale_options %}
+                                  <th>{% if label != value|stringformat:"s" %}{{ label }}{% else %}{{ value }}{% endif %}</th>
+                                {% endfor %}
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                {% for value, label in bq.scale_options %}
+                                  <td>
+                                    <span class="radio">
+                                      <input type="radio"
+                                             name="question_{{ bq.id }}"
+                                             id="bq{{ bq.id }}_{{ value }}"
+                                             value="{{ value }}"
+                                             {% if bq.required %}required{% endif %}>
+                                      <label for="bq{{ bq.id }}_{{ value }}" aria-label="{{ label }}"></label>
+                                    </span>
+                                  </td>
+                                {% endfor %}
+                              </tr>
+                            </tbody>
+                          </table>
+
+                        {% elif bq.question_type == 'multiple_choice_single' or bq.question_type == 'multiple_choice_multi' %}
+                          {% if bq.question_type == 'multiple_choice_single' %}<p class="q-instruction">Select one.</p>{% else %}<p class="q-instruction">Select all that apply.</p>{% endif %}
+                          <fieldset class="choice-list">
+                            <legend class="sr-only">{{ bq.text }}</legend>
+                            {% for value, label, is_disabled in bq.multiple_choice_options %}
+                              <label class="choice{% if is_disabled %} choice--disabled{% endif %}">
+                                <input type="checkbox" name="question_{{ bq.id }}" value="{{ value }}" {% if is_disabled %}disabled{% endif %}>
+                                <span class="choice__box"></span>
+                                {{ label }}
+                              </label>
+                            {% endfor %}
+                          </fieldset>
+
+                        {% elif bq.question_type == 'free_text' %}
+                          <textarea class="q-textarea" name="question_{{ bq.id }}" id="bq{{ bq.id }}" rows="4" {% if bq.required %}required{% endif %}></textarea>
+
+                        {% elif bq.question_type == 'dropdown_year' %}
+                          <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>
+                            <option value="">— Select year —</option>
+                            {% for value, label in bq.year_options %}
+                              <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                          </select>
+
+                        {% elif bq.question_type == 'dropdown_month' %}
+                          <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>
+                            <option value="">— Select month —</option>
+                            {% for value, label in bq.month_options %}
+                              <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                          </select>
+
+                        {% elif bq.question_type == 'dropdown_country' %}
+                          <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>
+                            <option value="">— Select country —</option>
+                            {% for value, label in bq.country_options %}
+                              <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                          </select>
+
+                        {% endif %}
+                      </div>
+                    {% endfor %}
+                  </div>
+                {% endif %}
+
               </section>
             {% endfor %}
           {% endif %}
@@ -966,47 +1122,43 @@
 <script>
 (function () {
   /* =========================================================================
-     Progress — counts answered questions and updates topbar fill + readout.
-     Excludes cards with .conditional-disabled.
+     Progress — three-state model matching the mockup:
+       answered    — has a response. Counts in numerator AND denominator.
+       pending     — shown (branch open) but blank. Denominator only.
+       n/a         — branch closed. Excluded from both numerator and denominator,
+                     so a "No" gate answer can still reach 100%.
      ========================================================================= */
   var fill    = document.querySelector('[data-progress-fill]');
   var doneEl  = document.querySelector('[data-progress-done]');
   var totalEl = document.querySelector('[data-progress-total]');
 
   function isAnswered(el) {
-    // Matrix row (grouped Likert): check for a checked radio in the row
-    if (el.tagName === 'TR') {
-      return el.querySelector('input[type="radio"]:checked') !== null;
-    }
-    // Card: check by input type present
+    if (el.tagName === 'TR') return el.querySelector('input[type="radio"]:checked') !== null;
     var radios = el.querySelectorAll('input[type="radio"]');
     if (radios.length) return el.querySelector('input[type="radio"]:checked') !== null;
-
     var checkboxes = el.querySelectorAll('input[type="checkbox"]:not([disabled])');
     if (checkboxes.length) return el.querySelector('input[type="checkbox"]:checked') !== null;
-
     var textarea = el.querySelector('textarea');
     if (textarea) return textarea.value.trim().length > 0;
-
     var select = el.querySelector('select');
     if (select) return select.value !== '';
-
     return false;
   }
 
   function refresh() {
-    // Gather all answerable units: ungrouped cards + matrix rows
     var units = Array.prototype.slice.call(
       document.querySelectorAll('[data-question-id]')
     ).filter(function (el) {
-      // Exclude cards inside a disabled parent
-      var card = el.closest('.q-card');
-      return !card || !card.classList.contains('conditional-disabled');
+      // Conditional questions only count while their branch is open
+      if (el.hasAttribute('data-conditional')) {
+        var branch = el.closest('[data-branch]');
+        return branch && branch.classList.contains('is-open');
+      }
+      return true;
     });
 
     var total = units.length;
     var done  = units.filter(isAnswered).length;
-
     doneEl.textContent  = done;
     totalEl.textContent = total;
     fill.style.width    = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
@@ -1023,72 +1175,51 @@
 
 (function () {
   /* =========================================================================
-     Conditional N-questions trigger — greys out next N cards when trigger
-     answer doesn't match trigger_value. Behaviour unchanged from original.
+     Gate/branch — trigger questions reveal a .branch sibling on match.
+     Uses data-trigger-value so any Likert value (not just "yes") can gate.
+     Clears branch inputs on retract; backend also nulls them server-side.
      ========================================================================= */
-  var allCards = Array.prototype.slice.call(
-    document.querySelectorAll('[data-question-order]')
-  );
-
-  document.querySelectorAll('[data-is-trigger="true"]').forEach(function (trigger) {
-    var triggerValue  = trigger.getAttribute('data-trigger-value');
-    var controlsCount = parseInt(trigger.getAttribute('data-controls-count'), 10);
-    var triggerOrder  = parseInt(trigger.getAttribute('data-question-order'), 10);
-
-    var controlled = allCards.filter(function (el) {
-      var o = parseInt(el.getAttribute('data-question-order'), 10);
-      return o > triggerOrder && o <= triggerOrder + controlsCount;
-    });
+  document.querySelectorAll('[data-gate]').forEach(function (gate) {
+    var triggerValue = gate.getAttribute('data-trigger-value');
+    var branch = document.getElementById(gate.getAttribute('data-controls'));
+    if (!branch) return;
 
     function update() {
-      var radio = trigger.querySelector('input[type="radio"]:checked');
-      var active = radio && radio.value === triggerValue;
+      var checked = gate.querySelector('input[type="radio"]:checked');
+      var open = checked && checked.value === triggerValue;
 
-      controlled.forEach(function (el) {
-        var card   = el.closest('.q-card') || el;
-        var inputs = card.querySelectorAll('input, textarea, select');
+      branch.classList.toggle('is-open', open);
+      branch.setAttribute('aria-hidden', open ? 'false' : 'true');
 
-        if (active) {
-          card.classList.remove('conditional-disabled');
-          inputs.forEach(function (i) {
-            i.disabled = false;
-            if (i.dataset.wasRequired === 'true') i.required = true;
-          });
-        } else {
-          card.classList.add('conditional-disabled');
-          inputs.forEach(function (i) {
-            if (!i.dataset.wasRequired && i.required) i.dataset.wasRequired = 'true';
-            i.required = false;
-            i.disabled = true;
-            if (i.type === 'radio' || i.type === 'checkbox') i.checked = false;
-            else i.value = '';
-          });
-        }
-      });
+      if (!open) {
+        branch.querySelectorAll('input:checked').forEach(function (i) { i.checked = false; });
+        branch.querySelectorAll('textarea').forEach(function (t) { t.value = ''; });
+        branch.querySelectorAll('select').forEach(function (s) { s.value = ''; });
+      }
 
-      // Recount now disabled cards are excluded
       document.dispatchEvent(new Event('survey:refresh'));
     }
 
-    trigger.querySelectorAll('input[type="radio"]').forEach(function (r) {
+    gate.querySelectorAll('input[type="radio"]').forEach(function (r) {
       r.addEventListener('change', update);
     });
     update();
   });
 
   document.addEventListener('survey:refresh', function () {
-    var fill   = document.querySelector('[data-progress-fill]');
-    var doneEl = document.querySelector('[data-progress-done]');
-    var totalEl= document.querySelector('[data-progress-total]');
+    // Re-trigger progress refresh — picked up by the progress IIFE above.
+    // We dispatch from here so gate changes cause a recount without coupling the two IIFEs.
+    var fill = document.querySelector('[data-progress-fill]');
     if (!fill) return;
-
     var units = Array.prototype.slice.call(
       document.querySelectorAll('[data-question-id]')
     ).filter(function (el) {
-      var card = el.closest('.q-card');
-      return !card || !card.classList.contains('conditional-disabled');
+      if (el.hasAttribute('data-conditional')) {
+        var branch = el.closest('[data-branch]');
+        return branch && branch.classList.contains('is-open');
+      }
+      return true;
     });
-
     function isAnswered(el) {
       if (el.tagName === 'TR') return el.querySelector('input[type="radio"]:checked') !== null;
       var radios = el.querySelectorAll('input[type="radio"]');
@@ -1101,7 +1232,8 @@
       if (sel) return sel.value !== '';
       return false;
     }
-
+    var doneEl  = document.querySelector('[data-progress-done]');
+    var totalEl = document.querySelector('[data-progress-total]');
     var total = units.length;
     var done  = units.filter(isAnswered).length;
     doneEl.textContent  = done;

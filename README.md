@@ -739,8 +739,39 @@ Ported the survey detail/take page to the design system, matching the two-column
 - Standalone Likert offset: removed sr-only first column (was claiming 44% width under `table-layout: fixed`)
 - `.matrix--standalone th:first-child` overrides inherited `width: 44%` / `text-align: left`
 
-#### TODO (next session)
-- **Conditional question rendering**: current implementation greys out controlled cards (`conditional-disabled`). The mockup uses a different pattern — the trigger question is a pill-button gate and controlled questions live **inside the same card** in a `.branch` div that slides open/closed with a left vertical rule. This needs a design decision on whether to change the data model (nest controlled questions) or group them in the view. See `memory/feedback_conditional_questions.md` for full context.
+**Branch**: `feature-design-port`
+
+---
+
+## Session 20: Conditional Branch UI & Task List Port (June 2026)
+
+### Conditional question rendering (survey detail)
+Replaced the grey-out (`conditional-disabled`) pattern with the mockup's branch/gate pattern — no data model changes required.
+
+#### `surveys/views.py` — `organize_questions_by_group`
+- Before splitting into groups/ungrouped, scans all ungrouped trigger questions and attaches their N controlled questions as `q.branch_questions`
+- Branch children are added to `branch_question_ids` and removed from the top-level rendering list so they don't appear as standalone cards
+- Every question gets `q.branch_questions = []` so the template check is always safe (grouped questions get an empty list)
+
+#### `templates/surveys/survey_detail.html`
+- **CSS**: replaced `.conditional-disabled` with `.branch` — a collapsible div with a left vertical rule (`var(--ink)`), collapsed by default (`max-height: 0; opacity: 0`), slides open with `.is-open`
+- **Gate questions**: trigger Likert questions (those with `branch_questions`) now render as `.pill-gate` — a row of pill-shaped radio buttons using the scale label text. Works for any trigger value, not just yes/no, since the JS checks against `data-trigger-value`
+- **Branch markup**: `.branch` div lives inside the trigger's `.q-card`, loops over `question.branch_questions`, renders each with the full question-type switch (Likert, multiple choice, free text, dropdowns). Branch question text uses `q-title` at 17px
+- **JS — gate script**: replaces the N-card grey-out; listens on `[data-gate]` elements, toggles `is-open` on the target `[data-branch]`, clears all inputs on retract
+- **JS — progress counter**: upgraded to the mockup's three-state model — `data-conditional` questions only count toward progress while their `[data-branch]` ancestor has `is-open`, so a "No" gate answer can still reach 100%
+
+### `templates/tasks/task_list.html` (complete rewrite)
+Ported the researcher task management page to the design system, matching `survey_list.html` exactly.
+- Two-column grid (360px sidebar + 1fr main), INFO/DOMAINS sidebar panels with domain filter
+- Task cards: title, description, Preview + Edit buttons on the left; Active/Inactive/Priority pills + domain + time limit + date on the right
+- Meta column stretches to fill card height, contents centred
+- Sidebar auto-opens to Domains panel when a domain filter is active
+- Empty state with upload prompt
+
+### Card meta column polish (survey list + task list)
+- `align-items: stretch` on both card grids so the meta column fills the full card height
+- `align-items: center` on the meta column so its contents sit centred
+- Pills: `line-height: 1`, `vertical-align: middle`, and asymmetric padding (`4px 10px 2px`) to correct the uppercase text optical baseline issue
 
 **Branch**: `feature-design-port`
 
