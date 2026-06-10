@@ -1,141 +1,124 @@
 {% extends 'base.html' %}
+{% block title %}Task complete — {{ task.title }} — Phantasia Research Hub{% endblock %}
+{% block extra_head %}
+    <style>
+  .task-complete {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 80px var(--page-padding-x);
+    text-align: center;
+  }
 
-{% block title %}Task Complete - {{ task.title }}{% endblock %}
+  .task-complete__mark {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 32px;
+    font-size: 28px;
+    font-weight: 700;
+    color: #0a0a0a;
+  }
 
-{% block extra_css %}
-<style>
-    .complete-container {
-        max-width: 600px;
-        margin: 3rem auto;
-        text-align: center;
-    }
+  .task-complete__title {
+    font-family: var(--font-display);
+    font-size: 36px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 12px;
+  }
 
-    .success-icon {
-        font-size: 5rem;
-        color: #27ae60;
-        margin-bottom: 1rem;
-        animation: scaleIn 0.5s ease-out;
-    }
+  .task-complete__subtitle {
+    font-size: 16px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 40px;
+  }
 
-    @keyframes scaleIn {
-        from {
-            transform: scale(0);
-        }
-        to {
-            transform: scale(1);
-        }
-    }
+  .task-complete__summary {
+    border: 1px solid var(--rule);
+    border-radius: var(--radius-card);
+    background: var(--bg-card);
+    padding: 24px 28px;
+    margin-bottom: 40px;
+    text-align: left;
+  }
 
-    .complete-title {
-        color: #2c3e50;
-        font-size: 2rem;
-        margin-bottom: 1rem;
-    }
+  .task-complete__summary-heading {
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin-bottom: 16px;
+  }
 
-    .complete-message {
-        color: #7f8c8d;
-        font-size: 1.1rem;
-        line-height: 1.6;
-        margin-bottom: 2rem;
-    }
+  .task-complete__summary-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 14px;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--rule-soft);
+  }
 
-    .info-box {
-        background: #f8f9fa;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        padding: 1.5rem;
-        margin-bottom: 2rem;
-        text-align: left;
-    }
+  .task-complete__summary-row:last-child {
+    border-bottom: none;
+  }
 
-    .info-box h3 {
-        color: #2c3e50;
-        margin-top: 0;
-        font-size: 1.2rem;
-    }
+  .task-complete__summary-key {
+    color: var(--ink-muted);
+    padding-right: 12px;
+  }
 
-    .info-box p {
-        color: #666;
-        margin: 0.5rem 0;
-    }
+  .task-complete__summary-val {
+    color: var(--ink);
+    font-weight: 500;
+  }
 
-    .info-box strong {
-        color: #2c3e50;
-    }
-
-    .btn-complete {
-        background-color: #27ae60;
-        color: white;
-        padding: 1rem 3rem;
-        border: none;
-        border-radius: 8px;
-        font-size: 1.2rem;
-        font-weight: bold;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .btn-complete:hover {
-        background-color: #229954;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
-    }
-
-    .note {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 8px;
-        padding: 1rem;
-        margin-top: 2rem;
-        color: #856404;
-        font-size: 0.9rem;
-    }
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-<div class="complete-container">
-    <div class="success-icon">✓</div>
-
-    <h1 class="complete-title">Task Complete!</h1>
-
-    <p class="complete-message">
-        You have finished the <strong>{{ task.title }}</strong> task.
-        {% if submission.status != 'completed' %}
-        Please confirm below to record your completion.
-        {% endif %}
-    </p>
-
-    <div class="info-box">
-        <h3>What Happened:</h3>
-        <p><strong>✓</strong> Your task results were submitted to the research database</p>
-        <p><strong>✓</strong> Your participation time was recorded</p>
-        {% if submission.started_at %}
-        <p><strong>Duration:</strong> Started {{ submission.started_at|date:"M d, Y g:i A" }}</p>
-        {% endif %}
-    </div>
-
     {% if submission.is_test %}
-    <div class="note">
-        <strong>Test submission:</strong> This submission has been flagged as test data.
-        You can review it in the admin panel and delete it once you're done testing.
+        <div class="alert alert--warning" role="alert">
+            Test submission — flagged as test data. Review and delete in the admin panel when done.
+        </div>
+    {% endif %}
+    <div class="task-complete">
+        <div class="task-complete__mark">✓</div>
+        <h1 class="task-complete__title">Task complete</h1>
+        <p class="task-complete__subtitle">
+            You have finished <strong>{{ task.title }}</strong>.
+            {% if submission.status != 'completed' %}Confirm below to record your completion.{% endif %}
+        </p>
+        <div class="task-complete__summary">
+            <div class="task-complete__summary-heading">What was recorded</div>
+            <div class="task-complete__summary-row">
+                <span class="task-complete__summary-key">Results</span>
+                <span class="task-complete__summary-val">Submitted to research database</span>
+            </div>
+            <div class="task-complete__summary-row">
+                <span class="task-complete__summary-key">Participation time</span>
+                <span class="task-complete__summary-val">Recorded</span>
+            </div>
+            {% if submission.started_at %}
+                <div class="task-complete__summary-row">
+                    <span class="task-complete__summary-key">Started</span>
+                    <span class="task-complete__summary-val">{{ submission.started_at|date:"j M Y, g:i A" }}</span>
+                </div>
+            {% endif %}
+        </div>
+        {% if submission.status != 'completed' %}
+            <form method="post">
+                {% csrf_token %}
+                <button type="submit" class="btn btn--primary">Confirm &amp; return to dashboard</button>
+            </form>
+        {% else %}
+            <a href="{% url 'dashboard:participant_dashboard' %}"
+               class="btn btn--outline">Return to dashboard</a>
+        {% endif %}
     </div>
-    {% endif %}
-
-    {% if submission.status != 'completed' %}
-    <form method="post">
-        {% csrf_token %}
-        <button type="submit" class="btn-complete">
-            Confirm Completion & Return to Dashboard
-        </button>
-    </form>
-    {% else %}
-    <p style="color: #27ae60; font-weight: bold; margin: 2rem 0;">
-        ✓ This task has already been marked as complete
-    </p>
-    <a href="{% url 'dashboard:participant_dashboard' %}" style="color: #3498db; text-decoration: none; font-size: 1.1rem;">
-        ← Return to Dashboard
-    </a>
-    {% endif %}
-</div>
 {% endblock %}

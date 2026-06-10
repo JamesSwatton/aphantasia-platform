@@ -777,6 +777,33 @@ Ported the researcher task management page to the design system, matching `surve
 
 ---
 
+## Session 21: Task Templates & base.html Block Fix (June 2026)
+
+### `{% block content %}` added to `base.html`
+- Added `{% block content %}{% endblock %}` inside `{% block body %}` in `base.html`
+- Simple pages (no custom grid) can now use `{% block content %}` and get the default topbar/footer for free
+- Full-page grid templates that override `{% block body %}` are unaffected
+
+### `templates/tasks/task_start.html` (complete rewrite)
+- Ported to design system using `{% block content %}`
+- Centered card layout (`max-width: 680px`, `background: var(--bg-card)`, bordered)
+- Metadata strip (domain, time limit, type) with label/value pairs, separated from heading by a bottom rule
+- Instructions in a plain bordered card
+- Preview mode uses `.alert--info` strip; no redundant "ready to begin" note
+- Back + Start task action buttons using `.btn--outline` / `.btn--primary`
+
+### `templates/tasks/task_complete.html` (complete rewrite)
+- Ported to design system using `{% block content %}`
+- Centered single-column layout
+- Lime-green circle checkmark mark using `var(--bg-accent)`
+- Summary table (results recorded, participation time, started timestamp) in a bordered card
+- Confirm & return button or dashboard link depending on completion status
+- Test submission uses `.alert--warning` strip
+
+**Branch**: `feature-design-port`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
