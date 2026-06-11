@@ -678,7 +678,7 @@
     <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
     <nav class="topbar__actions">
       {% if not request.user.is_staff and not request.user.is_researcher %}
-        <a href="#"><button type="button" class="btn btn--outline">Messages</button></a>
+        <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %}">Messages{% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}</a>
       {% endif %}
       {% if request.user.is_staff %}
         <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">

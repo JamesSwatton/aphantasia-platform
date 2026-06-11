@@ -248,7 +248,7 @@
         <header class="topbar">
             <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
             <nav class="topbar__actions">
-                <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">Messages</a>
+                <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages{% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}</a>
                 <a href="#" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
                     {{ user.get_full_name|default:user.email|slice:":2"|upper }}
                 </a>

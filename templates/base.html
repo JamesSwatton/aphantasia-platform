@@ -19,9 +19,9 @@
         {% block topbar_nav %}
           {% if user.is_authenticated %}
             {% if not user.is_staff and not user.is_researcher %}
-              <a href="#" class="btn btn--outline {% block messages_active %}{% endblock %}">
+              <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">
                 Messages
-                {# TODO: wire to core:messages URL once view exists #}
+                {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
               </a>
             {% endif %}
             <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}#{% endif %}"

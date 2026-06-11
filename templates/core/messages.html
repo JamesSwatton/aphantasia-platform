@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Messages — Phantasia Research Hub{% endblock %}
+{% block viewport %}width=1200{% endblock %}
+{% block messages_active %}is-active{% endblock %}
+
+{% block extra_head %}
+<style>
+  .page-head {
+    padding: 32px var(--page-padding-x) 0;
+  }
+  .page-subtitle {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin: var(--content-spacing) 0 40px;
+    max-width: 60ch;
+  }
+
+  .content {
+    padding: 0 var(--page-padding-x) 80px;
+  }
+
+  .section-label-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--rule);
+  }
+  .message-count {
+    font-size: 13px;
+    color: var(--ink-muted);
+    letter-spacing: 0.02em;
+  }
+  .filter-link {
+    font-size: 13px;
+    color: var(--ink-muted);
+    text-decoration: none;
+    letter-spacing: 0.02em;
+  }
+  .filter-link:hover {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .message {
+    border-bottom: 1px solid var(--rule-soft);
+    background: transparent;
+    transition: background 0.15s ease;
+  }
+  .message[open] {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    margin: 8px 0;
+    border-bottom: none;
+  }
+  .message[open] + .message {
+    border-top: none;
+  }
+
+  .message summary {
+    list-style: none;
+    cursor: pointer;
+    display: grid;
+    grid-template-columns: 20px 1fr auto;
+    gap: 20px;
+    padding: 20px 24px;
+    align-items: center;
+  }
+  .message summary::-webkit-details-marker {
+    display: none;
+  }
+  .message summary:hover {
+    background: rgba(0, 0, 0, 0.02);
+  }
+  .message[open] summary {
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .message[open] summary:hover {
+    background: transparent;
+  }
+
+  .status-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 1.5px solid var(--ink);
+    background: transparent;
+  }
+  .message.is-unread .status-dot {
+    background: var(--blue);
+    border-color: var(--blue);
+  }
+
+  .message-summary-main {
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .message-subject {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--ink);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .message.is-unread .message-subject {
+    font-weight: 700;
+  }
+
+  .message-meta-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 13px;
+    color: var(--ink-muted);
+  }
+  .message-sender {
+    font-weight: 500;
+  }
+  .message-preview {
+    color: var(--ink-subtle);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .message-date {
+    font-size: 13px;
+    color: var(--ink-muted);
+    white-space: nowrap;
+    align-self: start;
+    padding-top: 2px;
+  }
+
+  .message-body {
+    padding: 28px 60px 32px 64px;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-muted);
+    max-width: 72ch;
+  }
+  .message-body p {
+    margin-bottom: 16px;
+  }
+  .message-body p:last-child {
+    margin-bottom: 0;
+  }
+  .message-body strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+  .message-body em {
+    font-style: italic;
+  }
+  .message-body a {
+    color: var(--ink);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+  .message-body h4 {
+    font-family: var(--font-body);
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    margin: 24px 0 8px;
+  }
+  .message-body ul {
+    margin-bottom: 16px;
+    padding-left: 20px;
+    list-style: disc;
+  }
+  .message-body ul li {
+    margin-bottom: 6px;
+  }
+
+  .message-signoff {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--rule-soft);
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+
+  .empty-state {
+    padding: 80px 24px;
+    text-align: center;
+    color: var(--ink-muted);
+  }
+  .empty-state h3 {
+    font-family: var(--font-display);
+    font-weight: 400;
+    font-size: 24px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-head">
+  <h1 class="section-label">Messages</h1>
+  <p class="page-subtitle">
+    Updates, announcements, and research news from the Eye's Mind team.
+    We'll never use this to request sensitive information — if you're ever
+    unsure about a message, email us directly.
+  </p>
+</div>
+
+<main class="content">
+  {% if annotated_messages %}
+    <div class="section-label-row">
+      <span class="message-count" id="msg-count">
+        {{ total }} message{{ total|pluralize }} · {% if unread_count %}{{ unread_count }} unread{% else %}all read{% endif %}
+      </span>
+      <a href="#" class="filter-link" id="mark-all-read">Mark all as read</a>
+    </div>
+
+    <ul class="message-list">
+      {% for item in annotated_messages %}
+        <li>
+          <details class="message {% if item.is_unread %}is-unread{% endif %}"
+                   data-message-id="{{ item.message.id }}"
+                   data-mark-read-url="{% url 'core:mark_read' item.message.id %}">
+            <summary>
+              <span class="status-dot" aria-label="{% if item.is_unread %}Unread{% else %}Read{% endif %}"></span>
+              <div class="message-summary-main">
+                <span class="message-subject">{{ item.message.subject }}</span>
+                <div class="message-meta-row">
+                  <span class="message-sender">{{ item.message.sender_name }}</span>
+                  <span>·</span>
+                  <span class="message-preview">{{ item.message.body|striptags|truncatechars:120 }}</span>
+                </div>
+              </div>
+              <span class="message-date">{{ item.message.created_at|date:"j M" }}</span>
+            </summary>
+            <div class="message-body">
+              {{ item.message.body|safe }}
+            </div>
+          </details>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <div class="empty-state">
+      <h3>No messages yet</h3>
+      <p>Updates and announcements from the research team will appear here.</p>
+    </div>
+  {% endif %}
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const messages = document.querySelectorAll(".message");
+  const badge = document.getElementById("topbar-unread-badge");
+  const msgCount = document.getElementById("msg-count");
+  const markAllLink = document.getElementById("mark-all-read");
+  const markAllUrl = "{% url 'core:mark_all_read' %}";
+  const csrfToken = "{{ csrf_token }}";
+
+  function updateCounts() {
+    const total = messages.length;
+    const unread = document.querySelectorAll(".message.is-unread").length;
+
+    if (badge) {
+      if (unread === 0) {
+        badge.style.display = "none";
+      } else {
+        badge.style.display = "";
+        badge.textContent = unread;
+      }
+    }
+
+    if (msgCount) {
+      const plural = total === 1 ? "message" : "messages";
+      msgCount.textContent = unread === 0
+        ? `${total} ${plural} · all read`
+        : `${total} ${plural} · ${unread} unread`;
+    }
+  }
+
+  messages.forEach((msg) => {
+    msg.addEventListener("toggle", () => {
+      if (msg.open && msg.classList.contains("is-unread")) {
+        const url = msg.dataset.markReadUrl;
+        fetch(url, {
+          method: "POST",
+          headers: { "X-CSRFToken": csrfToken },
+        });
+        setTimeout(() => {
+          msg.classList.remove("is-unread");
+          updateCounts();
+        }, 800);
+      }
+    });
+  });
+
+  if (markAllLink) {
+    markAllLink.addEventListener("click", (e) => {
+      e.preventDefault();
+      fetch(markAllUrl, {
+        method: "POST",
+        headers: { "X-CSRFToken": csrfToken },
+      });
+      messages.forEach((m) => m.classList.remove("is-unread"));
+      updateCounts();
+    });
+  }
+</script>
+{% endblock %}

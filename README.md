@@ -631,9 +631,8 @@ Ported the mockup design system into Django templates, replacing all inline styl
 #### `templates/base.html` (complete rewrite)
 - Quattrocento font loaded from Google Fonts
 - Topbar with sticky scroll-shadow behaviour (JS IIFE)
-- Authenticated state: Messages button + avatar initials; unauthenticated: Login + Sign up buttons
+- Authenticated state: Messages button (with live unread badge) + avatar initials; unauthenticated: Login + Sign up buttons
 - Extensible blocks: `html_attrs`, `viewport`, `topbar_class`, `topbar_nav`, `extra_head`, `body`, `extra_js`
-- Messages and account URLs use `#` placeholders pending view creation
 
 #### `templates/home.html` (complete rewrite)
 - Dark theme (`data-theme="dark"`), static topbar
@@ -799,6 +798,31 @@ Ported the researcher task management page to the design system, matching `surve
 - Summary table (results recorded, participation time, started timestamp) in a bordered card
 - Confirm & return button or dashboard link depending on completion status
 - Test submission uses `.alert--warning` strip
+
+**Branch**: `feature-design-port`
+
+---
+
+## Session 22: Participant Messages Page (June 2026)
+
+### `templates/core/messages.html` (new)
+Participant-facing messages page ported from `mockups/messages.html`:
+- `<details>`/`<summary>` accordion — each message expands in place, lifting onto a card
+- `.is-unread` status dot (filled blue for unread, hollow for read)
+- Section header row: total/unread count + "Mark all as read" link
+- Empty state when no published messages exist
+
+### Messaging views (`core/views.py`)
+- `messages_view`: fetches published messages, annotates each with read/unread state per user
+- `mark_read`: POST `/messages/<id>/mark-read/` — adds user to `read_by`, returns `{unread_count}` JSON
+- `mark_all_read`: POST `/messages/mark-all-read/` — marks all published messages read for user
+
+### Context processor (`core/context_processors.py`)
+- `unread_message_count` injected into every template — powers the topbar badge on all pages
+- Registered in `settings.py` `TEMPLATES.OPTIONS.context_processors`
+
+### Topbar badge
+- `base.html`, `participant_dashboard.html`, and `survey_detail.html` all show a live unread badge on the Messages button, sourced from the context processor
 
 **Branch**: `feature-design-port`
 
