@@ -24,7 +24,7 @@
                 {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
               </a>
             {% endif %}
-            <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}#{% endif %}"
+            <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}{% url 'accounts:account' %}{% endif %}"
                class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
               {{ user.get_full_name|default:user.email|slice:":2"|upper }}
             </a>

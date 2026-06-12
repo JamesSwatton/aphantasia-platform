@@ -1,0 +1,304 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Account — Phantasia Research Hub{% endblock %}
+{% block viewport %}width=1200{% endblock %}
+
+{% block extra_head %}
+<style>
+  .view-switch {
+    padding: 32px var(--page-padding-x) 0;
+  }
+
+  .content {
+    padding: var(--content-spacing) var(--page-padding-x) 80px;
+  }
+
+  .page-title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 42px;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+  }
+  .page-subtitle {
+    font-size: 15px;
+    color: var(--ink-muted);
+    margin-bottom: 40px;
+  }
+
+  .panel {
+    display: none;
+  }
+  .panel.is-active {
+    display: block;
+  }
+
+  .card {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 32px 40px;
+  }
+  .card + .card {
+    margin-top: 16px;
+  }
+  .card h3 {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .card h3::before {
+    content: "";
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: var(--ink);
+    transform: translateY(-1px);
+  }
+
+  /* Profile panel */
+  .field-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    row-gap: 20px;
+    column-gap: 24px;
+  }
+  .field-grid dt {
+    font-size: 13px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    padding-top: 2px;
+  }
+  .field-grid dd {
+    font-size: 16px;
+    color: var(--ink);
+  }
+  .field-grid dd.participant-id {
+    font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+    font-size: 14px;
+    color: var(--ink-muted);
+  }
+
+  .action-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 4px 0;
+  }
+  .action-row p {
+    font-size: 14px;
+    color: var(--ink-muted);
+    max-width: 48ch;
+  }
+
+  /* Consent panel */
+  .consent-meta {
+    display: flex;
+    gap: 48px;
+    padding-bottom: 20px;
+    margin-bottom: 28px;
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: 13px;
+  }
+  .consent-meta div {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .consent-meta dt {
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+  }
+  .consent-meta dd {
+    font-size: 15px;
+    color: var(--ink);
+  }
+
+  .consent-body {
+    white-space: pre-wrap;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--ink-muted);
+  }
+
+  /* Withdraw section */
+  .withdraw {
+    margin-top: 16px;
+    background: var(--warn-soft);
+    border-radius: var(--radius-card);
+    padding: 32px 40px;
+    color: white;
+  }
+  .withdraw h3 {
+    margin-bottom: 16px;
+  }
+  .withdraw h3::before {
+    background: var(--warn);
+  }
+  .withdraw p {
+    font-size: 14px;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    max-width: 72ch;
+  }
+  .withdraw summary {
+    list-style: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--warn);
+    padding: 8px 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .withdraw summary::-webkit-details-marker {
+    display: none;
+  }
+  .withdraw summary::before {
+    content: "›";
+    display: inline-block;
+    transition: transform 0.15s ease;
+  }
+  .withdraw details[open] summary::before {
+    transform: rotate(90deg);
+  }
+  .withdraw-actions {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    display: flex;
+    gap: 12px;
+    align-items: center;
+  }
+  .withdraw-actions span {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<nav class="view-switch" aria-label="Account view">
+  <ul>
+    <li><a href="#" data-panel="profile" aria-current="true">Profile</a></li>
+    <li><a href="#" data-panel="consent">Consent</a></li>
+  </ul>
+</nav>
+
+<main class="content">
+  <h1 class="page-title">{{ user.get_full_name|default:user.email }}</h1>
+  <p class="page-subtitle">Participant since {{ user.date_joined|date:"F Y" }}</p>
+
+  <!-- Profile panel -->
+  <section class="panel is-active" data-panel="profile">
+    <div class="card">
+      <h3>Account details</h3>
+      <dl class="field-grid">
+        <dt>Name</dt>
+        <dd>{{ user.get_full_name|default:"—" }}</dd>
+
+        <dt>Email</dt>
+        <dd>{{ user.email }}</dd>
+
+        <dt>Participant ID</dt>
+        <dd class="participant-id">{{ participant_id }}</dd>
+
+        <dt>Joined</dt>
+        <dd>{{ user.date_joined|date:"j F Y" }}</dd>
+
+        <dt>Last active</dt>
+        <dd>{{ user.last_login|date:"j F Y"|default:"Never" }}</dd>
+      </dl>
+    </div>
+
+    <div class="card">
+      <h3>Security</h3>
+      <div class="action-row">
+        <p>
+          Change the password you use to sign in to the Hub. We'll email a
+          confirmation link to <strong>{{ user.email }}</strong>.
+        </p>
+        <a href="{% url 'account_change_password' %}" class="btn btn--outline">Change password</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Consent panel -->
+  <section class="panel" data-panel="consent">
+    <div class="card">
+      <h3>Consent record</h3>
+
+      {% if consent_form %}
+        <dl class="consent-meta">
+          <div>
+            <dt>Date signed</dt>
+            <dd>{{ user.date_joined|date:"j F Y" }}</dd>
+          </div>
+          {% if consent_form.version %}
+          <div>
+            <dt>Study version</dt>
+            <dd>{{ consent_form.version }}</dd>
+          </div>
+          {% endif %}
+        </dl>
+
+        <div class="consent-body">{{ consent_form.content }}</div>
+      {% else %}
+        <p style="font-size: 15px; color: var(--ink-muted);">No consent record found. Please contact the research team.</p>
+      {% endif %}
+    </div>
+
+    <div class="withdraw">
+      <h3>Withdraw from the study</h3>
+      <p>You can leave the Phantasia Research Hub at any time. When you withdraw:</p>
+      <p>
+        • Your account and all associated data will be permanently deleted from our systems.<br>
+        • You will lose access to any results you have not yet viewed.<br>
+        • Anonymised data that has already been exported for ongoing analyses may still be included in those specific analyses, as we cannot retrospectively remove it.<br>
+        • If you choose to rejoin the study later, your new responses may be affected by your familiarity with the tasks, which limits their scientific value. For this reason we recommend against rejoining.
+      </p>
+      <details>
+        <summary>I want to withdraw</summary>
+        <div class="withdraw-actions">
+          <button type="button" class="btn btn--warn" disabled>Delete my account</button>
+          <span>This action cannot be undone!</span>
+        </div>
+      </details>
+    </div>
+  </section>
+</main>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  const panels = document.querySelectorAll(".panel");
+  const navLinks = document.querySelectorAll(".view-switch a[data-panel]");
+
+  navLinks.forEach((link) => {
+    link.addEventListener("click", (e) => {
+      e.preventDefault();
+      const target = link.dataset.panel;
+      panels.forEach((p) => {
+        p.classList.toggle("is-active", p.dataset.panel === target);
+      });
+      navLinks.forEach((a) => {
+        if (a.dataset.panel === target) {
+          a.setAttribute("aria-current", "true");
+        } else {
+          a.removeAttribute("aria-current");
+        }
+      });
+    });
+  });
+</script>
+{% endblock %}

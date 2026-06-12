@@ -828,6 +828,37 @@ Participant-facing messages page ported from `mockups/messages.html`:
 
 ---
 
+## Session 23: Account Page & Password Flow (June 2026)
+
+### Participant account page (`/accounts/account/`)
+New page for participants to view their profile and consent record:
+- **Profile panel**: account details (name, email, participant ID, joined date, last active) + Change password action card
+- **Consent panel**: renders the active `ConsentForm` content as prose, matching what participants saw at signup; consent metadata (date signed, version); withdrawal section with a disabled "Delete my account" placeholder
+- **Participant ID**: derived as `PRH-{year}-{user.id:04d}` (e.g. `PRH-2026-0147`)
+- Panel switching via `.view-switch` JS (Profile / Consent tabs)
+- Avatar button in topbar and dashboard now links to `/accounts/account/` for participants
+
+### Password change page (`/accounts/password/change/`)
+Styled override of allauth's default password change page:
+- Same two-column layout as login/signup
+- Three fields: current password, new password, confirm new password
+- "Forgot your password?" escape link to reset flow
+- Redirects back to account page on success (via custom `AccountAdapter`)
+
+### Password reset flow (4 pages)
+Styled overrides for the full allauth password reset flow:
+- `password_reset.html` — email input, "Send reset link"
+- `password_reset_done.html` — confirmation, check your inbox
+- `password_reset_from_key.html` — set new password form; handles expired/invalid token inline
+- `password_reset_from_key_done.html` — success, "Log in" link
+
+### `accounts/adapter.py`
+Custom allauth adapter (`AccountAdapter`) overrides `get_password_change_redirect_url` to send users back to the account page instead of allauth's default (the change password page itself).
+
+**Branch**: `feature-design-port`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1400,10 +1431,13 @@ Administrators can edit participant consent forms directly through the admin pan
 - `/admin/` - Django admin panel (researchers and superusers)
 - `/admin/accounts/researcherinvitation/invite/` - Send researcher invitation (researchers and superusers)
 - `/accounts/invite/accept/<token>/` - Accept researcher invitation and register
+- `/accounts/account/` - Participant account page (profile + consent record)
 - `/accounts/signup/` - Participant registration with consent form
 - `/accounts/login/` - User login
 - `/accounts/logout/` - User logout
-- `/accounts/` - Other authentication URLs (password reset, email verification)
+- `/accounts/password/change/` - Change password
+- `/accounts/password/reset/` - Request password reset email
+- `/accounts/` - Other authentication URLs (email verification)
 
 ### Participant Views
 - `/dashboard/` - Participant dashboard showing available and completed surveys

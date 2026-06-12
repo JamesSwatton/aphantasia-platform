@@ -1,9 +1,21 @@
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login
 from django.contrib import messages
 from django.utils import timezone
-from .models import ResearcherInvitation
+from .models import ResearcherInvitation, ConsentForm
 from .forms import ResearcherSignupForm
+
+
+@login_required
+def account(request):
+    user = request.user
+    consent_form = ConsentForm.objects.filter(is_active=True).first()
+    participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
+    return render(request, 'accounts/account.html', {
+        'participant_id': participant_id,
+        'consent_form': consent_form,
+    })
 
 
 def accept_invitation(request, token):
