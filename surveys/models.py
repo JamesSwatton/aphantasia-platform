@@ -44,6 +44,28 @@ class Survey(models.Model):
         blank=True,
         help_text='Labels for each scale value. Example: {"1": "Strongly Disagree", "2": "Disagree", "3": "Neutral", "4": "Agree", "5": "Strongly Agree"}'
     )
+    AGGREGATION_MEAN = 'mean'
+    AGGREGATION_SUM = 'sum'
+    AGGREGATION_CHOICES = [
+        (AGGREGATION_MEAN, 'Mean (average)'),
+        (AGGREGATION_SUM, 'Sum (total)'),
+    ]
+    result_aggregation = models.CharField(
+        max_length=10,
+        choices=AGGREGATION_CHOICES,
+        default=AGGREGATION_MEAN,
+        help_text="How to combine question scores into a group/survey result."
+    )
+    result_min = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Minimum of the display range for results (e.g. 0). Leave blank if no mapping is needed."
+    )
+    result_max = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Maximum of the display range for results (e.g. 100)."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -54,6 +76,10 @@ class Survey(models.Model):
 
     def __str__(self):
         return self.title
+
+    @property
+    def has_subscales(self):
+        return self.question_groups.exclude(result_label='').exists()
 
     def get_label_for_value(self, value):
         """
@@ -124,12 +150,13 @@ class LikertScale(models.Model):
 
 class QuestionGroup(models.Model):
     """
-    Named section/group within a survey, serving two purposes:
-    1. Visual grouping: Section headers with instructions (e.g., "Think of a relative or friend")
-    2. Subscales: Hidden grouping for scoring/analysis (e.g., "extraversion" subscale)
+    A named group of questions within a survey.
+
+    'title' is the participant-facing prompt shown during the survey (e.g. "Think of a relative or friend").
+    'show_title' controls whether that prompt is rendered as a heading in the survey form.
+    'result_label' is the short label used on charts/results (e.g. "Scene 1"). Falls back to title if blank.
 
     Questions in groups get composite identifiers like "1_a", "1_b", "2_a", "2_b", etc.
-    Use show_title=True for visible groups, show_title=False for hidden subscales.
     """
     survey = models.ForeignKey(
         Survey,
@@ -148,12 +175,43 @@ class QuestionGroup(models.Model):
         default=True,
         help_text="Show the group title to participants. Uncheck to use this group as a hidden subscale for scoring/analysis only."
     )
+    result_label = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text="Short label for this group in charts/results (e.g. 'Scene 1'). Falls back to group title if blank."
+    )
+    result_min = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Override the survey-level result_min for this group's display range."
+    )
+    result_max = models.FloatField(
+        null=True,
+        blank=True,
+        help_text="Override the survey-level result_max for this group's display range."
+    )
     order = models.PositiveIntegerField(
         default=0,
         help_text='Display order of this group. Set to 0 for automatic ordering.'
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    @property
+    def effective_result_min(self):
+        if self.result_min is not None:
+            return self.result_min
+        return self.survey.result_min
+
+    @property
+    def effective_result_max(self):
+        if self.result_max is not None:
+            return self.result_max
+        return self.survey.result_max
+
+    @property
+    def display_label(self):
+        return self.result_label or self.title
 
     class Meta:
         ordering = ['survey', 'order', 'id']

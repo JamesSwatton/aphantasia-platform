@@ -859,6 +859,50 @@ Custom allauth adapter (`AccountAdapter`) overrides `get_password_change_redirec
 
 ---
 
+## TODO
+
+- **`result_description` field on Survey**: A short text field explaining what the score means to the participant (e.g. "Higher scores indicate greater vividness of mental imagery"). Deferred — add once the results page UI is taking shape so we know how/where to display it.
+
+---
+
+## Session 24: Results Panel & Survey Scoring (June 2026)
+
+### Survey result metadata (models + migrations)
+Extended `Survey` and `QuestionGroup` models to support participant-facing result display:
+- **`Survey.result_min` / `result_max`** (FloatField, nullable) — the display range for charting scores
+- **`Survey.result_aggregation`** (`'mean'` or `'sum'`, default `'mean'`) — how question scores are combined
+- **`QuestionGroup.result_label`** (CharField, blank) — short chart axis label (e.g. "Scene 1"); falls back to `title` if blank
+- **`QuestionGroup.result_min` / `result_max`** — optional per-group range override; falls back to survey-level via `effective_result_min` / `effective_result_max` properties
+- **`QuestionGroup.display_label`** property — returns `result_label` or `title`
+- **`Survey.has_subscales`** property — `True` if any group has a `result_label` set; drives spider vs scalar chart selection. No extra field needed — derived from data.
+- Migrations: `0022_add_result_range_fields`, `0023_add_result_aggregation`
+- Admin: "Results Display Range" fieldset on Survey; `result_label`, `result_min`, `result_max` columns added to QuestionGroup inline
+
+### Scoring utility (`surveys/utils.py`)
+New `get_survey_result(survey, participant)` and `get_all_results(participant)` functions:
+- Silently skips surveys with no `result_min`/`result_max` configured
+- **Single-score surveys** (`has_subscales=False`): aggregates all likert responses → `{score, min, max, chart_json}`
+- **Multi-subscale surveys** (`has_subscales=True`): aggregates per group → `{subscales: [{label, score, min, max}], chart_json}`
+- `chart_json` is a pre-serialised JSON string injected directly into the template for Chart.js
+
+### Results panel on account page
+- Added **Results** tab to the `view-switch` nav on `/accounts/account/`
+- **Radar chart** (Chart.js) for multi-subscale surveys — axes from `result_label`, scale from `effective_result_min/max`, legend lists each subscale score
+- **Spectrum chart** (SVG curve + CSS `--score-position` marker) for single-score surveys — marker positioned proportionally between `result_min` and `result_max`
+- Chart.js loaded from CDN (`chart.js@4.4.0`)
+- Radar charts resize correctly when the Results tab is activated
+- Empty state shown if no chartable results exist yet
+
+### Seed data management command (`surveys/management/commands/seed_results_data.py`)
+Run with `python manage.py seed_results_data`:
+- Configures result ranges and aggregation on existing surveys (VVIQ, ASSIST-Lite, SBSDS)
+- Sets `result_label` on VVIQ's 4 question groups ("Relative / Friend", "Rising Sun", "Shop Front", "Country Scene")
+- Creates a fictional **Big Five Personality Inventory (Test)** survey with 5 subscale groups (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism), 3 likert questions each
+- Seeds realistic fake responses for `participant@test.com` across all likert surveys
+- Fully idempotent — safe to run multiple times
+
+**Branch**: `feature-results-panel`
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**

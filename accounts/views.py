@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.utils import timezone
 from .models import ResearcherInvitation, ConsentForm
 from .forms import ResearcherSignupForm
+from surveys.utils import get_all_results
 
 
 @login_required
@@ -12,9 +13,11 @@ def account(request):
     user = request.user
     consent_form = ConsentForm.objects.filter(is_active=True).first()
     participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
+    results = get_all_results(user)
     return render(request, 'accounts/account.html', {
         'participant_id': participant_id,
         'consent_form': consent_form,
+        'results': results,
     })
 
 

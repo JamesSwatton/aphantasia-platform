@@ -5,6 +5,7 @@
 {% block viewport %}width=1200{% endblock %}
 
 {% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
   .view-switch {
     padding: 32px var(--page-padding-x) 0;
@@ -130,6 +131,138 @@
     color: var(--ink-muted);
   }
 
+  /* Results panel */
+  .result-summary {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--rule-soft);
+  }
+  .result-summary h4 {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 28px;
+  }
+  .result-summary .score {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--ink-muted);
+  }
+  .result-summary .score strong {
+    color: var(--ink);
+    font-weight: 700;
+  }
+  .result-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-top: 20px;
+    max-width: 72ch;
+  }
+
+  /* Spectrum chart */
+  .spectrum-chart {
+    position: relative;
+    width: 100%;
+    height: 180px;
+  }
+  .spectrum-curve {
+    width: 100%;
+    height: 100%;
+    display: block;
+  }
+  .spectrum-marker {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    left: var(--score-position, 50%);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .spectrum-marker-line {
+    position: absolute;
+    top: 16%;
+    bottom: 4%;
+    left: 50%;
+    width: 2px;
+    background: var(--blue);
+    transform: translateX(-50%);
+  }
+  .spectrum-marker-dot {
+    position: absolute;
+    top: 42%;
+    left: 50%;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+  }
+  .spectrum-marker-label {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .spectrum-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+  }
+
+  /* Radar chart */
+  .radar-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .radar {
+    width: 100%;
+    max-width: 380px;
+    aspect-ratio: 1;
+    margin: 0 auto;
+    position: relative;
+  }
+  .radar canvas {
+    width: 100% !important;
+    height: 100% !important;
+  }
+  .radar-legend h5 {
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    margin-bottom: 16px;
+  }
+  .radar-legend li {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: 14px;
+  }
+  .radar-legend li:last-child { border-bottom: none; }
+  .radar-legend .modality { color: var(--ink); }
+  .radar-legend .value {
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* Withdraw section */
   .withdraw {
     margin-top: 16px;
@@ -192,6 +325,7 @@
   <ul>
     <li><a href="#" data-panel="profile" aria-current="true">Profile</a></li>
     <li><a href="#" data-panel="consent">Consent</a></li>
+    <li><a href="#" data-panel="results">Results</a></li>
   </ul>
 </nav>
 
@@ -276,13 +410,70 @@
       </details>
     </div>
   </section>
+  <!-- Results panel -->
+  <section class="panel" data-panel="results">
+    {% if results %}
+      {% for result in results %}
+        {% if result.has_subscales %}
+          <div class="card" data-chart="radar" data-chart-id="radar-{{ forloop.counter }}" data-chart-json="{{ result.chart_json }}">
+            <h3>{{ result.survey.title }}</h3>
+            <div class="radar-wrap">
+              <div class="radar">
+                <canvas id="radar-{{ forloop.counter }}" aria-label="Radar chart for {{ result.survey.title }}"></canvas>
+              </div>
+              <div class="radar-legend">
+                <h5>Your scores</h5>
+                <ul>
+                  {% for subscale in result.subscales %}
+                    <li>
+                      <span class="modality">{{ subscale.label }}</span>
+                      <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
+                    </li>
+                  {% endfor %}
+                </ul>
+              </div>
+            </div>
+          </div>
+        {% else %}
+          <div class="card" data-chart="spectrum" data-chart-id="spectrum-{{ forloop.counter }}" data-chart-json="{{ result.chart_json }}">
+            <h3>{{ result.survey.title }}</h3>
+            <div class="result-summary">
+              <h4>Your score</h4>
+              <span class="score"><strong>{{ result.score }}</strong> / {{ result.max }}</span>
+            </div>
+            <div class="spectrum-chart" id="spectrum-{{ forloop.counter }}">
+              <svg class="spectrum-curve" viewBox="0 0 800 180" preserveAspectRatio="none" aria-hidden="true">
+                <line x1="0" y1="140" x2="800" y2="140" stroke="#cfcfcf" stroke-width="1" />
+                <path d="M 0,140 C 100,140 150,135 200,120 C 260,100 300,55 400,50 C 500,55 540,100 600,120 C 650,135 700,140 800,140 Z" fill="#e0e0e0" stroke="#b0b0b0" stroke-width="1" />
+              </svg>
+              <div class="spectrum-marker" role="img" aria-label="Your position">
+                <span class="spectrum-marker-label">You</span>
+                <span class="spectrum-marker-line"></span>
+                <span class="spectrum-marker-dot"></span>
+              </div>
+            </div>
+            <div class="spectrum-labels">
+              <span>{{ result.min }}</span>
+              <span>{{ result.max }}</span>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div class="card">
+        <p style="font-size: 15px; color: var(--ink-muted);">No results yet. Complete a survey to see your scores here.</p>
+      </div>
+    {% endif %}
+  </section>
 </main>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+  // Panel switching
   const panels = document.querySelectorAll(".panel");
   const navLinks = document.querySelectorAll(".view-switch a[data-panel]");
+  const radarCharts = {};
 
   navLinks.forEach((link) => {
     link.addEventListener("click", (e) => {
@@ -298,6 +489,75 @@
           a.removeAttribute("aria-current");
         }
       });
+      // Resize radar charts when results panel becomes visible
+      if (target === "results") {
+        Object.values(radarCharts).forEach((chart) => chart.resize());
+      }
+    });
+  });
+
+  // Spectrum charts
+  document.querySelectorAll("[data-chart='spectrum']").forEach((card) => {
+    const data = JSON.parse(card.dataset.chartJson);
+    const chartEl = document.getElementById(card.dataset.chartId);
+    const fraction = Math.min(1, Math.max(0, (data.score - data.min) / (data.max - data.min)));
+    chartEl.style.setProperty("--score-position", `${fraction * 100}%`);
+  });
+
+  // Radar charts
+  document.querySelectorAll("[data-chart='radar']").forEach((card) => {
+    const subscales = JSON.parse(card.dataset.chartJson);
+    const ctx = document.getElementById(card.dataset.chartId).getContext("2d");
+    const max = subscales[0]?.max ?? 5;
+
+    radarCharts[card.dataset.chartId] = new Chart(ctx, {
+      type: "radar",
+      data: {
+        labels: subscales.map((s) => s.label),
+        datasets: [{
+          label: "Your scores",
+          data: subscales.map((s) => s.score),
+          backgroundColor: "rgba(26, 163, 255, 0.2)",
+          borderColor: "#1aa3ff",
+          borderWidth: 2,
+          pointBackgroundColor: "#1aa3ff",
+          pointBorderColor: "#fff",
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: "#0a0a0a",
+            titleFont: { family: "'Helvetica', sans-serif", size: 13 },
+            bodyFont: { family: "'Helvetica', sans-serif", size: 13 },
+            padding: 10,
+            cornerRadius: 6,
+            displayColors: false,
+            callbacks: {
+              label: (ctx) => `${ctx.formattedValue} / ${max}`,
+            },
+          },
+        },
+        scales: {
+          r: {
+            min: subscales[0]?.min ?? 1,
+            max: max,
+            ticks: { stepSize: 1, display: false, backdropColor: "transparent" },
+            grid: { color: "#e0e0e0" },
+            angleLines: { color: "#cfcfcf" },
+            pointLabels: {
+              font: { family: "'Helvetica', sans-serif", size: 12, weight: "500" },
+              color: "#4a4a4a",
+            },
+          },
+        },
+      },
     });
   });
 </script>

@@ -36,7 +36,7 @@ class LikertScaleInline(admin.TabularInline):
 class QuestionGroupInline(admin.TabularInline):
     model = QuestionGroup
     extra = 1
-    fields = ["title", "show_title", "order"]
+    fields = ["title", "show_title", "result_label", "result_min", "result_max", "order"]
     verbose_name = "Question Group"
     verbose_name_plural = "Question Groups"
 
@@ -101,6 +101,16 @@ class SurveyAdmin(admin.ModelAdmin):
                 "description": (
                     "Fallback scale used for any question that does not have a specific Likert Scale assigned. "
                     'Labels use JSON format: {"1": "Strongly Disagree", "2": "Disagree", "3": "Neutral", "4": "Agree", "5": "Strongly Agree"}'
+                ),
+            },
+        ),
+        (
+            "Results Display Range",
+            {
+                "fields": ["result_aggregation", "result_min", "result_max"],
+                "description": (
+                    "The range to which participant scores are mapped for display in charts. "
+                    "Individual question groups can override this range. Leave blank if no mapping is needed."
                 ),
             },
         ),
