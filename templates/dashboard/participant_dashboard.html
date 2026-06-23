@@ -246,7 +246,7 @@
     <div class="page">
         <!-- Row 1: topbar (from base.html — re-declared here to sit in grid row 1) -->
         <header class="topbar">
-            <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+            <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
             <nav class="topbar__actions">
                 <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages{% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}</a>
                 <a href="{% url 'accounts:account' %}" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
@@ -328,7 +328,7 @@
                                             <span class="task-card__indicator"></span>
                                             <h3 class="task-card__title">{{ item.survey.title }}</h3>
                                         </div>
-                                        {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description }}</p>{% endif %}
+                                        {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>{% endif %}
                                     </div>
                                     <div class="task-card__meta">
                                         {% if item.total_questions %}
@@ -348,7 +348,7 @@
                                             <span class="task-card__indicator"></span>
                                             <h3 class="task-card__title">{{ item.task.title }}</h3>
                                         </div>
-                                        {% if item.task.description %}<p class="task-card__desc">{{ item.task.description }}</p>{% endif %}
+                                        {% if item.task.description %}<p class="task-card__desc">{{ item.task.description|truncatewords:30 }}</p>{% endif %}
                                     </div>
                                     <div class="task-card__meta">
                                         {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}
@@ -369,7 +369,7 @@
                                         <span class="task-card__indicator"></span>
                                         <h3 class="task-card__title">{{ item.survey.title }}</h3>
                                     </div>
-                                    {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description }}</p>{% endif %}
+                                    {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>{% endif %}
                                 </div>
                                 <div class="task-card__meta">
                                     {% if item.total_questions %}
@@ -388,7 +388,7 @@
                                         <span class="task-card__indicator"></span>
                                         <h3 class="task-card__title">{{ item.task.title }}</h3>
                                     </div>
-                                    {% if item.task.description %}<p class="task-card__desc">{{ item.task.description }}</p>{% endif %}
+                                    {% if item.task.description %}<p class="task-card__desc">{{ item.task.description|truncatewords:30 }}</p>{% endif %}
                                 </div>
                                 <div class="task-card__meta">
                                     {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}

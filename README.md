@@ -151,13 +151,7 @@ Researchers are users who can access the Django admin panel to create surveys, m
 
 #### Initial Setup
 
-1. **Run the setup command** (only needed once):
-   ```bash
-   python manage.py setup_researcher_permissions
-   ```
-   This creates a "Researchers" group with appropriate permissions.
-
-2. **Create your first superuser** (if you haven't already):
+1. **Create your first superuser** (if you haven't already):
    ```bash
    python manage.py createsuperuser
    ```
@@ -900,6 +894,51 @@ Run with `python manage.py seed_results_data`:
 - Creates a fictional **Big Five Personality Inventory (Test)** survey with 5 subscale groups (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism), 3 likert questions each
 - Seeds realistic fake responses for `participant@test.com` across all likert surveys
 - Fully idempotent — safe to run multiple times
+
+**Branch**: `feature-results-panel`
+
+---
+
+## Session 25: Researcher Access, Survey UX & Bug Fixes (June 2026)
+
+### Researcher account fixes
+- **`is_staff` now visible in admin**: Added `is_staff` to the Permissions fieldset in `UserAdmin` so it can be set when creating or editing a user
+- **`is_researcher` now editable at creation**: Added `is_researcher` to `add_fieldsets` so it can be ticked when adding a new user via the admin "Add user" form
+- **Fixed `is_researcher` always read-only bug**: `readonly_fields = ['consent_text', 'is_researcher']` at class level was overriding `get_readonly_fields`, making the field read-only even for superusers. Moved `is_researcher` out of `readonly_fields` — it is now only added to the readonly list dynamically for non-superusers
+- **Removed Researchers group**: The `Researchers` Django group was never used at runtime — all access checks use `is_researcher or is_staff` directly. Removed group management from `accounts/signals.py` and deleted the unused `setup_researcher_permissions` management command
+- **Researcher login via main login**: Researchers must log in with an email address (allauth is configured for email-based auth). Accounts created manually in the admin without an email set cannot log in via the main login page
+
+### Survey scoring fixes
+- **Subscale surveys no longer require survey-level range**: `get_survey_result()` in `surveys/utils.py` now only bails out early if the survey has no subscales *and* no `result_min`/`result_max`. Subscale surveys show results as long as the question groups have their ranges configured
+- **`get_survey_result` accepts `is_test` parameter**: Allows computing results from test (researcher preview) responses as well as real participant responses
+
+### Preview result chart
+When a researcher submits test data via the survey preview page, the computed result chart is now shown immediately below the response table — the same spectrum or radar chart that participants see on their account page. This lets researchers verify scoring, ranges, and aggregation visually before activating a survey.
+- `surveys/views.py`: initialises `test_result = None`; after saving test responses calls `get_survey_result(survey, request.user, is_test=True)` and passes `test_result` to the template
+- `survey_detail.html`: loads Chart.js (CDN) only in preview mode; renders spectrum or radar chart from `test_result` if present; uses the same HTML/JS patterns as the account page results panel
+
+### Survey instructions field
+- New `instructions` TextField (blank, optional) on the `Survey` model (`surveys/models.py`)
+- Migration: `0024_add_survey_instructions`
+- Admin: field added to the "Survey Information" fieldset in `surveys/admin.py`, displayed below `description`
+- Template: if set, rendered as a paragraph above the standard "How to answer" bullet list in the survey sidebar (`survey_detail.html`)
+
+### Markdown rendering
+- Added `markdown` package (`pip install markdown`, added to `requirements.txt`)
+- New template filter `render_markdown` in `core/templatetags/markdown_extras.py` — converts markdown to safe HTML using the `nl2br` extension so single line breaks are preserved
+- Applied to `survey.description` and `survey.instructions` in `survey_detail.html`; both fields now support markdown formatting
+
+### Dashboard description truncation
+- Task and survey descriptions on the participant dashboard (`participant_dashboard.html`) were rendering in full; now truncated to 30 words with `truncatewords:30` to match the survey and task list pages
+
+### Brand link → dashboard
+- Topbar brand ("Phantasia Research Hub") now links to `/dashboard/` when the user is logged in, and to `/` (home) when not. Updated in `base.html` (conditional), and hardcoded to `/dashboard/` in `participant_dashboard.html`, `survey_list.html`, `task_list.html`, and `survey_detail.html`
+
+### Conditional branch required-field bug fix
+Branch (conditional follow-up) questions with `required` inputs were blocking form submission when the branch was closed — the browser's native validation fires on all inputs in the DOM regardless of visibility. Fix:
+- On page load, any required input inside a `.branch` div gets `data-was-required="1"` stamped on it
+- The gate/branch JS in `survey_detail.html` now toggles `required` on those inputs when the branch opens or closes
+- Closed branches have `required` removed so submission is never blocked; reopened branches restore it
 
 **Branch**: `feature-results-panel`
 

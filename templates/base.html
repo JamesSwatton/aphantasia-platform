@@ -14,7 +14,7 @@
   <body>
     {% block header %}
     <header class="topbar {% block topbar_class %}{% endblock %}">
-      <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+      <a href="{% if user.is_authenticated %}{% url 'dashboard:participant_dashboard' %}{% else %}{% url 'core:home' %}{% endif %}" class="topbar__brand">Phantasia Research Hub</a>
       <nav class="topbar__actions">
         {% block topbar_nav %}
           {% if user.is_authenticated %}

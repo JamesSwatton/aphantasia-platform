@@ -92,7 +92,7 @@ class SurveyAdmin(admin.ModelAdmin):
     fieldsets = [
         (
             "Survey Information",
-            {"fields": ["title", "description", "researcher", "domain", "is_active", "is_priority", "randomize_questions", "preview_link_field"]},
+            {"fields": ["title", "description", "instructions", "researcher", "domain", "is_active", "is_priority", "randomize_questions", "preview_link_field"]},
         ),
         (
             "Default Likert Scale",

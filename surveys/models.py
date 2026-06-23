@@ -10,6 +10,10 @@ class Survey(models.Model):
     """
     title = models.CharField(max_length=200)
     description = models.TextField()
+    instructions = models.TextField(
+        blank=True,
+        help_text="Optional survey-specific instructions shown in the sidebar before the standard how-to-answer points."
+    )
     researcher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,

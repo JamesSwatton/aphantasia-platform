@@ -2,7 +2,7 @@ import json
 from .models import Survey, ParticipantResponse
 
 
-def get_survey_result(survey, participant):
+def get_survey_result(survey, participant, is_test=False):
     """
     Compute a participant's result for a single completed survey.
 
@@ -30,13 +30,13 @@ def get_survey_result(survey, participant):
             'chart_json': '[{"label": "Openness", "score": 4.67, "min": 1.0, "max": 5.0}, ...]',
         }
     """
-    if survey.result_min is None or survey.result_max is None:
+    if not survey.has_subscales and (survey.result_min is None or survey.result_max is None):
         return None
 
     responses = ParticipantResponse.objects.filter(
         survey=survey,
         participant=participant,
-        is_test=False,
+        is_test=is_test,
     ).select_related('question__group')
 
     if not responses.exists():

@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static markdown_extras %}
 
 {% block title %}{{ survey.title }} — Phantasia Research Hub{% endblock %}
 
@@ -8,6 +8,9 @@
 {% block footer %}{% endblock %}
 
 {% block extra_head %}
+{% if is_preview %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+{% endif %}
 <style>
 
   /* =========================================================================
@@ -230,6 +233,104 @@
     vertical-align: middle;
     margin-left: 4px;
   }
+
+  /* =========================================================================
+     Test result chart (preview mode)
+     ========================================================================= */
+
+  .test-chart {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    padding: 24px 28px;
+    margin-bottom: 16px;
+  }
+  .test-chart__heading {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 16px;
+    margin-bottom: 20px;
+    color: var(--ink);
+  }
+  .test-chart__score {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: 15px;
+    color: var(--ink-muted);
+  }
+  .test-chart__score strong { color: var(--ink); font-weight: 700; }
+  .spectrum-chart {
+    position: relative;
+    width: 100%;
+    height: 180px;
+  }
+  .spectrum-curve { width: 100%; height: 100%; display: block; }
+  .spectrum-marker {
+    position: absolute;
+    top: 0; bottom: 0;
+    left: var(--score-position, 50%);
+    transform: translateX(-50%);
+    pointer-events: none;
+  }
+  .spectrum-marker-line {
+    position: absolute;
+    top: 16%; bottom: 4%; left: 50%;
+    width: 2px;
+    background: var(--blue);
+    transform: translateX(-50%);
+  }
+  .spectrum-marker-dot {
+    position: absolute;
+    top: 42%; left: 50%;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--blue);
+    border: 3px solid #fff;
+    transform: translate(-50%, -50%);
+  }
+  .spectrum-marker-label {
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    font-size: 12px; font-weight: 600;
+    color: var(--ink);
+    white-space: nowrap;
+  }
+  .spectrum-labels {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 8px;
+    font-size: 12px;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+  }
+  .radar-wrap {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 40px;
+    align-items: center;
+  }
+  .radar { width: 100%; max-width: 340px; aspect-ratio: 1; margin: 0 auto; }
+  .radar canvas { width: 100% !important; height: 100% !important; }
+  .radar-legend h5 {
+    font-size: 13px; font-weight: 600;
+    letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--ink-subtle); margin-bottom: 16px;
+  }
+  .radar-legend li {
+    display: flex; justify-content: space-between;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--rule-soft);
+    font-size: 14px;
+  }
+  .radar-legend li:last-child { border-bottom: none; }
+  .radar-legend .modality { color: var(--ink); }
+  .radar-legend .value { color: var(--ink-muted); font-variant-numeric: tabular-nums; }
 
   /* =========================================================================
      Question cards
@@ -675,7 +776,7 @@
 
   <!-- ── Row 1: topbar ───────────────────────────────────────────────────── -->
   <header class="topbar">
-    <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+    <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
     <nav class="topbar__actions">
       {% if not request.user.is_staff and not request.user.is_researcher %}
         <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %}">Messages{% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}</a>
@@ -715,13 +816,16 @@
   <aside class="page__sidebar">
     <div class="info-content">
       {% if survey.description %}
-        <p>{{ survey.description }}</p>
+        {{ survey.description|render_markdown }}
       {% endif %}
       {% if survey.domain %}
         <p><strong>Domain:</strong> {{ survey.domain.name }}</p>
       {% endif %}
       <div class="info-block">
         <h2 class="section-label">How to answer</h2>
+        {% if survey.instructions %}
+          {{ survey.instructions|render_markdown }}
+        {% endif %}
         <ul>
           <li>Read each question carefully before responding.</li>
           <li>Answer based on your honest first impression.</li>
@@ -797,6 +901,54 @@
           </tbody>
         </table>
       </div>
+    {% endif %}
+
+    <!-- Test result chart (shown after a researcher test submission) -->
+    {% if test_result %}
+      {% if test_result.has_subscales %}
+        <div class="test-chart" id="test-chart" data-chart="radar" data-chart-json="{{ test_result.chart_json }}">
+          <p class="test-chart__heading">Computed result</p>
+          <div class="radar-wrap">
+            <div class="radar">
+              <canvas id="test-radar" aria-label="Radar chart for {{ survey.title }}"></canvas>
+            </div>
+            <div class="radar-legend">
+              <h5>Subscale scores</h5>
+              <ul>
+                {% for subscale in test_result.subscales %}
+                  <li>
+                    <span class="modality">{{ subscale.label }}</span>
+                    <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
+                  </li>
+                {% endfor %}
+              </ul>
+            </div>
+          </div>
+        </div>
+      {% else %}
+        <div class="test-chart" id="test-chart" data-chart="spectrum" data-chart-json="{{ test_result.chart_json }}">
+          <p class="test-chart__heading">Computed result</p>
+          <div class="test-chart__score">
+            <span>Score</span>
+            <span><strong>{{ test_result.score }}</strong> / {{ test_result.max }}</span>
+          </div>
+          <div class="spectrum-chart" id="test-spectrum">
+            <svg class="spectrum-curve" viewBox="0 0 800 180" preserveAspectRatio="none" aria-hidden="true">
+              <line x1="0" y1="140" x2="800" y2="140" stroke="#cfcfcf" stroke-width="1" />
+              <path d="M 0,140 C 100,140 150,135 200,120 C 260,100 300,55 400,50 C 500,55 540,100 600,120 C 650,135 700,140 800,140 Z" fill="#e0e0e0" stroke="#b0b0b0" stroke-width="1" />
+            </svg>
+            <div class="spectrum-marker" role="img" aria-label="Test score position">
+              <span class="spectrum-marker-label">Score</span>
+              <span class="spectrum-marker-line"></span>
+              <span class="spectrum-marker-dot"></span>
+            </div>
+          </div>
+          <div class="spectrum-labels">
+            <span>{{ test_result.min }}</span>
+            <span>{{ test_result.max }}</span>
+          </div>
+        </div>
+      {% endif %}
     {% endif %}
 
     <!-- ── Survey form ───────────────────────────────────────────────────── -->
@@ -1197,8 +1349,20 @@
         branch.querySelectorAll('select').forEach(function (s) { s.value = ''; });
       }
 
+      // Enable/disable required so closed branches don't block form submission
+      branch.querySelectorAll('input, textarea, select').forEach(function (el) {
+        if (el.dataset.wasRequired) {
+          el.required = open;
+        }
+      });
+
       document.dispatchEvent(new Event('survey:refresh'));
     }
+
+    // Mark originally-required branch inputs before the first update() disables them
+    branch.querySelectorAll('input, textarea, select').forEach(function (el) {
+      if (el.required) el.dataset.wasRequired = '1';
+    });
 
     gate.querySelectorAll('input[type="radio"]').forEach(function (r) {
       r.addEventListener('change', update);
@@ -1240,6 +1404,68 @@
     totalEl.textContent = total;
     fill.style.width    = (total > 0 ? Math.round(done / total * 100) : 0) + '%';
   });
+})();
+
+(function () {
+  /* =========================================================================
+     Test result chart (preview mode only)
+     ========================================================================= */
+  var spectrumCard = document.querySelector('[data-chart="spectrum"]');
+  if (spectrumCard) {
+    var data = JSON.parse(spectrumCard.dataset.chartJson);
+    var chartEl = document.getElementById('test-spectrum');
+    var fraction = Math.min(1, Math.max(0, (data.score - data.min) / (data.max - data.min)));
+    chartEl.style.setProperty('--score-position', (fraction * 100) + '%');
+  }
+
+  var radarCard = document.querySelector('[data-chart="radar"]');
+  if (radarCard) {
+    var subscales = JSON.parse(radarCard.dataset.chartJson);
+    var ctx = document.getElementById('test-radar').getContext('2d');
+    var max = subscales[0] ? subscales[0].max : 5;
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: subscales.map(function (s) { return s.label; }),
+        datasets: [{
+          label: 'Test scores',
+          data: subscales.map(function (s) { return s.score; }),
+          backgroundColor: 'rgba(26, 163, 255, 0.2)',
+          borderColor: '#1aa3ff',
+          borderWidth: 2,
+          pointBackgroundColor: '#1aa3ff',
+          pointBorderColor: '#fff',
+          pointBorderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+        }],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#0a0a0a',
+            padding: 10,
+            cornerRadius: 6,
+            displayColors: false,
+            callbacks: { label: function (ctx) { return ctx.formattedValue + ' / ' + max; } },
+          },
+        },
+        scales: {
+          r: {
+            min: subscales[0] ? subscales[0].min : 1,
+            max: max,
+            ticks: { stepSize: 1, display: false, backdropColor: 'transparent' },
+            grid: { color: '#e0e0e0' },
+            angleLines: { color: '#cfcfcf' },
+            pointLabels: { font: { size: 12, weight: '500' }, color: '#4a4a4a' },
+          },
+        },
+      },
+    });
+  }
 })();
 
 (function () {

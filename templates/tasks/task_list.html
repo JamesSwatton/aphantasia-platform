@@ -224,7 +224,7 @@
 
   <!-- Row 1: topbar -->
   <header class="topbar">
-    <a href="{% url 'core:home' %}" class="topbar__brand">Phantasia Research Hub</a>
+    <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
     <nav class="topbar__actions">
       <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
         {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}

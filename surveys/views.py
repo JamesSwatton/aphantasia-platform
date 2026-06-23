@@ -5,6 +5,7 @@ from django.http import HttpResponseForbidden
 from django.db import transaction
 from django.urls import reverse
 from .models import Survey, ParticipantResponse, QuestionGroup
+from .utils import get_survey_result
 import random
 from collections import OrderedDict
 
@@ -107,6 +108,7 @@ def survey_preview(request, pk):
     grouped_questions = organize_questions_by_group(questions, groups)
 
     test_responses = None
+    test_result = None
 
     if request.method == 'POST':
         # Process preview submission - save to database with is_test=True
@@ -372,6 +374,7 @@ def survey_preview(request, pk):
                 f"Test data saved for '{survey.title}'. See below for the full response summary."
             )
             test_responses = display_responses
+            test_result = get_survey_result(survey, request.user, is_test=True)
 
     context = {
         'survey': survey,
@@ -379,6 +382,7 @@ def survey_preview(request, pk):
         'grouped_questions': grouped_questions,
         'is_preview': True,
         'test_responses': test_responses,
+        'test_result': test_result,
     }
 
     return render(request, 'surveys/survey_detail.html', context)

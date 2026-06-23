@@ -30,23 +30,19 @@ class UserAdmin(BaseUserAdmin):
         }),
         ('Consent Information', {'fields': ('consent_text',)}),
         ('Permissions', {
-            'fields': ('is_active', 'is_superuser', 'user_permissions'),
-            'description': 'Note: Researcher group membership and staff status are automatically managed.'
+            'fields': ('is_active', 'is_staff', 'is_superuser', 'user_permissions'),
+            'description': 'Staff status is required for admin access. Researcher group membership is automatically managed.'
         }),
         ('Important dates', {'fields': ('last_login', 'date_joined')}),
     )
 
     add_fieldsets = BaseUserAdmin.add_fieldsets + (
-        ('Role Information', {'fields': ('is_participant',)}),
+        ('Role Information', {'fields': ('is_researcher', 'is_participant')}),
     )
 
-    readonly_fields = ['consent_text', 'is_researcher']
+    readonly_fields = ['consent_text']
 
     def get_readonly_fields(self, request, obj=None):
-        """
-        Make is_researcher read-only for non-superusers.
-        Superusers can still manually adjust in emergency situations.
-        """
         readonly = list(super().get_readonly_fields(request, obj))
         if not request.user.is_superuser:
             if 'is_researcher' not in readonly:
