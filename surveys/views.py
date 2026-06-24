@@ -36,13 +36,15 @@ def organize_questions_by_group(questions, groups):
                     branch_question_ids.add(candidate.id)
 
     # Separate grouped and ungrouped questions, excluding branch children
+    # Groups with show_title=False are subscale-only; render their questions individually
+    group_lookup = {g.id: g for g in groups}
     grouped_questions = {}  # {group_id: [questions]}
     ungrouped_questions = []
 
     for q in questions:
         if q.id in branch_question_ids:
             continue  # rendered inside the trigger card, not as a top-level card
-        if q.group_id:
+        if q.group_id and group_lookup.get(q.group_id, None) and group_lookup[q.group_id].show_title:
             if q.group_id not in grouped_questions:
                 grouped_questions[q.group_id] = []
             grouped_questions[q.group_id].append(q)

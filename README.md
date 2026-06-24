@@ -942,6 +942,23 @@ Branch (conditional follow-up) questions with `required` inputs were blocking fo
 
 **Branch**: `feature-results-panel`
 
+## Session 26: Hidden Subscale Question Rendering (June 2026)
+
+### Subscale groups now render questions individually
+Previously, all questions belonging to a `QuestionGroup` were bundled into a single matrix card regardless of whether the group title was visible. This meant that even hidden subscale groups (used purely for scoring) caused their questions to cluster visually on the survey form.
+
+**Change** (`surveys/views.py` — `organize_questions_by_group`):
+- Groups with `show_title=True` continue to render as a single matrix card (the group heading is shown, questions are bundled — correct for visible instruction-style groups)
+- Groups with `show_title=False` now have their questions treated as if they were ungrouped — each question gets its own card and is interleaved with all other questions by its `order` value
+
+This means researchers can assign questions to a subscale group for scoring purposes without that grouping being visible to participants. Participants see the questions in their configured order with no visual hint that certain questions belong together, which prevents them from detecting or gaming the subscale structure.
+
+Scoring is unaffected — `get_survey_result()` reads `question.group_id` directly from the database, not from the rendered structure.
+
+**Branch**: `feature-results-panel`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1004,8 +1021,8 @@ The survey system is being extended incrementally to support richer question typ
   - `show_title`: Boolean to control visibility (True = show header to participants, False = hidden subscale)
   - `order`: Display order (auto-increments if set to 0)
 - **Use cases:**
-  - **Visible groups** (show_title=True): Section headers with instructions (e.g., "Think of a relative or friend")
-  - **Hidden subscales** (show_title=False): Organizational grouping for scoring/analysis (e.g., "extraversion", "agreeableness")
+  - **Visible groups** (show_title=True): Section headers with instructions (e.g., "Think of a relative or friend"). Questions are bundled into a single matrix card.
+  - **Hidden subscales** (show_title=False): Organizational grouping for scoring/analysis only (e.g., "extraversion", "agreeableness"). Questions render as individual cards interleaved with all other questions by their `order` value — participants see no visual grouping, which avoids telegraphing the subscale structure.
 - Questions can optionally belong to a group via `group` ForeignKey
 - Questions in groups get meaningful `question_id` identifiers: `{group_code}_{question_number}` (e.g., "1_a", "1_b", "2_a", "2_b")
 - Ungrouped questions use simple identifiers like "5", "10"
