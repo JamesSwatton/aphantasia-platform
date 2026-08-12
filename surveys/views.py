@@ -396,7 +396,7 @@ def survey_take(request, pk):
     View for participants to take a survey and submit their responses.
     Researchers are redirected to test mode.
     """
-    survey = get_object_or_404(Survey, pk=pk)
+    survey = get_object_or_404(Survey, pk=pk, is_feedback=False)
 
     # Redirect researchers to preview
     if request.user.is_researcher or request.user.is_staff:

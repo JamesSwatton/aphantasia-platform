@@ -959,6 +959,37 @@ Scoring is unaffected — `get_survey_result()` reads `question.group_id` direct
 
 ---
 
+## Session 27: Participant Feedback Form (August 2026)
+
+### Feedback survey system
+Added a mid-study feedback form that appears inline on the participant account page after a configurable number of surveys have been completed.
+
+#### Model changes (`surveys/models.py`)
+- **`Survey.is_feedback`** (BooleanField, default `False`) — marks a survey as a feedback form; hides it from the participant dashboard and researcher survey list
+- **`Survey.show_after_n_surveys`** (PositiveIntegerField, default `2`) — threshold of completed regular surveys before the form appears on the account page
+- **`FeedbackSurvey` proxy model** — sits in `surveys/models.py` but is registered under **Core** in the admin, keeping it visually separate from study surveys
+- Migration: `0025_add_feedback_survey_fields`
+
+#### Admin (`core/admin.py`)
+- **Core → Feedback Surveys** section with a simplified admin: title, description, researcher, active toggle, threshold, default Likert scale, and a question inline limited to Likert and Free Text question types only
+
+#### Account page (`/accounts/account/`)
+- Feedback card rendered inside the **Profile panel**, below the Security card
+- Hidden until `completed_regular_surveys >= show_after_n_surveys` and participant has no prior response
+- Supports **Submit** (saves real answers) and **Skip** (records `NULL` for all questions) — both permanently hide the form
+- Skipping uses `formnovalidate` to bypass browser required-field validation
+- On submission, a **completion modal** fires (same pattern as survey completion) with Escape/backdrop dismiss and `history.replaceState` to strip `?feedback=submitted` from the URL so refresh doesn't reopen it
+- Once submitted or skipped, shows a small "Thank you — your feedback has been received" card in place of the form
+
+#### Data integrity
+- Feedback surveys excluded from participant dashboard (`dashboard/views.py`) and from `/surveys/<id>/take/` (`surveys/views.py`)
+- Responses stored as `ParticipantResponse` with `is_test=False`, visible under **Surveys → Participant Responses** filterable by survey name
+- `NULL` answers on skip allow researchers to distinguish skipped from not-yet-shown
+
+**Branch**: `feature-feedback-form`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -971,7 +1002,7 @@ Scoring is unaffected — `get_survey_result()` reads `question.group_id` direct
 8. ~~**Add CSV export** for task results in admin panel~~ ✅ **Completed** (Session 8 — list action + per-submission download buttons)
 9. ~~**Redesign survey system** to support richer question types~~ ✅ **Completed** (Sessions 8-12)
 10. ~~**Admin dashboard improvements**~~ ✅ **Completed** (Session 13 — domain filtering, download logging, progress tracking)
-11. **Add feedback form to participant account page** — shown after n surveys completed; collects mid-study feedback without being a formal survey
+11. ~~**Add feedback form to participant account page**~~ ✅ **Completed** (Session 27)
 12. **Add exit survey and withdrawal info to account page** — exit survey (triggered when participant opts to withdraw or at study end); expanded withdrawal section with detailed info and account deletion flow
 13. **Integrate HTMX** for dynamic interactions
 14. **Add Alpine.js** for frontend interactivity

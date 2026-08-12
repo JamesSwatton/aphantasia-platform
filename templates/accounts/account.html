@@ -1,12 +1,10 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}Account — Phantasia Research Hub{% endblock %}
 {% block viewport %}width=1200{% endblock %}
-
 {% block extra_head %}
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
   .view-switch {
     padding: 32px var(--page-padding-x) 0;
   }
@@ -30,6 +28,7 @@
 
   .panel {
     display: none;
+    line-height: 1.6;
   }
   .panel.is-active {
     display: block;
@@ -39,6 +38,7 @@
     background: var(--bg-card);
     border-radius: var(--radius-card);
     padding: 32px 40px;
+    max-width: 860px;
   }
   .card + .card {
     margin-top: 16px;
@@ -263,6 +263,162 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* Feedback form */
+  .feedback-form .q-label {
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--ink);
+    display: block;
+    margin-bottom: 14px;
+  }
+  .feedback-form .q-num {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-subtle);
+    display: block;
+    margin-bottom: 6px;
+  }
+  .feedback-form .likert-row {
+    display: flex;
+    flex-wrap: wrap;
+    margin-bottom: 4px;
+  }
+  .feedback-form .likert-row label {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    color: var(--ink-muted);
+    cursor: pointer;
+    flex: 1;
+    min-width: 48px;
+    text-align: center;
+  }
+  .feedback-form .likert-row input[type="radio"] {
+    accent-color: var(--blue);
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+  }
+  .feedback-form textarea {
+    width: 100%;
+    border: 1px solid var(--rule);
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-family: var(--font-body);
+    font-size: 15px;
+    color: var(--ink);
+    background: var(--bg-page);
+    resize: vertical;
+    min-height: 90px;
+    box-sizing: border-box;
+  }
+  .feedback-form textarea:focus {
+    outline: 2px solid var(--blue);
+    outline-offset: 1px;
+  }
+  .feedback-form .q-block + .q-block {
+    margin-top: 28px;
+    padding-top: 28px;
+    border-top: 1px solid var(--rule-soft);
+  }
+  .feedback-thanks {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 15px;
+    color: var(--ink-muted);
+  }
+  .feedback-thanks::before {
+    content: "✓";
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--bg-accent);
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  /* Feedback completion modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    background: rgba(20, 22, 28, 0.55);
+    -webkit-backdrop-filter: blur(6px);
+    backdrop-filter: blur(6px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+  }
+  .modal-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition: opacity 0.22s ease, visibility 0s;
+  }
+  .modal {
+    background: var(--bg-card);
+    border-radius: var(--radius-card);
+    max-width: 440px;
+    width: 100%;
+    padding: 40px 40px 36px;
+    text-align: center;
+    box-shadow: 0 24px 60px rgba(20, 22, 28, 0.35);
+    transform: translateY(12px) scale(0.98);
+    transition: transform 0.24s ease;
+  }
+  .modal-overlay.is-open .modal {
+    transform: translateY(0) scale(1);
+  }
+  .modal__badge {
+    width: 64px;
+    height: 64px;
+    margin: 0 auto 24px;
+    border-radius: 50%;
+    background: var(--blue);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal__badge::after {
+    content: "";
+    width: 22px;
+    height: 11px;
+    border-left: 2.5px solid var(--bg-card);
+    border-bottom: 2.5px solid var(--bg-card);
+    transform: rotate(-45deg) translate(2px, -2px);
+  }
+  .modal__title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-bottom: 12px;
+  }
+  .modal__body {
+    font-size: 15px;
+    line-height: 1.6;
+    color: var(--ink-muted);
+    margin-bottom: 28px;
+  }
+  .modal__actions .btn { width: 100%; }
+
   /* Withdraw section */
   .withdraw {
     margin-top: 16px;
@@ -270,6 +426,7 @@
     border-radius: var(--radius-card);
     padding: 32px 40px;
     color: white;
+    max-width: 860px;
   }
   .withdraw h3 {
     margin-bottom: 16px;
@@ -317,159 +474,245 @@
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
   }
-</style>
+    </style>
 {% endblock %}
-
 {% block content %}
-<nav class="view-switch" aria-label="Account view">
-  <ul>
-    <li><a href="#" data-panel="profile" aria-current="true">Profile</a></li>
-    <li><a href="#" data-panel="consent">Consent</a></li>
-    <li><a href="#" data-panel="results">Results</a></li>
-  </ul>
-</nav>
-
-<main class="content">
-  <h1 class="page-title">{{ user.get_full_name|default:user.email }}</h1>
-  <p class="page-subtitle">Participant since {{ user.date_joined|date:"F Y" }}</p>
-
-  <!-- Profile panel -->
-  <section class="panel is-active" data-panel="profile">
-    <div class="card">
-      <h3>Account details</h3>
-      <dl class="field-grid">
-        <dt>Name</dt>
-        <dd>{{ user.get_full_name|default:"—" }}</dd>
-
-        <dt>Email</dt>
-        <dd>{{ user.email }}</dd>
-
-        <dt>Participant ID</dt>
-        <dd class="participant-id">{{ participant_id }}</dd>
-
-        <dt>Joined</dt>
-        <dd>{{ user.date_joined|date:"j F Y" }}</dd>
-
-        <dt>Last active</dt>
-        <dd>{{ user.last_login|date:"j F Y"|default:"Never" }}</dd>
-      </dl>
-    </div>
-
-    <div class="card">
-      <h3>Security</h3>
-      <div class="action-row">
-        <p>
-          Change the password you use to sign in to the Hub. We'll email a
-          confirmation link to <strong>{{ user.email }}</strong>.
-        </p>
-        <a href="{% url 'account_change_password' %}" class="btn btn--outline">Change password</a>
-      </div>
-    </div>
-  </section>
-
-  <!-- Consent panel -->
-  <section class="panel" data-panel="consent">
-    <div class="card">
-      <h3>Consent record</h3>
-
-      {% if consent_form %}
-        <dl class="consent-meta">
-          <div>
-            <dt>Date signed</dt>
-            <dd>{{ user.date_joined|date:"j F Y" }}</dd>
-          </div>
-          {% if consent_form.version %}
-          <div>
-            <dt>Study version</dt>
-            <dd>{{ consent_form.version }}</dd>
-          </div>
-          {% endif %}
-        </dl>
-
-        <div class="consent-body">{{ consent_form.content }}</div>
-      {% else %}
-        <p style="font-size: 15px; color: var(--ink-muted);">No consent record found. Please contact the research team.</p>
-      {% endif %}
-    </div>
-
-    <div class="withdraw">
-      <h3>Withdraw from the study</h3>
-      <p>You can leave the Phantasia Research Hub at any time. When you withdraw:</p>
-      <p>
-        • Your account and all associated data will be permanently deleted from our systems.<br>
-        • You will lose access to any results you have not yet viewed.<br>
-        • Anonymised data that has already been exported for ongoing analyses may still be included in those specific analyses, as we cannot retrospectively remove it.<br>
-        • If you choose to rejoin the study later, your new responses may be affected by your familiarity with the tasks, which limits their scientific value. For this reason we recommend against rejoining.
-      </p>
-      <details>
-        <summary>I want to withdraw</summary>
-        <div class="withdraw-actions">
-          <button type="button" class="btn btn--warn" disabled>Delete my account</button>
-          <span>This action cannot be undone!</span>
-        </div>
-      </details>
-    </div>
-  </section>
-  <!-- Results panel -->
-  <section class="panel" data-panel="results">
-    {% if results %}
-      {% for result in results %}
-        {% if result.has_subscales %}
-          <div class="card" data-chart="radar" data-chart-id="radar-{{ forloop.counter }}" data-chart-json="{{ result.chart_json }}">
-            <h3>{{ result.survey.title }}</h3>
-            <div class="radar-wrap">
-              <div class="radar">
-                <canvas id="radar-{{ forloop.counter }}" aria-label="Radar chart for {{ result.survey.title }}"></canvas>
-              </div>
-              <div class="radar-legend">
-                <h5>Your scores</h5>
-                <ul>
-                  {% for subscale in result.subscales %}
-                    <li>
-                      <span class="modality">{{ subscale.label }}</span>
-                      <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
-                    </li>
-                  {% endfor %}
-                </ul>
-              </div>
+    <nav class="view-switch" aria-label="Account view">
+        <ul>
+            <li>
+                <a href="#" data-panel="profile" aria-current="true">Profile</a>
+            </li>
+            <li>
+                <a href="#" data-panel="consent">Consent</a>
+            </li>
+            <li>
+                <a href="#" data-panel="results">Results</a>
+            </li>
+        </ul>
+    </nav>
+    <main class="content">
+        <h1 class="page-title">{{ user.get_full_name|default:user.email }}</h1>
+        <p class="page-subtitle">Participant since {{ user.date_joined|date:"F Y" }}</p>
+        <!-- Profile panel -->
+        <section class="panel is-active" data-panel="profile">
+            <div class="card">
+                <h3>Account details</h3>
+                <dl class="field-grid">
+                    <dt>Name</dt>
+                    <dd>
+                        {{ user.get_full_name|default:"—" }}
+                    </dd>
+                    <dt>Email</dt>
+                    <dd>
+                        {{ user.email }}
+                    </dd>
+                    <dt>Participant ID</dt>
+                    <dd class="participant-id">
+                        {{ participant_id }}
+                    </dd>
+                    <dt>Joined</dt>
+                    <dd>
+                        {{ user.date_joined|date:"j F Y" }}
+                    </dd>
+                    <dt>Last active</dt>
+                    <dd>
+                        {{ user.last_login|date:"j F Y"|default:"Never" }}
+                    </dd>
+                </dl>
             </div>
-          </div>
-        {% else %}
-          <div class="card" data-chart="spectrum" data-chart-id="spectrum-{{ forloop.counter }}" data-chart-json="{{ result.chart_json }}">
-            <h3>{{ result.survey.title }}</h3>
-            <div class="result-summary">
-              <h4>Your score</h4>
-              <span class="score"><strong>{{ result.score }}</strong> / {{ result.max }}</span>
+            <div class="card">
+                <h3>Security</h3>
+                <div class="action-row">
+                    <p>
+                        Change the password you use to sign in to the Hub. We'll email a
+                        confirmation link to <strong>{{ user.email }}</strong>.
+                    </p>
+                    <a href="{% url 'account_change_password' %}" class="btn btn--outline">Change password</a>
+                </div>
             </div>
-            <div class="spectrum-chart" id="spectrum-{{ forloop.counter }}">
-              <svg class="spectrum-curve" viewBox="0 0 800 180" preserveAspectRatio="none" aria-hidden="true">
-                <line x1="0" y1="140" x2="800" y2="140" stroke="#cfcfcf" stroke-width="1" />
-                <path d="M 0,140 C 100,140 150,135 200,120 C 260,100 300,55 400,50 C 500,55 540,100 600,120 C 650,135 700,140 800,140 Z" fill="#e0e0e0" stroke="#b0b0b0" stroke-width="1" />
-              </svg>
-              <div class="spectrum-marker" role="img" aria-label="Your position">
-                <span class="spectrum-marker-label">You</span>
-                <span class="spectrum-marker-line"></span>
-                <span class="spectrum-marker-dot"></span>
-              </div>
+            {% if feedback_submitted or feedback_already_done %}
+                <div class="card">
+                    <h3>Study feedback</h3>
+                    <p class="feedback-thanks">Thank you — your feedback has been received.</p>
+                </div>
+            {% elif feedback_survey %}
+                <div class="card">
+                    <h3>Study feedback</h3>
+                    <p style="font-size: 14px; color: var(--ink-muted); margin-bottom: 24px">{{ feedback_survey.description }}</p>
+                    <form method="post"
+                          action="{% url 'accounts:feedback_submit' %}"
+                          class="feedback-form">
+                        {% csrf_token %}
+                        <input type="hidden" name="survey_id" value="{{ feedback_survey.id }}">
+                        {% for question in feedback_questions %}
+                            <div class="q-block">
+                                <span class="q-num">{{ forloop.counter }}.</span>
+                                <span class="q-label">{{ question.text }}
+                                    {% if not question.required %}
+                                        <span style="color:var(--ink-subtle); font-size:13px; font-weight:400;">(optional)</span>
+                                    {% endif %}
+                                </span>
+                                {% if question.question_type == 'likert' %}
+                                    <div class="likert-row">
+                                        {% for value, label in question.get_scale_options %}
+                                            <label>
+                                                <input type="radio"
+                                                       name="question_{{ question.id }}"
+                                                       value="{{ value }}"
+                                                       {% if question.required %}required{% endif %}>
+                                                {{ label }}
+                                            </label>
+                                        {% endfor %}
+                                    </div>
+                                {% elif question.question_type == 'free_text' %}
+                                    <textarea name="question_{{ question.id }}" rows="3" placeholder="Your answer…" {% if question.required %}required{% endif %}></textarea>
+                                {% endif %}
+                            </div>
+                        {% endfor %}
+                        <div style="margin-top: 28px; display: flex; align-items: center; gap: 16px;">
+                            <button type="submit" class="btn btn--primary">Submit feedback</button>
+                            <button type="submit" name="skip" value="1" class="btn btn--outline" formnovalidate>Skip</button>
+                        </div>
+                    </form>
+                </div>
+            {% endif %}
+        </section>
+        <!-- Consent panel -->
+        <section class="panel" data-panel="consent">
+            <div class="card">
+                <h3>Consent record</h3>
+                {% if consent_form %}
+                    <dl class="consent-meta">
+                        <div>
+                            <dt>Date signed</dt>
+                            <dd>
+                                {{ user.date_joined|date:"j F Y" }}
+                            </dd>
+                        </div>
+                        {% if consent_form.version %}
+                            <div>
+                                <dt>Study version</dt>
+                                <dd>
+                                    {{ consent_form.version }}
+                                </dd>
+                            </div>
+                        {% endif %}
+                    </dl>
+                    <div class="consent-body">{{ consent_form.content }}</div>
+                {% else %}
+                    <p style="font-size: 15px; color: var(--ink-muted);">No consent record found. Please contact the research team.</p>
+                {% endif %}
             </div>
-            <div class="spectrum-labels">
-              <span>{{ result.min }}</span>
-              <span>{{ result.max }}</span>
+            <div class="withdraw">
+                <h3>Withdraw from the study</h3>
+                <p>You can leave the Phantasia Research Hub at any time. When you withdraw:</p>
+                <p>
+                    • Your account and all associated data will be permanently deleted from our systems.
+                    <br>
+                    • You will lose access to any results you have not yet viewed.
+                    <br>
+                    • Anonymised data that has already been exported for ongoing analyses may still be included in those specific analyses, as we cannot retrospectively remove it.
+                    <br>
+                    • If you choose to rejoin the study later, your new responses may be affected by your familiarity with the tasks, which limits their scientific value. For this reason we recommend against rejoining.
+                </p>
+                <details>
+                    <summary>I want to withdraw</summary>
+                    <div class="withdraw-actions">
+                        <button type="button" class="btn btn--warn" disabled>Delete my account</button>
+                        <span>This action cannot be undone!</span>
+                    </div>
+                </details>
             </div>
-          </div>
-        {% endif %}
-      {% endfor %}
-    {% else %}
-      <div class="card">
-        <p style="font-size: 15px; color: var(--ink-muted);">No results yet. Complete a survey to see your scores here.</p>
-      </div>
-    {% endif %}
-  </section>
-</main>
+        </section>
+        <!-- Results panel -->
+        <section class="panel" data-panel="results">
+            {% if results %}
+                {% for result in results %}
+                    {% if result.has_subscales %}
+                        <div class="card"
+                             data-chart="radar"
+                             data-chart-id="radar-{{ forloop.counter }}"
+                             data-chart-json="{{ result.chart_json }}">
+                            <h3>{{ result.survey.title }}</h3>
+                            <div class="radar-wrap">
+                                <div class="radar">
+                                    <canvas id="radar-{{ forloop.counter }}"
+                                            aria-label="Radar chart for {{ result.survey.title }}"></canvas>
+                                </div>
+                                <div class="radar-legend">
+                                    <h5>Your scores</h5>
+                                    <ul>
+                                        {% for subscale in result.subscales %}
+                                            <li>
+                                                <span class="modality">{{ subscale.label }}</span>
+                                                <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="card"
+                             data-chart="spectrum"
+                             data-chart-id="spectrum-{{ forloop.counter }}"
+                             data-chart-json="{{ result.chart_json }}">
+                            <h3>{{ result.survey.title }}</h3>
+                            <div class="result-summary">
+                                <h4>Your score</h4>
+                                <span class="score"><strong>{{ result.score }}</strong> / {{ result.max }}</span>
+                            </div>
+                            <div class="spectrum-chart" id="spectrum-{{ forloop.counter }}">
+                                <svg class="spectrum-curve"
+                                     viewBox="0 0 800 180"
+                                     preserveAspectRatio="none"
+                                     aria-hidden="true">
+                                    <line x1="0" y1="140" x2="800" y2="140" stroke="#cfcfcf" stroke-width="1" />
+                                    <path d="M 0,140 C 100,140 150,135 200,120 C 260,100 300,55 400,50 C 500,55 540,100 600,120 C 650,135 700,140 800,140 Z" fill="#e0e0e0" stroke="#b0b0b0" stroke-width="1" />
+                                </svg>
+                                <div class="spectrum-marker" role="img" aria-label="Your position">
+                                    <span class="spectrum-marker-label">You</span>
+                                    <span class="spectrum-marker-line"></span>
+                                    <span class="spectrum-marker-dot"></span>
+                                </div>
+                            </div>
+                            <div class="spectrum-labels">
+                                <span>{{ result.min }}</span>
+                                <span>{{ result.max }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <p style="font-size: 15px; color: var(--ink-muted);">No results yet. Complete a survey to see your scores here.</p>
+                </div>
+            {% endif %}
+        </section>
+    </main>
+
+<!-- Feedback completion modal -->
+<div class="modal-overlay{% if feedback_submitted %} is-open{% endif %}"
+     data-feedback-modal
+     role="dialog"
+     aria-modal="true"
+     aria-labelledby="feedback-modal-title"
+     aria-describedby="feedback-modal-body"
+     {% if not feedback_submitted %}hidden{% endif %}>
+  <div class="modal">
+    <div class="modal__badge" aria-hidden="true"></div>
+    <h2 class="modal__title" id="feedback-modal-title">Feedback received</h2>
+    <p class="modal__body" id="feedback-modal-body">
+      Thank you — your feedback has been recorded. It helps us improve the study experience for everyone.
+    </p>
+    <div class="modal__actions">
+      <button type="button" class="btn btn--primary" data-close-feedback-modal>Back to account</button>
+    </div>
+  </div>
+</div>
 {% endblock %}
-
 {% block extra_js %}
-<script>
+    <script>
   // Panel switching
   const panels = document.querySelectorAll(".panel");
   const navLinks = document.querySelectorAll(".view-switch a[data-panel]");
@@ -560,5 +803,40 @@
       },
     });
   });
-</script>
+    </script>
+    <script>
+  // Feedback modal
+  (function () {
+    var overlay = document.querySelector('[data-feedback-modal]');
+    if (!overlay) return;
+
+    var lastFocused = null;
+
+    function close() {
+      overlay.classList.remove('is-open');
+      document.body.style.overflow = '';
+      setTimeout(function () { overlay.hidden = true; }, 220);
+      if (lastFocused && lastFocused.focus) lastFocused.focus();
+      history.replaceState(null, '', window.location.pathname);
+    }
+
+    if (overlay.classList.contains('is-open')) {
+      overlay.hidden = false;
+      document.body.style.overflow = 'hidden';
+      lastFocused = document.activeElement;
+      var btn = overlay.querySelector('.btn');
+      if (btn) btn.focus();
+    }
+
+    overlay.querySelector('[data-close-feedback-modal]').addEventListener('click', close);
+
+    overlay.addEventListener('click', function (e) {
+      if (e.target === overlay) close();
+    });
+
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
+    });
+  }());
+    </script>
 {% endblock %}

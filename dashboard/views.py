@@ -20,8 +20,8 @@ def participant_dashboard(request):
         )
         return redirect('surveys:survey_list')
 
-    # Get all active surveys (ordered by priority, then by created_at via model Meta)
-    active_surveys = Survey.objects.filter(is_active=True)
+    # Get all active non-feedback surveys (ordered by priority, then by created_at via model Meta)
+    active_surveys = Survey.objects.filter(is_active=True, is_feedback=False)
 
     # Get surveys the participant has completed (has any response)
     completed_survey_ids = ParticipantResponse.objects.filter(

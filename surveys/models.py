@@ -27,6 +27,14 @@ class Survey(models.Model):
         related_name='surveys'
     )
     is_active = models.BooleanField(default=True)
+    is_feedback = models.BooleanField(
+        default=False,
+        help_text="Mark this as a mid-study feedback survey. Feedback surveys are hidden from the participant dashboard and managed under Core in the admin."
+    )
+    show_after_n_surveys = models.PositiveIntegerField(
+        default=2,
+        help_text="(Feedback surveys only) Show this form on the participant account page after they have completed this many regular surveys."
+    )
     is_priority = models.BooleanField(
         default=False,
         help_text="Mark this survey as a priority. Priority surveys appear at the top of the list."
@@ -107,6 +115,22 @@ class Survey(models.Model):
             if question.order != index:
                 question.order = index
                 question.save()
+
+
+class FeedbackSurvey(Survey):
+    """
+    Proxy model for managing feedback surveys in the Core admin section.
+    Feedback surveys are hidden from the participant dashboard and shown
+    inline on the participant account page after a threshold is met.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'Feedback Survey'
+        verbose_name_plural = 'Feedback Surveys'
+
+    def save(self, *args, **kwargs):
+        self.is_feedback = True
+        super().save(*args, **kwargs)
 
 
 class LikertScale(models.Model):

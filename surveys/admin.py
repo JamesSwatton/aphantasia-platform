@@ -136,8 +136,10 @@ class SurveyAdmin(admin.ModelAdmin):
         return "Save survey first to generate preview link"
     preview_link_field.short_description = 'Preview'
 
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_feedback=False)
+
     def get_form(self, request, obj=None, **kwargs):
-        # Store the survey object on the request so QuestionInline can filter scales
         request._survey_obj = obj
         return super().get_form(request, obj, **kwargs)
 
