@@ -971,10 +971,12 @@ Scoring is unaffected — `get_survey_result()` reads `question.group_id` direct
 8. ~~**Add CSV export** for task results in admin panel~~ ✅ **Completed** (Session 8 — list action + per-submission download buttons)
 9. ~~**Redesign survey system** to support richer question types~~ ✅ **Completed** (Sessions 8-12)
 10. ~~**Admin dashboard improvements**~~ ✅ **Completed** (Session 13 — domain filtering, download logging, progress tracking)
-11. **Integrate HTMX** for dynamic interactions
-12. **Add Alpine.js** for frontend interactivity
-13. **Add data visualization** for research insights
-14. **Configure production settings** (PostgreSQL, static files, security)
+11. **Add feedback form to participant account page** — shown after n surveys completed; collects mid-study feedback without being a formal survey
+12. **Add exit survey and withdrawal info to account page** — exit survey (triggered when participant opts to withdraw or at study end); expanded withdrawal section with detailed info and account deletion flow
+13. **Integrate HTMX** for dynamic interactions
+14. **Add Alpine.js** for frontend interactivity
+15. **Add data visualization** for research insights
+16. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Survey Redesign Plan (Session 8+)
 
