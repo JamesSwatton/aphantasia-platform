@@ -31,6 +31,10 @@ class Survey(models.Model):
         default=False,
         help_text="Mark this as a mid-study feedback survey. Feedback surveys are hidden from the participant dashboard and managed under Core in the admin."
     )
+    is_exit_survey = models.BooleanField(
+        default=False,
+        help_text="Mark this as an exit survey. Exit surveys are shown to participants when they choose to withdraw from the study."
+    )
     show_after_n_surveys = models.PositiveIntegerField(
         default=2,
         help_text="(Feedback surveys only) Show this form on the participant account page after they have completed this many regular surveys."
@@ -130,6 +134,22 @@ class FeedbackSurvey(Survey):
 
     def save(self, *args, **kwargs):
         self.is_feedback = True
+        super().save(*args, **kwargs)
+
+
+class ExitSurvey(Survey):
+    """
+    Proxy model for managing exit surveys in the Core admin section.
+    Exit surveys are hidden from the participant dashboard and shown
+    to participants when they choose to withdraw from the study.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'Exit Survey'
+        verbose_name_plural = 'Exit Surveys'
+
+    def save(self, *args, **kwargs):
+        self.is_exit_survey = True
         super().save(*args, **kwargs)
 
 

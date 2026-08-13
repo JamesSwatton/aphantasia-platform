@@ -1003,11 +1003,12 @@ Added a mid-study feedback form that appears inline on the participant account p
 9. ~~**Redesign survey system** to support richer question types~~ ✅ **Completed** (Sessions 8-12)
 10. ~~**Admin dashboard improvements**~~ ✅ **Completed** (Session 13 — domain filtering, download logging, progress tracking)
 11. ~~**Add feedback form to participant account page**~~ ✅ **Completed** (Session 27)
-12. **Add exit survey and withdrawal info to account page** — exit survey (triggered when participant opts to withdraw or at study end); expanded withdrawal section with detailed info and account deletion flow
-13. **Integrate HTMX** for dynamic interactions
-14. **Add Alpine.js** for frontend interactivity
-15. **Add data visualization** for research insights
-16. **Configure production settings** (PostgreSQL, static files, security)
+12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
+13. **Customise allauth confirmation email** — override `templates/account/email/email_confirmation_subject.txt` and `email_confirmation_message.txt` with branded plain-text templates; decide on verification mode (`"optional"` vs `"none"`), tone, and whether to name Dr Digard / the Eye's Mind Research Group
+14. **Integrate HTMX** for dynamic interactions
+15. **Add Alpine.js** for frontend interactivity
+16. **Add data visualization** for research insights
+17. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Survey Redesign Plan (Session 8+)
 

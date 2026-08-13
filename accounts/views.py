@@ -4,7 +4,8 @@ from django.urls import reverse
 from django.contrib.auth import login
 from django.contrib import messages
 from django.utils import timezone
-from .models import ResearcherInvitation, ConsentForm
+import markdown as md
+from .models import ResearcherInvitation, ConsentForm, WithdrawalText
 from .forms import ResearcherSignupForm
 from surveys.utils import get_all_results
 from surveys.models import Survey, ParticipantResponse
@@ -14,6 +15,16 @@ from surveys.models import Survey, ParticipantResponse
 def account(request):
     user = request.user
     consent_form = ConsentForm.objects.filter(is_active=True).first()
+    consent_form_html = md.markdown(
+        consent_form.content,
+        extensions=['sane_lists', 'nl2br'],
+    ) if consent_form else None
+
+    withdrawal_text_obj = WithdrawalText.objects.filter(is_active=True).first()
+    withdrawal_text_html = md.markdown(
+        withdrawal_text_obj.content,
+        extensions=['sane_lists', 'nl2br'],
+    ) if withdrawal_text_obj else None
     participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
     results = get_all_results(user)
 
@@ -46,11 +57,13 @@ def account(request):
     return render(request, 'accounts/account.html', {
         'participant_id': participant_id,
         'consent_form': consent_form,
+        'consent_form_html': consent_form_html,
         'results': results,
         'feedback_survey': feedback_survey,
         'feedback_questions': feedback_questions,
         'feedback_submitted': feedback_submitted,
         'feedback_already_done': feedback_already_done,
+        'withdrawal_text_html': withdrawal_text_html,
     })
 
 
@@ -98,6 +111,69 @@ def feedback_submit(request):
         )
 
     return redirect(reverse('accounts:account') + '?feedback=submitted')
+
+
+@login_required
+def exit_survey(request):
+    from surveys.models import ExitSurvey
+    active_exit = ExitSurvey.objects.filter(is_active=True, is_exit_survey=True).first()
+    exit_questions = list(active_exit.questions.order_by('order')) if active_exit else []
+
+    return render(request, 'accounts/exit_survey.html', {
+        'exit_survey': active_exit,
+        'exit_questions': exit_questions,
+    })
+
+
+@login_required
+def exit_survey_submit(request):
+    if request.method != 'POST':
+        return redirect('accounts:exit_survey')
+
+    from surveys.models import ExitSurvey
+    from django.contrib.auth import logout
+
+    user = request.user
+    action = request.POST.get('action', 'skip')
+    survey_id = request.POST.get('survey_id')
+
+    if survey_id:
+        try:
+            survey = ExitSurvey.objects.get(id=survey_id, is_active=True, is_exit_survey=True)
+            if action == 'submit':
+                for question in survey.questions.order_by('order'):
+                    raw = request.POST.get(f'question_{question.id}', '').strip()
+                    if question.question_type == 'likert':
+                        if raw:
+                            try:
+                                answer = int(raw)
+                                if question.reverse_coded:
+                                    answer = question.apply_reverse_coding(answer)
+                                answer = str(question.apply_scale_factor(answer))
+                            except ValueError:
+                                answer = 'NULL'
+                        else:
+                            answer = 'NULL'
+                    else:
+                        answer = raw if raw else 'NULL'
+
+                    ParticipantResponse.objects.create(
+                        survey=survey,
+                        question=question,
+                        participant=user,
+                        answer=answer,
+                        is_test=False,
+                    )
+        except ExitSurvey.DoesNotExist:
+            pass
+
+    logout(request)
+    user.delete()
+    return redirect('accounts:withdrawal_complete')
+
+
+def withdrawal_complete(request):
+    return render(request, 'accounts/withdrawal_complete.html')
 
 
 def accept_invitation(request, token):

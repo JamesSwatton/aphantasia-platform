@@ -3,7 +3,7 @@ from django.contrib.admin import SimpleListFilter
 from django import forms
 from .models import Domain, DataDownloadLog, Message
 from accounts.models import User
-from surveys.models import FeedbackSurvey, Question, LikertScale
+from surveys.models import FeedbackSurvey, ExitSurvey, Question, LikertScale
 
 
 class FeedbackQuestionInline(admin.TabularInline):
@@ -89,6 +89,85 @@ class FeedbackSurveyAdmin(admin.ModelAdmin):
 
     def save_model(self, request, obj, form, change):
         obj.is_feedback = True
+        super().save_model(request, obj, form, change)
+
+
+class ExitQuestionInline(admin.TabularInline):
+    model = Question
+    extra = 1
+    fields = ["question_type", "text", "order", "question_id", "likert_scale", "required"]
+    readonly_fields = ["question_id"]
+    verbose_name = "Question"
+    verbose_name_plural = "Questions (Likert and Free Text only)"
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).order_by("order")
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "likert_scale":
+            if hasattr(request, '_exit_survey_obj'):
+                kwargs["queryset"] = LikertScale.objects.filter(survey=request._exit_survey_obj)
+            else:
+                kwargs["queryset"] = LikertScale.objects.none()
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def formfield_for_choice_field(self, db_field, request, **kwargs):
+        if db_field.name == "question_type":
+            kwargs["choices"] = [
+                ("likert", "Likert Scale"),
+                ("free_text", "Free Text"),
+            ]
+        return super().formfield_for_choice_field(db_field, request, **kwargs)
+
+
+class ExitLikertScaleInline(admin.TabularInline):
+    model = LikertScale
+    extra = 1
+    fields = ["name", "min_value", "max_value", "scale_labels"]
+    verbose_name = "Likert Scale"
+    verbose_name_plural = "Likert Scales"
+
+
+class ExitSurveyAdminForm(forms.ModelForm):
+    class Meta:
+        model = ExitSurvey
+        fields = ["title", "description", "researcher", "is_active", "min_value", "max_value", "scale_labels"]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["researcher"].queryset = User.objects.filter(is_staff=True)
+
+
+@admin.register(ExitSurvey)
+class ExitSurveyAdmin(admin.ModelAdmin):
+    form = ExitSurveyAdminForm
+    list_display = ["title", "researcher", "is_active", "created_at"]
+    list_filter = ["is_active"]
+    search_fields = ["title", "description"]
+    inlines = [ExitLikertScaleInline, ExitQuestionInline]
+    fieldsets = [
+        (
+            "Exit Survey",
+            {"fields": ["title", "description", "researcher", "is_active"]},
+        ),
+        (
+            "Default Likert Scale",
+            {
+                "fields": ["min_value", "max_value", "scale_labels"],
+                "description": 'Fallback scale for Likert questions. Labels use JSON: {"1": "Strongly Disagree", "5": "Strongly Agree"}',
+            },
+        ),
+    ]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(is_exit_survey=True)
+
+    def get_form(self, request, obj=None, **kwargs):
+        request._exit_survey_obj = obj
+        return super().get_form(request, obj, **kwargs)
+
+    def save_model(self, request, obj, form, change):
+        obj.is_exit_survey = True
         super().save_model(request, obj, form, change)
 
 

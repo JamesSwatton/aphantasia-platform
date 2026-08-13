@@ -41,13 +41,7 @@
     </header>
     {% endblock %}
 
-    {% block flash_messages %}
-    {% for message in messages %}
-      {% if message.tags != 'success' %}
-        <div class="alert alert--{{ message.tags }}" role="alert">{{ message }}</div>
-      {% endif %}
-    {% endfor %}
-    {% endblock %}
+    {% block flash_messages %}{% endblock %}
 
     {% block body %}{% block content %}{% endblock %}{% endblock %}
 

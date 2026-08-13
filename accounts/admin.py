@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import path
 from allauth.account.models import EmailAddress
-from .models import User, ConsentForm, ResearcherInvitation
+from .models import User, ConsentForm, WithdrawalText, ResearcherInvitation
 from .forms import InviteResearcherForm
 
 # Unregister allauth's EmailAddress model from admin
@@ -133,6 +133,36 @@ class ConsentFormAdmin(admin.ModelAdmin):
             self.message_user(
                 request,
                 f'"{obj.title}" is now the active consent form. All other consent forms have been deactivated.'
+            )
+
+
+@admin.register(WithdrawalText)
+class WithdrawalTextAdmin(admin.ModelAdmin):
+    list_display = ['__str__', 'is_active', 'updated_at']
+    list_filter = ['is_active']
+    readonly_fields = ['updated_at']
+
+    fieldsets = [
+        ('Withdrawal Text', {
+            'fields': ['is_active', 'content'],
+            'description': (
+                'Text shown to participants on their account page under "Withdraw from the study". '
+                'Supports Markdown formatting (headings, bold, bullet lists, etc.). '
+                'Only one record should be active at a time.'
+            ),
+        }),
+        ('Metadata', {
+            'fields': ['updated_at'],
+            'classes': ['collapse'],
+        }),
+    ]
+
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        if obj.is_active:
+            self.message_user(
+                request,
+                'Withdrawal text updated and is now active.',
             )
 
 

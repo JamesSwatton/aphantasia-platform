@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static markdown_extras %}
 {% block title %}Account — Phantasia Research Hub{% endblock %}
 {% block viewport %}width=1200{% endblock %}
 {% block extra_head %}
@@ -125,10 +125,21 @@
   }
 
   .consent-body {
-    white-space: pre-wrap;
     font-size: 15px;
     line-height: 1.65;
     color: var(--ink-muted);
+  }
+  .consent-body * {
+    max-width: 600px;
+  }
+  .consent-body h3 {
+    margin-bottom: 16px;
+  }
+  .consent-body ul,
+  .consent-body ol {
+    list-style: revert;
+    padding-left: 1.5em;
+    margin: 0.75em 0;
   }
 
   /* Results panel */
@@ -430,6 +441,7 @@
   }
   .withdraw h3 {
     margin-bottom: 16px;
+    max-width: 600px;
   }
   .withdraw h3::before {
     background: var(--warn);
@@ -438,7 +450,7 @@
     font-size: 14px;
     line-height: 1.6;
     margin-bottom: 16px;
-    max-width: 72ch;
+    max-width: 600px;
   }
   .withdraw summary {
     list-style: none;
@@ -473,6 +485,17 @@
   .withdraw-actions span {
     font-size: 13px;
     color: rgba(255, 255, 255, 0.7);
+  }
+  .withdraw-detail {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+  }
+  .withdraw-detail ul,
+  .withdraw-detail ol {
+    list-style: revert;
+    padding-left: 1.5em;
+    margin: 0.75em 0;
   }
     </style>
 {% endblock %}
@@ -538,7 +561,9 @@
             {% elif feedback_survey %}
                 <div class="card">
                     <h3>Study feedback</h3>
-                    <p style="font-size: 14px; color: var(--ink-muted); margin-bottom: 24px">{{ feedback_survey.description }}</p>
+                    <div style="font-size: 14px; color: var(--ink-muted); margin-bottom: 24px">
+                        {{ feedback_survey.description|render_markdown }}
+                    </div>
                     <form method="post"
                           action="{% url 'accounts:feedback_submit' %}"
                           class="feedback-form">
@@ -565,13 +590,23 @@
                                         {% endfor %}
                                     </div>
                                 {% elif question.question_type == 'free_text' %}
-                                    <textarea name="question_{{ question.id }}" rows="3" placeholder="Your answer…" {% if question.required %}required{% endif %}></textarea>
+                                    <textarea name="question_{{ question.id }}"
+                                              rows="3"
+                                              placeholder="Your answer…"
+                                              {% if question.required %}required{% endif %}></textarea>
                                 {% endif %}
                             </div>
                         {% endfor %}
-                        <div style="margin-top: 28px; display: flex; align-items: center; gap: 16px;">
+                        <div style="margin-top: 28px;
+                                    display: flex;
+                                    align-items: center;
+                                    gap: 16px">
                             <button type="submit" class="btn btn--primary">Submit feedback</button>
-                            <button type="submit" name="skip" value="1" class="btn btn--outline" formnovalidate>Skip</button>
+                            <button type="submit"
+                                    name="skip"
+                                    value="1"
+                                    class="btn btn--outline"
+                                    formnovalidate>Skip</button>
                         </div>
                     </form>
                 </div>
@@ -598,7 +633,7 @@
                             </div>
                         {% endif %}
                     </dl>
-                    <div class="consent-body">{{ consent_form.content }}</div>
+                    <div class="consent-body">{{ consent_form_html|safe }}</div>
                 {% else %}
                     <p style="font-size: 15px; color: var(--ink-muted);">No consent record found. Please contact the research team.</p>
                 {% endif %}
@@ -617,8 +652,9 @@
                 </p>
                 <details>
                     <summary>I want to withdraw</summary>
+                    {% if withdrawal_text_html %}<div class="withdraw-detail">{{ withdrawal_text_html|safe }}</div>{% endif %}
                     <div class="withdraw-actions">
-                        <button type="button" class="btn btn--warn" disabled>Delete my account</button>
+                        <a href="{% url 'accounts:exit_survey' %}" class="btn btn--warn">Delete my account</a>
                         <span>This action cannot be undone!</span>
                     </div>
                 </details>
@@ -690,26 +726,25 @@
             {% endif %}
         </section>
     </main>
-
-<!-- Feedback completion modal -->
-<div class="modal-overlay{% if feedback_submitted %} is-open{% endif %}"
-     data-feedback-modal
-     role="dialog"
-     aria-modal="true"
-     aria-labelledby="feedback-modal-title"
-     aria-describedby="feedback-modal-body"
-     {% if not feedback_submitted %}hidden{% endif %}>
-  <div class="modal">
-    <div class="modal__badge" aria-hidden="true"></div>
-    <h2 class="modal__title" id="feedback-modal-title">Feedback received</h2>
-    <p class="modal__body" id="feedback-modal-body">
-      Thank you — your feedback has been recorded. It helps us improve the study experience for everyone.
-    </p>
-    <div class="modal__actions">
-      <button type="button" class="btn btn--primary" data-close-feedback-modal>Back to account</button>
+    <!-- Feedback completion modal -->
+    <div class="modal-overlay{% if feedback_submitted %} is-open{% endif %}"
+         data-feedback-modal
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="feedback-modal-title"
+         aria-describedby="feedback-modal-body"
+         {% if not feedback_submitted %}hidden{% endif %}>
+        <div class="modal">
+            <div class="modal__badge" aria-hidden="true"></div>
+            <h2 class="modal__title" id="feedback-modal-title">Feedback received</h2>
+            <p class="modal__body" id="feedback-modal-body">
+                Thank you — your feedback has been recorded. It helps us improve the study experience for everyone.
+            </p>
+            <div class="modal__actions">
+                <button type="button" class="btn btn--primary" data-close-feedback-modal>Back to account</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 {% endblock %}
 {% block extra_js %}
     <script>

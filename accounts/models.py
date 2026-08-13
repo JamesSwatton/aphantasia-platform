@@ -135,6 +135,35 @@ class ConsentForm(models.Model):
         super().save(*args, **kwargs)
 
 
+class WithdrawalText(models.Model):
+    """
+    Stores the withdrawal information text shown to participants on their account page.
+    Supports markdown formatting — content is rendered to HTML when displayed.
+    Only one record should be active at a time.
+    """
+    content = models.TextField(
+        help_text="Markdown-formatted text explaining the withdrawal process and consequences."
+    )
+    is_active = models.BooleanField(
+        default=True,
+        help_text="Only one withdrawal text should be active at a time."
+    )
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = 'Withdrawal Text'
+        verbose_name_plural = 'Withdrawal Texts'
+
+    def __str__(self):
+        status = " (Active)" if self.is_active else ""
+        return f"Withdrawal Text{status} — last updated {self.updated_at.strftime('%Y-%m-%d')}"
+
+    def save(self, *args, **kwargs):
+        if self.is_active:
+            WithdrawalText.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
+        super().save(*args, **kwargs)
+
+
 class ResearcherInvitation(models.Model):
     """
     Stores invitations for new researchers to join the platform.

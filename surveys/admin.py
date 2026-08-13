@@ -137,7 +137,7 @@ class SurveyAdmin(admin.ModelAdmin):
     preview_link_field.short_description = 'Preview'
 
     def get_queryset(self, request):
-        return super().get_queryset(request).filter(is_feedback=False)
+        return super().get_queryset(request).filter(is_feedback=False, is_exit_survey=False)
 
     def get_form(self, request, obj=None, **kwargs):
         request._survey_obj = obj

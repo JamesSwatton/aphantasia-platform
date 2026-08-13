@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% load static %}
+{% block title %}Withdrawn — Phantasia Research Hub{% endblock %}
+
+{% block topbar_nav %}{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 80px auto; padding: 0 24px; text-align: center;">
+  <h1 style="font-family: var(--font-display); font-weight: 700; font-size: 36px; letter-spacing: -0.01em; margin-bottom: 16px;">
+    You have left the study
+  </h1>
+  <p style="font-size: 16px; color: var(--ink-muted); line-height: 1.7; margin-bottom: 12px;">
+    Your account and data have been deleted. Thank you for your participation in the Phantasia Research Hub — your contribution is genuinely appreciated.
+  </p>
+  <p style="font-size: 15px; color: var(--ink-subtle); line-height: 1.7; margin-bottom: 40px;">
+    If you have any questions, please contact the research team at the Eye's Mind Research Group, University of Edinburgh.
+  </p>
+  <a href="{% url 'core:home' %}" class="btn btn--outline">Return to home</a>
+</div>
+{% endblock %}
