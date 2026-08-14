@@ -87,11 +87,12 @@
     padding: 0 0 40px;
   }
   .info-content h3 {
-    font-family: var(--font-display);
-    font-weight: 700;
-    font-size: 20px;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink);
     margin-bottom: 12px;
-    letter-spacing: -0.01em;
   }
   .info-content p {
     font-size: 14px;
@@ -237,6 +238,43 @@
     color: var(--ink-subtle);
     max-width: 680px;
   }
+
+  /* ----- 5. Demographic gateway card ----- */
+
+  .task-card--gateway {
+    border: 2px solid var(--blue);
+  }
+  .task-card--gateway .task-card__indicator {
+    background: var(--blue);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 20%, transparent);
+  }
+  .task-card--gateway-done {
+    opacity: 0.6;
+  }
+
+  /* ----- 6. Locked state ----- */
+
+  .task-card--locked {
+    opacity: 0.45;
+    pointer-events: none;
+    user-select: none;
+  }
+  .locked-notice {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    background: color-mix(in srgb, var(--ink) 5%, transparent);
+    border-radius: var(--radius-card);
+    font-size: 13px;
+    color: var(--ink-muted);
+    max-width: 680px;
+    margin-bottom: 16px;
+  }
+  .locked-notice__icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
     </style>
 {% endblock %}
 {% block header %}{% endblock %}
@@ -246,10 +284,16 @@
     <div class="page">
         <!-- Row 1: topbar (from base.html — re-declared here to sit in grid row 1) -->
         <header class="topbar">
-            <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
+            <a href="{% url 'dashboard:participant_dashboard' %}"
+               class="topbar__brand">Phantasia Research Hub</a>
             <nav class="topbar__actions">
-                <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages{% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}</a>
-                <a href="{% url 'accounts:account' %}" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
+                <a href="{% url 'core:messages' %}"
+                   class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages
+                    {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
+                </a>
+                <a href="{% url 'accounts:account' %}"
+                   class="avatar"
+                   aria-label="{{ user.get_full_name|default:user.email }}">
                     {{ user.get_full_name|default:user.email|slice:":2"|upper }}
                 </a>
                 <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
@@ -279,21 +323,40 @@
             <!-- Info panel -->
             <div class="sidebar-panel is-active" data-panel="info">
                 <div class="info-content">
-                    <p>
-                        The Phantasia Research Hub is organised into different domains,
-                        each exploring a specific aspect of cognition and how it relates
-                        to mental imagery.
-                    </p>
-                    <p>
-                        You're free to complete measures in any order. Start with
-                        whichever domain interests you most, or work through the
-                        available questionnaires and tasks at your own pace.
-                    </p>
-                    <p>
-                        Each measure takes between 1 and 10 minutes on average.
-                        Your progress is saved automatically, so you can pause
-                        and return at any time.
-                    </p>
+                    {% if demographic_locked %}
+                        <h3>Before you begin</h3>
+                        <p>
+                            Please complete the <strong>{{ demographic_survey.title }}</strong>
+                            questionnaire first. This short survey collects some background
+                            information and takes only a few minutes.
+                        </p>
+                        <p>
+                            The rest of the questionnaires and tasks will unlock once you
+                            have submitted it.
+                        </p>
+                    {% else %}
+                        <p>
+                            The Phantasia Research Hub is organised into different domains,
+                            each exploring a specific aspect of cognition and how it relates
+                            to mental imagery.
+                        </p>
+                        <p>
+                            You're free to complete measures in any order.
+                            However,<strong> we have a 'core' set of
+                            questionairres that we recommend you start with. These are grouped
+                            at the top of the list, each with the blue
+                            marker</strong>. This is just a suggestion as it will give both you and our
+                            research team the broadest insight into how you visualise the world
+                            around you. Or you can just start with
+                            whichever domain interests you most, or work through the
+                            available questionnaires and tasks at your own pace.
+                        </p>
+                        <p>
+                            Each measure takes between 1 and 10 minutes on average.
+                            Your progress is saved automatically, so you can pause
+                            and return at any time.
+                        </p>
+                    {% endif %}
                 </div>
             </div>
             <!-- Domains panel -->
@@ -318,17 +381,66 @@
         <section class="page__main">
             <div class="task-list">
                 <div class="task-list-items">
+                    {% if demographic_survey %}
+                        {% if demographic_complete %}
+                            <a class="task-card task-card--done task-card--gateway-done"
+                               href="{% url 'surveys:survey_take' demographic_survey.pk %}">
+                                <div class="task-card__body">
+                                    <div class="task-card__head">
+                                        <span class="task-card__indicator"></span>
+                                        <h3 class="task-card__title">{{ demographic_survey.title }}</h3>
+                                    </div>
+                                    {% if demographic_survey.description %}
+                                        <p class="task-card__desc">{{ demographic_survey.description|truncatewords:30 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="task-card__meta">
+                                    {% with demographic_survey.questions.count as q_count %}
+                                        {% if q_count %}<span>{{ q_count }} question{{ q_count|pluralize }}</span>{% endif %}
+                                    {% endwith %}
+                                    <span>Completed</span>
+                                </div>
+                            </a>
+                        {% else %}
+                            <a class="task-card task-card--gateway"
+                               href="{% url 'surveys:survey_take' demographic_survey.pk %}">
+                                <div class="task-card__body">
+                                    <div class="task-card__head">
+                                        <span class="task-card__indicator"></span>
+                                        <h3 class="task-card__title">{{ demographic_survey.title }}</h3>
+                                    </div>
+                                    {% if demographic_survey.description %}
+                                        <p class="task-card__desc">{{ demographic_survey.description|truncatewords:30 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div class="task-card__meta">
+                                    {% with demographic_survey.questions.count as q_count %}
+                                        {% if q_count %}<span>{{ q_count }} question{{ q_count|pluralize }}</span>{% endif %}
+                                    {% endwith %}
+                                    <span>Start here</span>
+                                </div>
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                    {% if demographic_locked %}
+                        <div class="locked-notice">
+                            <span class="locked-notice__icon">&#128274;</span>
+                            <span>Complete <strong>{{ demographic_survey.title }}</strong> above to unlock the rest of the study.</span>
+                        </div>
+                    {% endif %}
                     {% if available_surveys or available_tasks %}
                         {% if available_surveys %}
                             {% for item in available_surveys %}
-                                <a class="task-card {% if item.survey.is_priority %}task-card--priority{% endif %}"
-                                   href="{% url 'surveys:survey_take' item.survey.pk %}">
+                                <a class="task-card {% if item.survey.is_priority %}task-card--priority{% endif %}{% if demographic_locked %} task-card--locked{% endif %}"
+                                   href="{% if not demographic_locked %}{% url 'surveys:survey_take' item.survey.pk %}{% else %}#{% endif %}">
                                     <div class="task-card__body">
                                         <div class="task-card__head">
                                             <span class="task-card__indicator"></span>
                                             <h3 class="task-card__title">{{ item.survey.title }}</h3>
                                         </div>
-                                        {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>{% endif %}
+                                        {% if item.survey.description %}
+                                            <p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>
+                                        {% endif %}
                                     </div>
                                     <div class="task-card__meta">
                                         {% if item.total_questions %}
@@ -341,8 +453,8 @@
                         {% endif %}
                         {% if available_tasks %}
                             {% for item in available_tasks %}
-                                <a class="task-card {% if item.task.is_priority %}task-card--priority{% endif %}"
-                                   href="{% url 'tasks:task_run' item.task.pk %}">
+                                <a class="task-card {% if item.task.is_priority %}task-card--priority{% endif %}{% if demographic_locked %} task-card--locked{% endif %}"
+                                   href="{% if not demographic_locked %}{% url 'tasks:task_run' item.task.pk %}{% else %}#{% endif %}">
                                     <div class="task-card__body">
                                         <div class="task-card__head">
                                             <span class="task-card__indicator"></span>
@@ -369,7 +481,9 @@
                                         <span class="task-card__indicator"></span>
                                         <h3 class="task-card__title">{{ item.survey.title }}</h3>
                                     </div>
-                                    {% if item.survey.description %}<p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>{% endif %}
+                                    {% if item.survey.description %}
+                                        <p class="task-card__desc">{{ item.survey.description|truncatewords:30 }}</p>
+                                    {% endif %}
                                 </div>
                                 <div class="task-card__meta">
                                     {% if item.total_questions %}
@@ -398,7 +512,7 @@
                             </a>
                         {% endfor %}
                     {% endif %}
-                    {% if not available_surveys and not available_tasks and not completed_surveys and not completed_tasks %}
+                    {% if not demographic_survey and not available_surveys and not available_tasks and not completed_surveys and not completed_tasks %}
                         <p class="empty-state">No questionnaires or tasks have been assigned yet. Check back soon.</p>
                     {% endif %}
                 </div>

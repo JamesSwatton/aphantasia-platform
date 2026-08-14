@@ -35,6 +35,10 @@ class Survey(models.Model):
         default=False,
         help_text="Mark this as an exit survey. Exit surveys are shown to participants when they choose to withdraw from the study."
     )
+    is_demographic = models.BooleanField(
+        default=False,
+        help_text="Mark this as the demographic gateway survey. Participants must complete it before accessing any other surveys or tasks. Only one survey should have this enabled at a time."
+    )
     show_after_n_surveys = models.PositiveIntegerField(
         default=2,
         help_text="(Feedback surveys only) Show this form on the participant account page after they have completed this many regular surveys."
@@ -150,6 +154,21 @@ class ExitSurvey(Survey):
 
     def save(self, *args, **kwargs):
         self.is_exit_survey = True
+        super().save(*args, **kwargs)
+
+
+class DemographicSurvey(Survey):
+    """
+    Proxy model for managing the demographic gateway survey in the Core admin section.
+    Participants must complete it before accessing any other surveys or tasks.
+    """
+    class Meta:
+        proxy = True
+        verbose_name = 'Demographic Survey'
+        verbose_name_plural = 'Demographic Survey'
+
+    def save(self, *args, **kwargs):
+        self.is_demographic = True
         super().save(*args, **kwargs)
 
 

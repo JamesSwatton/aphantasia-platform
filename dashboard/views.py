@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from surveys.models import Survey, ParticipantResponse
+from surveys.models import Survey, ParticipantResponse, DemographicSurvey
 from tasks.models import LabTask, TaskSubmission
 from core.models import Domain
 
@@ -20,8 +20,19 @@ def participant_dashboard(request):
         )
         return redirect('surveys:survey_list')
 
-    # Get all active non-feedback surveys (ordered by priority, then by created_at via model Meta)
-    active_surveys = Survey.objects.filter(is_active=True, is_feedback=False)
+    # Check for a demographic gateway survey
+    demographic_survey = Survey.objects.filter(is_active=True, is_demographic=True).first()
+    demographic_complete = False
+    demographic_locked = False
+    if demographic_survey:
+        demographic_complete = ParticipantResponse.objects.filter(
+            survey=demographic_survey,
+            participant=request.user
+        ).exists()
+        demographic_locked = not demographic_complete
+
+    # Get all active non-feedback, non-exit, non-demographic surveys
+    active_surveys = Survey.objects.filter(is_active=True, is_feedback=False, is_exit_survey=False, is_demographic=False)
 
     # Get surveys the participant has completed (has any response)
     completed_survey_ids = ParticipantResponse.objects.filter(
@@ -102,6 +113,9 @@ def participant_dashboard(request):
         'domains': domains,
         'total_count': total_count,
         'completed_count': completed_count,
+        'demographic_survey': demographic_survey,
+        'demographic_locked': demographic_locked,
+        'demographic_complete': demographic_complete,
     }
 
     return render(request, 'dashboard/participant_dashboard.html', context)
