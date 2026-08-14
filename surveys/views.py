@@ -411,6 +411,13 @@ def survey_take(request, pk):
         messages.error(request, "This survey is not currently active.")
         return redirect('core:home')
 
+    # Enforce demographic gateway — block access to non-demographic surveys until it's done
+    if not survey.is_demographic:
+        gate = Survey.objects.filter(is_active=True, is_demographic=True).first()
+        if gate and not ParticipantResponse.objects.filter(survey=gate, participant=request.user).exists():
+            messages.warning(request, f"Please complete '{gate.title}' first.")
+            return redirect('dashboard:participant_dashboard')
+
     # Get all questions and groups for this survey
     questions = list(survey.questions.all())
     groups = list(survey.question_groups.all())

@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 from django.urls import reverse
 from .models import LabTask, TaskSubmission
+from surveys.models import Survey, ParticipantResponse
 import json
 
 
@@ -100,6 +101,13 @@ def task_run(request, pk):
     if not task.is_active:
         messages.error(request, "This task is not currently active.")
         return redirect('dashboard:participant_dashboard')
+
+    # Enforce demographic gateway for participants
+    if not (request.user.is_researcher or request.user.is_staff):
+        gate = Survey.objects.filter(is_active=True, is_demographic=True).first()
+        if gate and not ParticipantResponse.objects.filter(survey=gate, participant=request.user).exists():
+            messages.warning(request, f"Please complete '{gate.title}' first.")
+            return redirect('dashboard:participant_dashboard')
 
     # Check if task has been unpacked
     if not task.task_directory:

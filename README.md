@@ -990,6 +990,39 @@ Added a mid-study feedback form that appears inline on the participant account p
 
 ---
 
+## Session 29: Demographic Survey Gateway (August 2026)
+
+### Demographic gateway survey
+Added a gating mechanism so participants must complete a designated demographic survey before any other surveys or tasks become accessible.
+
+#### Model changes (`surveys/models.py`)
+- **`Survey.is_demographic`** (BooleanField, default `False`) — marks a survey as the demographic gateway; hidden from the main survey list and managed under **Core** in the admin
+- **`DemographicSurvey` proxy model** — registered under **Core → Demographic Survey**; auto-sets `is_demographic=True` on save; supports all question types (Likert, multiple choice, free text, dropdowns)
+- Migration: `0027_add_is_demographic`
+
+#### Admin (`core/admin.py`)
+- **Core → Demographic Survey** section with full question/group/scale inlines (same capability as a regular survey)
+- `SurveyAdmin` queryset updated to exclude `is_demographic=True` surveys from the main Surveys list
+
+#### Dashboard view (`dashboard/views.py`)
+- Detects the active demographic survey and checks whether the participant has submitted any response
+- Passes `demographic_survey`, `demographic_locked`, and `demographic_complete` to the template
+- Active survey queryset now also excludes `is_exit_survey=True` (exit surveys were previously visible on the dashboard)
+
+#### Dashboard template (`participant_dashboard.html`)
+- Demographic card renders first, visually distinct: blue border + glowing indicator dot + "Start here" meta label when incomplete; fades to done state once complete
+- Lock notice bar appears below the demographic card when locked, explaining what's required
+- All other survey and task cards rendered at 45% opacity with `pointer-events: none` while locked
+- Sidebar INFO panel switches to "Before you begin" copy naming the demographic survey when locked; reverts to normal copy once complete
+
+#### URL-level guards
+- **`survey_take`** (`surveys/views.py`): non-demographic surveys redirect participants to the dashboard with a warning message if the gate isn't complete; researchers/staff bypass the check
+- **`task_run`** (`tasks/views.py`): same redirect for participants; researchers/staff unaffected
+
+**Branch**: `feature-demographic-survey`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1005,10 +1038,11 @@ Added a mid-study feedback form that appears inline on the participant account p
 11. ~~**Add feedback form to participant account page**~~ ✅ **Completed** (Session 27)
 12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
 13. **Customise allauth confirmation email** — override `templates/account/email/email_confirmation_subject.txt` and `email_confirmation_message.txt` with branded plain-text templates; decide on verification mode (`"optional"` vs `"none"`), tone, and whether to name Dr Digard / the Eye's Mind Research Group
-14. **Integrate HTMX** for dynamic interactions
-15. **Add Alpine.js** for frontend interactivity
-16. **Add data visualization** for research insights
-17. **Configure production settings** (PostgreSQL, static files, security)
+14. ~~**Implement demographic survey gateway**~~ ✅ **Completed** (Session 29 — `DemographicSurvey` proxy model; dashboard locked state with greyed-out cards; URL-level guards on `survey_take` and `task_run`)
+15. **Integrate HTMX** for dynamic interactions
+16. **Add Alpine.js** for frontend interactivity
+17. **Add data visualization** for research insights
+18. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Survey Redesign Plan (Session 8+)
 
