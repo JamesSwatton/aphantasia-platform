@@ -7,7 +7,7 @@ A Django-based research platform for collecting participant data through surveys
 - Django 5.2.8
 - django-allauth (email/password authentication)
 - SQLite (development database)
-- HTMX/Alpine.js (frontend, to be integrated)
+- Chart.js 4.4.0 (participant results charts)
 
 ## Project Structure
 
@@ -1023,6 +1023,25 @@ Added a gating mechanism so participants must complete a designated demographic 
 
 ---
 
+## Session 30: Bug Fixes & CSS Groundwork (August 2026)
+
+### Bug fixes
+- **Domain filter on participant dashboard**: Domain links were `href="#"` placeholders and the view ignored the query param. Now reads `?domain=<id>` and filters surveys and tasks accordingly. `?domain=all` keeps the domains panel open while showing everything. Domains panel auto-opens when a filter is active.
+- **Demographic survey card hidden once complete**: Previously shown greyed-out at the top of the dashboard after completion. Now hidden entirely.
+- **Participant avatar in survey detail was a `<div>`**: Replaced with `<a href="accounts:account">` matching every other page.
+- **Topbar shadow on non-sticky pages**: Scroll listener now checks for `topbar--static` and skips adding `.is-scrolled`, so the shadow only appears when the topbar is actually stuck.
+- **Avatar initials**: Replaced `|slice:":2"|upper` across all six avatar instances with a new `|initials` template filter (`core/templatetags/account_extras.py`) that extracts the first letter of the first and last word — giving proper initials (e.g. "JS") instead of the first two characters of the name string.
+
+### Avatar hover state
+Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to `var(--blue)` with white text on hover, making it feel interactive like the other topbar buttons.
+
+### Static files now tracked in git
+`/static/*` was blanket-ignored. Added exceptions for `static/css/`, `static/js/`, `static/images/`, and `static/LABJS_INTEGRATION.md` so source assets are version-controlled. Collected staticfiles (`/staticfiles/`) remain ignored.
+
+**Branch**: `css-refactor`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1039,10 +1058,8 @@ Added a gating mechanism so participants must complete a designated demographic 
 12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
 13. **Customise allauth confirmation email** — override `templates/account/email/email_confirmation_subject.txt` and `email_confirmation_message.txt` with branded plain-text templates; decide on verification mode (`"optional"` vs `"none"`), tone, and whether to name Dr Digard / the Eye's Mind Research Group
 14. ~~**Implement demographic survey gateway**~~ ✅ **Completed** (Session 29 — `DemographicSurvey` proxy model; dashboard locked state with greyed-out cards; URL-level guards on `survey_take` and `task_run`)
-15. **Integrate HTMX** for dynamic interactions
-16. **Add Alpine.js** for frontend interactivity
-17. **Add data visualization** for research insights
-18. **Configure production settings** (PostgreSQL, static files, security)
+15. **CSS refactor** — extract duplicated inline `<style>` blocks from all templates into `static/css/styles.css`; do one template group at a time, test in browser, commit after each batch. Start next session.
+16. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Survey Redesign Plan (Session 8+)
 
