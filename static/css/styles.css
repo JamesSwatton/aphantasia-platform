@@ -1,0 +1,992 @@
+/* =============================================================================
+   Phantasia Research Hub — shared stylesheet
+   =============================================================================
+
+   Organised in the following sections:
+
+   1.   Design tokens (light theme default + [data-theme="dark"] overrides)
+   2.   Reset / base styles
+   3.   Reduced-motion preference
+   4.   Layout primitives
+   5.   Components
+        5.1  Topbar
+        5.2  Footer
+        5.3  Buttons (.btn, modifiers)
+        5.4  Badge
+        5.5  Avatar
+        5.6  Section label (filled-dot heading marker)
+        5.7  View switcher (e.g. PROFILE | CONSENT | RESULTS)
+        5.8  Crest
+        5.9  Alert / flash messages
+   6.   Auth page grid (.page--auth, .heading, .info-region, .form-region, .message-region)
+   7.   Domain list sidebar nav (.domain-list)
+   8.   Modal overlay (.modal-overlay, .modal)
+   9.   Pill badges (.pill)
+   10.  Empty state (.empty-state)
+   11.  Auth form fields (.field, .field-errors, .non-field-errors, .form-submit)
+   12.  Two-column page grid (.page, .page__sidebar, .page__main, .sidebar-panel, .info-content)
+   ============================================================================= */
+
+/* -----------------------------------------------------------------------------
+   1.  Design tokens
+
+   Default :root tokens describe the LIGHT theme (used by dashboard, signup,
+   account, messages). Pages that need the DARK theme set
+   <html data-theme="dark"> — currently only the landing page.
+
+   Theme-locked components (e.g. .footer) redeclare these tokens locally
+   so they stay dark regardless of the page theme.
+   ----------------------------------------------------------------------------- */
+
+:root {
+  /* Surface */
+  --bg-page: #e9e9e9;
+  --bg-card: #ffffff;
+  --bg-accent: #d8f24b;
+
+  /* Text */
+  --ink: #0a0a0a;
+  --ink-muted: #4a4a4a;
+  --ink-subtle: #8a8a8a;
+
+  /* Lines */
+  --rule: #cfcfcf;
+  --rule-soft: #e0e0e0;
+
+  /* Status / accent */
+  --blue: #1aa3ff;
+  --warn: #f45e69;
+  /* --warn: #c0392b; */
+  --warn-soft: black;
+  /* --warn-soft: #fbe9e7; */
+
+  /* Shape */
+  --radius-card: 10px;
+  --radius-pill: 999px;
+
+  /* Type */
+  --font-display: "Quattrocento", Georgia, serif;
+  --font-body: "Helvetica", -apple-system, BlinkMacSystemFont, sans-serif;
+
+  /* Spacing */
+  --content-spacing: 64px;
+}
+
+[data-theme="dark"] {
+  --bg-page: #0a0a0a;
+  --bg-card: #1a1a1a;
+  /* --bg-accent stays the same; the lime green works on both backgrounds */
+
+  --ink: #ffffff;
+  --ink-muted: #b8b8b8;
+  --ink-subtle: #7a7a7a;
+
+  --rule: gray;
+  --rule-soft: #1f1f1f;
+}
+
+/* -----------------------------------------------------------------------------
+   2.  Reset / base
+   ----------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg-page);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Sticky footer (global): the body is a full-height flex column, so when a
+   page's content is shorter than the viewport the footer is pushed to the
+   bottom edge instead of floating up into the middle. When content is taller
+   than the viewport everything flows normally and the footer follows below.
+
+   The mechanism is `margin-top: auto` on .footer (see the .footer rule): an
+   auto top-margin on a flex item absorbs all the free space above it. This
+   works regardless of how many children the body has or whether they are grid
+   (.page) or normal flow (e.g. messages), so it needs no shared content
+   wrapper. A body-level flex column does not disturb .page's own grid — .page
+   is simply a flex item that lays its own children out as a grid. */
+body {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Strip default margins from text-block elements; reapply intentionally. */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+dl,
+dd,
+figure,
+blockquote {
+  margin: 0;
+}
+
+ul,
+ol {
+  padding: 0;
+  list-style: none;
+}
+
+/* -----------------------------------------------------------------------------
+   3.  Respect user motion preferences
+   ----------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* -----------------------------------------------------------------------------
+   4.  Layout primitives
+   ----------------------------------------------------------------------------- */
+
+/* Page-edge horizontal padding used by topbar, footer, and most page rows. */
+:root {
+  --page-padding-x: 44px;
+
+  /* Topbar height = 40px content (avatar/button) + 16px*2 padding = 72px.
+     Pages that pin something beneath the sticky topbar (e.g. the survey's
+     answered-count) offset by this. Kept here so it stays locked to the
+     topbar's actual padding above. */
+  --topbar-h: 72px;
+}
+
+/* .viewport-frame: the topbar + main content fill exactly 100vh.
+   Anything that follows the .viewport-frame (e.g. .footer) sits below
+   the fold — visible only by scrolling. Used by dashboard, signup,
+   account, messages. */
+.viewport-frame {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  /* The body is a flex column (see body rule); without this, a sibling footer's
+     height would let the flex algorithm shrink this frame below 100vh. Holding
+     it firm keeps the frame exactly one viewport tall, with the footer pushed
+     just below the fold (scroll to reveal). */
+  flex-shrink: 0;
+}
+
+/* .scroll-fade: a fade-out overlay at the bottom of a scrollable region,
+   indicating that there's more content below.
+
+   Place INSIDE a positioned wrapper that contains the scroll container
+   (the fade is a sibling of the scroll container, not a child of it).
+   The fade colour matches --bg-page so it works on light or dark themes.
+
+   Markup pattern:
+     <div style="position: relative">
+       <div style="overflow: auto">...content...</div>
+       <div class="scroll-fade"></div>
+     </div>
+*/
+.scroll-fade {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 80px;
+  background: linear-gradient(to bottom, transparent, var(--bg-page));
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------------------------
+   5.1  Topbar
+
+   Used on every page. Brand wordmark on the left, actions (button + avatar)
+   on the right. Padding and brand size are intentionally restrained.
+   ----------------------------------------------------------------------------- */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px var(--page-padding-x);
+  border-bottom: 1px solid var(--rule);
+
+  /* Sticky on every page: stays pinned to the top while the document scrolls
+     beneath it. Pages must use the natural document-flow layout (the whole
+     window scrolls) rather than an inner overflow container, or there is no
+     window scroll for the topbar to stick against. The background + z-index
+     let content scroll cleanly underneath. */
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: var(--bg-page);
+  transition: box-shadow 0.2s ease;
+}
+
+/* Opt-out modifier: a topbar that scrolls away with the page instead of
+   sticking. Used on the landing page, where a fixed header would compete with
+   the full-height hero; here the topbar is meant to scroll off as the visitor
+   moves into the page. (A static topbar also has no use for the .is-scrolled
+   shadow, so such pages simply omit the scroll listener.) */
+.topbar--static {
+  position: static;
+}
+
+/* Shadow appears once the page is scrolled away from the top, so the topbar
+   feels lifted above the moving content. Toggled by each page's own small
+   scroll listener via the .is-scrolled class. */
+.topbar.is-scrolled {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+/* On dark pages a soft black shadow is invisible; use a darker, deeper one. */
+[data-theme="dark"] .topbar.is-scrolled {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
+}
+
+.topbar__brand {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 30px;
+  letter-spacing: 0;
+  color: var(--ink);
+  text-decoration: none;
+}
+
+.topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* -----------------------------------------------------------------------------
+   5.2  Footer
+
+   Theme-locked: always dark with white text, regardless of the page theme.
+   Crest sits at the right.
+   ----------------------------------------------------------------------------- */
+
+.footer {
+  /* Override theme tokens locally so the footer is always dark. */
+  --bg-page: #0a0a0a;
+  --ink: #ffffff;
+
+  /* As the last flex child of the body, an auto top-margin absorbs any spare
+     vertical space, pinning the footer to the viewport bottom on short pages
+     (see the body sticky-footer note above). Collapses to 0 when content fills
+     the screen. */
+  margin-top: auto;
+
+  display: flex;
+  justify-content: flex-end;
+  padding: 16px var(--page-padding-x);
+  background: var(--bg-page);
+  color: var(--ink);
+}
+
+/* -----------------------------------------------------------------------------
+   5.3  Buttons
+
+   .btn is the base; modifiers add visual variants. Heights are tuned so
+   .btn matches .avatar in the topbar.
+   ----------------------------------------------------------------------------- */
+
+.btn {
+  font-family: var(--font-body);
+  font-size: 14px;
+  padding: 10px 24px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-block;
+  transition:
+    background 0.15s ease,
+    color 0.15s ease,
+    opacity 0.15s ease;
+}
+
+.btn--outline {
+  color: var(--ink);
+  background: transparent;
+  border: 1.5px solid var(--ink);
+}
+.btn--outline:hover {
+  background: var(--ink);
+  color: var(--bg-page);
+}
+
+.btn--primary {
+  color: #0a0a0a; /* Always dark text — accent is light yellow-green */
+  background: var(--bg-accent);
+  border: 1.5px solid var(--bg-accent);
+  font-weight: 500;
+}
+.btn--primary:hover {
+  opacity: 0.88;
+}
+
+/* "is-active" — used when a button represents the page the user is currently
+   on (e.g. the Messages button in the topbar while on /messages). Filled-in
+   to communicate "you are here". */
+.btn--outline.is-active {
+  background: var(--ink);
+  color: var(--bg-page);
+}
+
+/* Destructive variant — for actions that delete, withdraw, or remove. */
+.btn--warn {
+  color: var(--warn);
+  background: transparent;
+  border: 1.5px solid var(--warn);
+}
+.btn--warn:hover {
+  background: var(--warn);
+  color: #fff;
+}
+
+/* Modifier for buttons that anchor a badge (notification count, etc.). */
+.btn--has-badge {
+  position: relative;
+}
+
+/* -----------------------------------------------------------------------------
+   5.4b  Badge
+
+   A small pill anchored to the corner of a button or icon, typically used
+   for unread/notification counts. Uses negative offsets so it overlaps
+   the parent's edge.
+   ----------------------------------------------------------------------------- */
+
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--blue);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Border in the surrounding background colour gives a clean "lifted off"
+     look. Tokens here so the badge respects whatever the page theme is. */
+  border: 2px solid var(--bg-page);
+}
+
+/* -----------------------------------------------------------------------------
+   5.4  Avatar
+
+   Circular badge in the topbar showing the participant's initials. Size is
+   coupled to the .btn height (40px) so they line up.
+   ----------------------------------------------------------------------------- */
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--bg-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 13px;
+  color: #0a0a0a;
+  cursor: pointer;
+  text-decoration: none;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.avatar:hover {
+  background: var(--blue);
+  color: #ffffff;
+}
+
+/* -----------------------------------------------------------------------------
+   5.5  Section label
+
+   Uppercase heading marker with a filled dot on the left. Used as a section
+   indicator throughout: "DOMAINS", "QUESTIONNAIRES & TASKS", etc.
+
+   The translateY(-1px) on the dot is an optical adjustment — uppercase glyphs
+   sit at the top of their line-box, so geometric centering places the dot
+   slightly low. 1px up restores visual alignment.
+   ----------------------------------------------------------------------------- */
+
+.section-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.section-label::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* -----------------------------------------------------------------------------
+   5.6  View switcher
+
+   Inline list of options with a leading filled dot, vertical bar separators,
+   and an active state. Used on dashboard, signup, account, etc.
+
+   Markup pattern:
+     <nav class="view-switch">
+       <ul>
+         <li><a href="..." aria-current="true">SELECTED</a></li>
+         <li><a href="...">OTHER</a></li>
+       </ul>
+     </nav>
+   ----------------------------------------------------------------------------- */
+
+.view-switch ul {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.view-switch ul::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+  transform: translateY(-1px); /* See note in .section-label */
+}
+
+.view-switch li {
+  display: flex;
+  align-items: center;
+}
+
+.view-switch a {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+  opacity: 0.55;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.view-switch a:hover {
+  opacity: 0.8;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+.view-switch [aria-current="true"] {
+  font-weight: 700;
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
+}
+
+/* Vertical bar between options. */
+.view-switch li + li::before {
+  content: "|";
+  margin-right: 16px;
+  font-size: 13px;
+  color: var(--ink-subtle);
+}
+
+/* -----------------------------------------------------------------------------
+   5.7  Crest (Edinburgh wordmark in the footer)
+   ----------------------------------------------------------------------------- */
+
+.crest {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--font-display);
+  font-size: 13px;
+  line-height: 1.2;
+  letter-spacing: 0.04em;
+  color: var(--ink); /* Inherits the footer's locked dark theme */
+}
+
+.crest__mark {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.crest__text {
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.crest__text em {
+  display: block;
+  font-style: italic;
+  font-weight: 400;
+  text-transform: none;
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* -----------------------------------------------------------------------------
+   5.8  Alert / flash messages
+
+   Django messages framework uses tags like "success", "error", "warning",
+   "info", "debug". Map these to themed strips shown above the page body.
+   ----------------------------------------------------------------------------- */
+
+.alert {
+  padding: 12px var(--page-padding-x);
+  font-size: 14px;
+  border-left: 3px solid currentColor;
+  margin-bottom: 0;
+}
+
+.alert--success {
+  background: #e8f9ef;
+  color: #1a6e3a;
+}
+
+.alert--error,
+.alert--danger {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+
+.alert--warning {
+  background: #fef3c7;
+  color: #7c5a0a;
+}
+
+.alert--info,
+.alert--debug {
+  background: #e0f0ff;
+  color: #1a4a7a;
+}
+
+/* -----------------------------------------------------------------------------
+   6.  Auth page grid
+
+   Used by login, signup, password reset, password change, and the two
+   password-reset confirmation pages — 7 templates in total.
+
+   Layout: two equal columns (1fr | 1fr) with a vertical rule separator.
+   Rows: large heading (auto) | sub-label (auto) | spacer (64px) | content (auto)
+
+   Each page overrides :root to set --bg-page: #fff and declares its own
+   left/right column child classes (e.g. .info-region, .form-region,
+   .message-region) — the shared rules here only define the container and
+   the structural elements that are identical on every auth page.
+   ----------------------------------------------------------------------------- */
+
+/* White background override for all auth pages. */
+.page--auth {
+  --bg-page: #ffffff;
+  background: #ffffff;
+}
+
+/* Horizontal padding inside auth columns. Overrideable per-page if needed. */
+:root {
+  --auth-padding-x: 60px;
+}
+
+.page--auth {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto var(--content-spacing) auto;
+}
+
+.page--auth .page__heading {
+  padding: 48px var(--auth-padding-x);
+  border-bottom: 1px solid var(--rule);
+}
+.page--auth .page__heading--left  { grid-column: 1; grid-row: 1; }
+.page--auth .page__heading--right { grid-column: 2; grid-row: 1; }
+
+/* Large display heading used on every auth page. */
+.heading {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 64px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+}
+
+.page--auth .page__label--left  { grid-column: 1; grid-row: 2; padding: 48px var(--auth-padding-x) 0; }
+.page--auth .page__label--right { grid-column: 2; grid-row: 2; padding: 48px var(--auth-padding-x) 0; }
+
+/* Vertical rule separating left and right columns. */
+.page--auth::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 1 / 5;
+  border-right: 1px solid var(--rule);
+  pointer-events: none;
+}
+
+/* Left info/copy region (row 4, col 1). */
+.info-region {
+  grid-column: 1;
+  grid-row: 4;
+  padding: 0 var(--auth-padding-x) 60px;
+}
+.info-region p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.info-region p strong { color: var(--ink); font-weight: 600; }
+.info-region a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Right form region (row 4, col 2). */
+.form-region {
+  grid-column: 2;
+  grid-row: 4;
+  padding: 0 var(--auth-padding-x) 60px;
+  align-self: start;
+}
+
+/* Right message/confirmation region — same placement as .form-region but
+   with top padding to drop the content below the label row. */
+.message-region {
+  grid-column: 2;
+  grid-row: 4;
+  padding: 40px var(--auth-padding-x) 60px;
+  align-self: start;
+}
+.message-region p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.message-region a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* -----------------------------------------------------------------------------
+   7.  Domain list (sidebar navigation)
+
+   Vertical list of domain links shown in the sidebar of the dashboard,
+   survey list, and task list pages. Each item has a hollow dot that fills
+   when the domain is active (currently filtered).
+   ----------------------------------------------------------------------------- */
+
+.domain-list__item {
+  border-bottom: 1px solid var(--rule);
+}
+.domain-list__link {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 0;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  line-height: 1;
+  color: var(--ink);
+  text-decoration: none;
+  transition: color 0.15s ease;
+  text-transform: uppercase;
+}
+.domain-list__link:hover {
+  color: var(--ink-muted);
+}
+.domain-list__dot {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+  flex-shrink: 0;
+  transform: translateY(-1px);
+}
+.domain-list__item--active .domain-list__link {
+  font-weight: 700;
+  font-style: italic;
+}
+.domain-list__item--active .domain-list__dot {
+  background: var(--ink);
+}
+
+/* -----------------------------------------------------------------------------
+   8.  Modal overlay
+
+   Full-screen backdrop + centred card. Hidden by default (opacity: 0,
+   visibility: hidden); .is-open triggers the fade-in and allows interaction.
+   Used on the survey completion screen (survey_detail.html) and the feedback
+   submission confirmation (account.html).
+   ----------------------------------------------------------------------------- */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(20, 22, 28, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.22s ease, visibility 0s linear 0.22s;
+}
+.modal-overlay.is-open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.22s ease, visibility 0s;
+}
+.modal {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  max-width: 440px;
+  width: 100%;
+  padding: 40px 40px 36px;
+  text-align: center;
+  box-shadow: 0 24px 60px rgba(20, 22, 28, 0.35);
+  transform: translateY(12px) scale(0.98);
+  transition: transform 0.24s ease;
+}
+.modal-overlay.is-open .modal {
+  transform: translateY(0) scale(1);
+}
+
+/* -----------------------------------------------------------------------------
+   9.  Pill badges
+
+   Small uppercase status labels used on survey and task cards.
+   Colour variants: active (green), inactive (red), priority (warn red).
+   ----------------------------------------------------------------------------- */
+
+.pill {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 4px 10px 2px;
+  border-radius: var(--radius-pill);
+  line-height: 1;
+  vertical-align: middle;
+}
+.pill--active {
+  background: #d4f7e0;
+  color: #1a6e3a;
+}
+.pill--inactive {
+  background: #fde8e8;
+  color: #9b1c1c;
+}
+.pill--priority {
+  background: var(--warn);
+  color: #fff;
+}
+
+/* -----------------------------------------------------------------------------
+   10. Empty state
+
+   Centred placeholder shown when a list has no items.
+   ----------------------------------------------------------------------------- */
+
+.empty-state {
+  padding: 80px 0;
+  color: var(--ink-muted);
+  max-width: 680px;
+}
+.empty-state h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.empty-state p {
+  font-size: 14px;
+  margin-bottom: 24px;
+}
+
+/* -----------------------------------------------------------------------------
+   11. Auth form fields
+
+   Bottom-border-only text inputs used across all auth pages (login, signup,
+   password reset, password change). No visible box — just a rule below each
+   field with a muted label above.
+   ----------------------------------------------------------------------------- */
+
+.field {
+  position: relative;
+  padding: 20px 0 18px;
+  border-bottom: 1px solid var(--rule);
+}
+.field label {
+  display: block;
+  font-size: 16px;
+  color: var(--ink-subtle);
+  margin-bottom: 8px;
+}
+.field input {
+  width: 100%;
+  border: none;
+  background: transparent;
+  font-family: inherit;
+  font-size: 16px;
+  color: var(--ink);
+  outline: none;
+}
+.field input::placeholder { color: var(--ink-subtle); }
+
+.field-errors {
+  margin-top: 6px;
+  font-size: 13px;
+  color: var(--warn);
+  list-style: none;
+}
+
+.non-field-errors {
+  padding: 12px 16px;
+  background: #fff0f0;
+  border-radius: 6px;
+  font-size: 14px;
+  color: var(--warn);
+  margin-bottom: 16px;
+  list-style: none;
+}
+
+/* Primary submit button used inside auth forms (password reset, change). */
+.form-submit {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-accent);
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  margin-top: 8px;
+}
+.form-submit:hover { opacity: 0.88; }
+
+/* -----------------------------------------------------------------------------
+   11. Two-column page grid
+
+   Used by the participant dashboard, survey detail, survey list, and task list.
+   Columns: 360px sidebar | 1fr main content
+   Rows:    topbar (auto) | sub-header (auto) | spacer (64px) | content (auto)
+
+   Each page places its own child elements into named grid areas via additional
+   inline rules (.page__tasks-header, .page__survey-header, etc.). The shared
+   rules here only define the grid container and the fixed child placements
+   that are identical on every page.
+   ----------------------------------------------------------------------------- */
+
+.page {
+  display: grid;
+  grid-template-columns: 360px 1fr;
+  grid-template-rows: auto auto var(--content-spacing) auto;
+}
+
+.page > .topbar {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.page > .view-switch {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 32px var(--page-padding-x) 0;
+}
+
+.page__sidebar {
+  grid-column: 1;
+  grid-row: 4;
+  padding: 0 var(--page-padding-x);
+}
+
+.page__main {
+  grid-column: 2;
+  grid-row: 4;
+}
+
+/* Vertical rule separating sidebar from main, spanning rows 2–end. */
+.page::before {
+  content: "";
+  grid-column: 1;
+  grid-row: 2 / -1;
+  border-right: 1px solid var(--rule);
+  pointer-events: none;
+}
+
+/* -----------------------------------------------------------------------------
+   6.1  Sidebar panels
+
+   Sidebar shows one panel at a time (e.g. INFO / DOMAINS). The active panel
+   is toggled via JS by adding/removing .is-active.
+   ----------------------------------------------------------------------------- */
+
+.sidebar-panel {
+  display: none;
+}
+.sidebar-panel.is-active {
+  display: block;
+}
+
+.info-content {
+  padding: 0 0 40px;
+}
+.info-content p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.info-content p:last-child {
+  margin-bottom: 0;
+}
