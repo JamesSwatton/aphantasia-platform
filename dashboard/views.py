@@ -31,8 +31,19 @@ def participant_dashboard(request):
         ).exists()
         demographic_locked = not demographic_complete
 
+    # Domain filter
+    selected_domain = request.GET.get('domain')
+
     # Get all active non-feedback, non-exit, non-demographic surveys
     active_surveys = Survey.objects.filter(is_active=True, is_feedback=False, is_exit_survey=False, is_demographic=False)
+    active_tasks = LabTask.objects.filter(is_active=True, task_directory__isnull=False)
+
+    if selected_domain == 'none':
+        active_surveys = active_surveys.filter(domain__isnull=True)
+        active_tasks = active_tasks.filter(domain__isnull=True)
+    elif selected_domain and selected_domain != 'all':
+        active_surveys = active_surveys.filter(domain_id=selected_domain)
+        active_tasks = active_tasks.filter(domain_id=selected_domain)
 
     # Get surveys the participant has completed (has any response)
     completed_survey_ids = ParticipantResponse.objects.filter(
@@ -64,9 +75,6 @@ def participant_dashboard(request):
             completed_surveys.append(survey_data)
         else:
             available_surveys.append(survey_data)
-
-    # Get all active tasks (ordered by priority, then by created_at via model Meta)
-    active_tasks = LabTask.objects.filter(is_active=True, task_directory__isnull=False)
 
     # Get tasks the participant has completed
     completed_task_ids = TaskSubmission.objects.filter(
@@ -111,6 +119,7 @@ def participant_dashboard(request):
         'available_tasks': available_tasks,
         'completed_tasks': completed_tasks,
         'domains': domains,
+        'selected_domain': selected_domain,
         'total_count': total_count,
         'completed_count': completed_count,
         'demographic_survey': demographic_survey,

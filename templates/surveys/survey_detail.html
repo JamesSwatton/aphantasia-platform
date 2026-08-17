@@ -786,9 +786,9 @@
           {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
         </a>
       {% else %}
-        <div class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
+        <a href="{% url 'accounts:account' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
           {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
-        </div>
+        </a>
       {% endif %}
       <form method="post" action="{% url 'account_logout' %}" style="margin:0">
         {% csrf_token %}

@@ -362,17 +362,17 @@
             <!-- Domains panel -->
             <div class="sidebar-panel" data-panel="domains">
                 <ul class="domain-list">
+                    <li class="domain-list__item {% if not selected_domain or selected_domain == 'all' %}domain-list__item--active{% endif %}">
+                        <a class="domain-list__link" href="?domain=all">
+                            <span class="domain-list__dot"></span>All
+                        </a>
+                    </li>
                     {% for domain in domains %}
-                        <li class="domain-list__item">
-                            <a class="domain-list__link" href="#">
+                        <li class="domain-list__item {% if selected_domain == domain.id|stringformat:'s' %}domain-list__item--active{% endif %}">
+                            <a class="domain-list__link" href="?domain={{ domain.id }}">
                                 <span class="domain-list__dot"></span>{{ domain.name }}
                             </a>
                         </li>
-                    {% empty %}
-                        <li class="domain-list__item"
-                            style="padding: 18px 0;
-                                   font-size: 14px;
-                                   color: var(--ink-subtle)">No domains yet.</li>
                     {% endfor %}
                 </ul>
             </div>
@@ -381,46 +381,25 @@
         <section class="page__main">
             <div class="task-list">
                 <div class="task-list-items">
-                    {% if demographic_survey %}
-                        {% if demographic_complete %}
-                            <a class="task-card task-card--done task-card--gateway-done"
-                               href="{% url 'surveys:survey_take' demographic_survey.pk %}">
-                                <div class="task-card__body">
-                                    <div class="task-card__head">
-                                        <span class="task-card__indicator"></span>
-                                        <h3 class="task-card__title">{{ demographic_survey.title }}</h3>
-                                    </div>
-                                    {% if demographic_survey.description %}
-                                        <p class="task-card__desc">{{ demographic_survey.description|truncatewords:30 }}</p>
-                                    {% endif %}
+                    {% if demographic_survey and not demographic_complete %}
+                        <a class="task-card task-card--gateway"
+                           href="{% url 'surveys:survey_take' demographic_survey.pk %}">
+                            <div class="task-card__body">
+                                <div class="task-card__head">
+                                    <span class="task-card__indicator"></span>
+                                    <h3 class="task-card__title">{{ demographic_survey.title }}</h3>
                                 </div>
-                                <div class="task-card__meta">
-                                    {% with demographic_survey.questions.count as q_count %}
-                                        {% if q_count %}<span>{{ q_count }} question{{ q_count|pluralize }}</span>{% endif %}
-                                    {% endwith %}
-                                    <span>Completed</span>
-                                </div>
-                            </a>
-                        {% else %}
-                            <a class="task-card task-card--gateway"
-                               href="{% url 'surveys:survey_take' demographic_survey.pk %}">
-                                <div class="task-card__body">
-                                    <div class="task-card__head">
-                                        <span class="task-card__indicator"></span>
-                                        <h3 class="task-card__title">{{ demographic_survey.title }}</h3>
-                                    </div>
-                                    {% if demographic_survey.description %}
-                                        <p class="task-card__desc">{{ demographic_survey.description|truncatewords:30 }}</p>
-                                    {% endif %}
-                                </div>
-                                <div class="task-card__meta">
-                                    {% with demographic_survey.questions.count as q_count %}
-                                        {% if q_count %}<span>{{ q_count }} question{{ q_count|pluralize }}</span>{% endif %}
-                                    {% endwith %}
-                                    <span>Start here</span>
-                                </div>
-                            </a>
-                        {% endif %}
+                                {% if demographic_survey.description %}
+                                    <p class="task-card__desc">{{ demographic_survey.description|truncatewords:30 }}</p>
+                                {% endif %}
+                            </div>
+                            <div class="task-card__meta">
+                                {% with demographic_survey.questions.count as q_count %}
+                                    {% if q_count %}<span>{{ q_count }} question{{ q_count|pluralize }}</span>{% endif %}
+                                {% endwith %}
+                                <span>Start here</span>
+                            </div>
+                        </a>
                     {% endif %}
                     {% if demographic_locked %}
                         <div class="locked-notice">
@@ -534,6 +513,17 @@
   (function () {
     const panels = document.querySelectorAll(".sidebar-panel");
     const navLinks = document.querySelectorAll(".view-switch a");
+
+    {% if selected_domain %}
+    panels.forEach(function (p) {
+      p.classList.toggle("is-active", p.dataset.panel === "domains");
+    });
+    navLinks.forEach(function (a) {
+      const isDomains = a.textContent.trim().toLowerCase() === "domains";
+      if (isDomains) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    });
+    {% endif %}
 
     navLinks.forEach(function (link) {
       link.addEventListener("click", function (e) {
