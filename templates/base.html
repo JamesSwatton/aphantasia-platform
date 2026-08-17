@@ -1,4 +1,4 @@
-{% load static %}
+{% load static account_extras %}
 <!doctype html>
 <html lang="en"{% block html_attrs %}{% endblock %}>
   <head>
@@ -26,7 +26,7 @@
             {% endif %}
             <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}{% url 'accounts:account' %}{% endif %}"
                class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
-              {{ user.get_full_name|default:user.email|slice:":2"|upper }}
+              {{ user.get_full_name|default:user.email|initials }}
             </a>
             <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
               {% csrf_token %}

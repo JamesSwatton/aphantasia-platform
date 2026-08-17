@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load account_extras %}
 
 {% block title %}Task Management — Phantasia Research Hub{% endblock %}
 
@@ -227,7 +228,7 @@
     <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
     <nav class="topbar__actions">
       <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
-        {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+        {{ request.user.get_full_name|default:request.user.email|initials }}
       </a>
       <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
         {% csrf_token %}

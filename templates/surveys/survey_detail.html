@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static markdown_extras %}
+{% load static markdown_extras account_extras %}
 
 {% block title %}{{ survey.title }} — Phantasia Research Hub{% endblock %}
 
@@ -783,11 +783,11 @@
       {% endif %}
       {% if request.user.is_staff %}
         <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
-          {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+          {{ request.user.get_full_name|default:request.user.email|initials }}
         </a>
       {% else %}
         <a href="{% url 'accounts:account' %}" class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
-          {{ request.user.get_full_name|default:request.user.email|slice:":2"|upper }}
+          {{ request.user.get_full_name|default:request.user.email|initials }}
         </a>
       {% endif %}
       <form method="post" action="{% url 'account_logout' %}" style="margin:0">
