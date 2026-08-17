@@ -60,7 +60,7 @@
     <script>
       (function () {
         var topbar = document.querySelector(".topbar");
-        if (!topbar) return;
+        if (!topbar || topbar.classList.contains("topbar--static")) return;
         function updateShadow() {
           topbar.classList.toggle("is-scrolled", window.scrollY > 0);
         }
