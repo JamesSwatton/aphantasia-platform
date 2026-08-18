@@ -195,7 +195,6 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
         # Define CSV columns
         fieldnames = [
             # Participant info
-            'participant_email',
             'participant_id',
 
             # Survey info
@@ -253,7 +252,6 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 scale_name = ''
 
             row = {
-                'participant_email': response_obj.participant.email,
                 'participant_id': response_obj.participant.id,
                 'survey_title': response_obj.survey.title,
                 'survey_id': response_obj.survey.id,

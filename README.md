@@ -1058,8 +1058,41 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
 13. **Customise allauth confirmation email** — override `templates/account/email/email_confirmation_subject.txt` and `email_confirmation_message.txt` with branded plain-text templates; decide on verification mode (`"optional"` vs `"none"`), tone, and whether to name Dr Digard / the Eye's Mind Research Group
 14. ~~**Implement demographic survey gateway**~~ ✅ **Completed** (Session 29 — `DemographicSurvey` proxy model; dashboard locked state with greyed-out cards; URL-level guards on `survey_take` and `task_run`)
-15. **CSS refactor** — extract duplicated inline `<style>` blocks from all templates into `static/css/styles.css`; do one template group at a time, test in browser, commit after each batch. Start next session.
+15. **CSS refactor** — extract duplicated inline `<style>` blocks from all templates into `static/css/styles.css`; do one template group at a time, test in browser, commit after each batch. Do this after all functionality is finalised.
 16. **Configure production settings** (PostgreSQL, static files, security)
+
+### Bug Fixes & Misc (current branch: `bug-fixes-and-misc`)
+
+#### Bugs
+- ~~**Survey success modal reappears on back/refresh**~~ ✅ Fixed — `history.replaceState` strips `?submitted=True` from the URL after the modal opens
+- ~~**Consent panel not highlighted when toggled at signup**~~ ✅ Fixed — widened `navLinks` selector to include any `a[data-panel]`, so the "Consent Form" link in the checkbox label now triggers the panel switch
+- ~~**Researcher test results not being logged for SUIS survey**~~ ✅ Investigated — data is being saved and scored correctly; issue could not be reproduced
+
+#### Fixes — Participant-facing
+- ~~**Completed survey/task behaviour**~~ ✅ Fixed — completed cards on dashboard changed from `<a>` to `<div>` (no hover, no pointer, no link); URL guards added to `survey_take` and `task_run` to redirect participants back to the dashboard if they navigate directly to a completed item
+- ~~**Spectrum chart**~~ ✅ Fixed — replaced bell curve SVG with a simple horizontal track and blue dot marker; applied to both the participant account page and the researcher preview chart
+- **Environment warning** — added inline to the dashboard info panel and "how to answer" sidebar in survey detail; considered sufficient
+- **"World's largest study" hero text** — remove or replace; needs new copy (discuss with Dr Digard)
+- ~~**Username instead of Name at signup**~~ ✅ Fixed — field label updated in both `accounts/forms.py` and `templates/account/signup.html`
+
+#### Fixes — Admin / Researcher-facing
+- ~~**Participant display in admin Users list**~~ ✅ Fixed — participants now display as `PRH-{year}-{id:04d}` in the Users list; researchers and superusers show username/email as before
+- ~~**CSV export and participant responses**~~ ✅ Fixed — `participant_email` field removed from survey response CSV export; `participant_id` remains
+- ~~**Researcher preview**~~ ✅ Fixed — after test submission the form, banner, and progress readout are hidden; only the results table, chart, and a "← Back to survey management" link are shown
+- **Admin textarea fields** — survey description/instructions textareas are too tall in the admin inline; set `rows` to a smaller value
+- **Researcher invitation email** — the researcher invitation email system is sufficient; no need for a separate researcher-facing email flow. Remove or simplify any redundant researcher email config.
+- **Random answers button** — add a "Fill with random answers" button to the survey preview/test page that populates all fields with valid random values before submitting; ideally shows the filled form before auto-submitting so the researcher can see what was selected
+
+#### New Features
+- **Real consent form** — replace placeholder consent text with the actual form; use markdown to render checkboxes and structured content
+- **Withdrawal audit log** — when a participant deletes their account, retain an anonymised audit record (participant ID string only, no PII) so withdrawal can be logged without keeping personal data
+- **Withdrawal email** — send a confirmation email to the participant when they withdraw from the study
+- **Exit survey data on withdrawal** — confirm the intended behaviour: what happens to exit survey responses when an account is deleted? Decide whether to retain or anonymise them
+- **Year + Month demographic fields** — the demographic survey needs both a year dropdown and a month dropdown (not just year); ensure both are available as question types
+- **Chart result label** — add a `result_description` text field to Survey for a short explanation shown to participants beside or below their chart (e.g. "Higher scores indicate greater vividness of mental imagery")
+- **Chart axis label arrays** — extend the `result_label` field on QuestionGroup to accept either a plain string or a JSON array `["V", "Visual"]`; the first item is the short chart label, the second is the long description rendered as "V = Visual" in a legend. Add help text in admin and document in the user manual
+- **Browser window size check for visual tasks** — before a lab task starts, check the window is above a minimum size (ideally fullscreen); warn the participant if not. Also log window dimensions in the task submission so researchers can judge data quality
+- **Forgot password flow** — implement the full allauth password reset pipeline (request email → reset link → set new password → confirmation); verify old password no longer works after reset
 
 ### Survey Redesign Plan (Session 8+)
 
@@ -1638,3 +1671,38 @@ Administrators can edit participant consent forms directly through the admin pan
 
 ### Home
 - `/` - Home page with role-based navigation
+
+## Deployment Roadmap
+
+### Git Tagging — the Baseline Concept
+
+A **git tag** marks a specific point in the project's history as a named, referenceable snapshot. Unlike a branch (which moves forward as you commit), a tag stays fixed. Think of it as a bookmark you can always return to.
+
+```bash
+# Create a tag
+git tag v1.0-stable
+
+# List all tags
+git tag
+
+# Return to a tagged state (read-only look)
+git checkout v1.0-stable
+
+# Create a new branch from a tag (e.g. to start deployment config)
+git checkout -b railway v1.0-stable
+```
+
+### Planned Deployment Path
+
+The intention is to deploy in two stages, both branching from the same stable tag:
+
+1. **Tag a stable version** once development features are complete (`v1.0` or similar)
+2. **Railway** (interim) — branch from the tag, add Railway-specific config, deploy for researcher content entry and light user testing before the study goes live. Data from this phase should be treated as test data and migrated carefully.
+3. **University servers** (production) — branch from the same tag, configure for the university's infrastructure requirements. This is the live study environment.
+
+The production config work (PostgreSQL, static files, `DEBUG=False`, environment variables) is largely the same for both — Railway is practice for the real thing.
+
+### What needs doing before tagging
+
+- CSS refactor (extract inline `<style>` blocks from templates into `static/css/styles.css`)
+- Customise allauth confirmation email templates

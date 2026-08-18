@@ -18,7 +18,7 @@ class UserAdmin(BaseUserAdmin):
     Admin configuration for custom User model.
     Note: Researchers should be appointed via invitation system, not manual promotion.
     """
-    list_display = ['username', 'email', 'is_researcher', 'is_participant', 'survey_progress_display', 'task_progress_display', 'overall_progress_display', 'is_active', 'date_joined']
+    list_display = ['participant_id_display', 'email', 'is_researcher', 'is_participant', 'survey_progress_display', 'task_progress_display', 'overall_progress_display', 'is_active', 'date_joined']
     list_filter = ['is_researcher', 'is_participant', 'is_active', 'date_joined']
 
     fieldsets = (
@@ -48,6 +48,12 @@ class UserAdmin(BaseUserAdmin):
             if 'is_researcher' not in readonly:
                 readonly.append('is_researcher')
         return readonly
+
+    def participant_id_display(self, obj):
+        if obj.is_participant and not obj.is_researcher:
+            return f"PRH-{obj.date_joined.year}-{obj.id:04d}"
+        return obj.username or obj.email
+    participant_id_display.short_description = 'ID'
 
     def survey_progress_display(self, obj):
         """Display survey completion progress."""

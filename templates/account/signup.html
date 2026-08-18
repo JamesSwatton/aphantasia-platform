@@ -422,7 +422,7 @@
                     </ul>
                 {% endif %}
                 <div class="field">
-                    <label for="{{ form.name.id_for_label }}">Name</label>
+                    <label for="{{ form.name.id_for_label }}">Username</label>
                     <input type="text"
                            name="name"
                            id="{{ form.name.id_for_label }}"
@@ -505,7 +505,7 @@
     <script>
   // Panel switcher (Info / Consent Form)
   var panels = document.querySelectorAll('.info-panel');
-  var navLinks = document.querySelectorAll('.view-switch a, .consent-hint a[data-panel]');
+  var navLinks = document.querySelectorAll('.view-switch a, a[data-panel]');
 
   function switchPanel(target) {
     panels.forEach(function(p) {

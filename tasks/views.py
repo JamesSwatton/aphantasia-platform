@@ -104,6 +104,10 @@ def task_run(request, pk):
 
     # Enforce demographic gateway for participants
     if not (request.user.is_researcher or request.user.is_staff):
+        # Redirect if already completed
+        if TaskSubmission.objects.filter(task=task, participant=request.user, status='completed', is_test=False).exists():
+            return redirect('dashboard:participant_dashboard')
+
         gate = Survey.objects.filter(is_active=True, is_demographic=True).first()
         if gate and not ParticipantResponse.objects.filter(survey=gate, participant=request.user).exists():
             messages.warning(request, f"Please complete '{gate.title}' first.")

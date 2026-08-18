@@ -37,7 +37,7 @@ class ParticipantSignupForm(SignupForm):
     name = forms.CharField(
         required=False,
         max_length=150,
-        label="Name",
+        label="Username",
     )
     consent = forms.BooleanField(
         required=True,

@@ -183,6 +183,11 @@
 
   .task-card--done {
     opacity: 0.6;
+    cursor: default;
+  }
+  .task-card--done:hover {
+    transform: none;
+    box-shadow: none;
   }
 
   .task-card__body {
@@ -343,18 +348,19 @@
                         <p>
                             You're free to complete measures in any order.
                             However,<strong> we have a 'core' set of
-                            questionairres that we recommend you start with. These are grouped
-                            at the top of the list, each with the blue
+                            questionnaires that we recommend you start with. These are grouped
+                            at the top of the list, each with the red
                             marker</strong>. This is just a suggestion as it will give both you and our
                             research team the broadest insight into how you visualise the world
                             around you. Or you can just start with
                             whichever domain interests you most, or work through the
                             available questionnaires and tasks at your own pace.
                         </p>
+                        <p>Each measure takes between 1 and 10 minutes on average.</p>
                         <p>
-                            Each measure takes between 1 and 10 minutes on average.
-                            Your progress is saved automatically, so you can pause
-                            and return at any time.
+                            <strong>We highly advise that you complete these measures in a quiet
+                                envionment so you can give them your full attention. Once a measure is
+                            submitted you will not be able to retake it.</strong>
                         </p>
                     {% endif %}
                 </div>
@@ -453,8 +459,7 @@
                     {% if completed_surveys or completed_tasks %}
                         <p class="section-divider">Completed</p>
                         {% for item in completed_surveys %}
-                            <a class="task-card task-card--done"
-                               href="{% url 'surveys:survey_take' item.survey.pk %}">
+                            <div class="task-card task-card--done">
                                 <div class="task-card__body">
                                     <div class="task-card__head">
                                         <span class="task-card__indicator"></span>
@@ -471,11 +476,10 @@
                                     {% if item.survey.domain %}<span>{{ item.survey.domain.name }}</span>{% endif %}
                                     <span>Completed</span>
                                 </div>
-                            </a>
+                            </div>
                         {% endfor %}
                         {% for item in completed_tasks %}
-                            <a class="task-card task-card--done"
-                               href="{% url 'tasks:task_run' item.task.pk %}">
+                            <div class="task-card task-card--done">
                                 <div class="task-card__body">
                                     <div class="task-card__head">
                                         <span class="task-card__indicator"></span>
@@ -488,7 +492,7 @@
                                     {% if item.task.domain %}<span>{{ item.task.domain.name }}</span>{% endif %}
                                     <span>Completed</span>
                                 </div>
-                            </a>
+                            </div>
                         {% endfor %}
                     {% endif %}
                     {% if not demographic_survey and not available_surveys and not available_tasks and not completed_surveys and not completed_tasks %}

@@ -178,50 +178,32 @@
   .spectrum-chart {
     position: relative;
     width: 100%;
-    height: 180px;
+    height: 48px;
+    display: flex;
+    align-items: center;
   }
-  .spectrum-curve {
-    width: 100%;
-    height: 100%;
-    display: block;
+  .spectrum-track {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 6px;
+    background: var(--rule);
+    border-radius: 3px;
   }
   .spectrum-marker {
     position: absolute;
-    top: 0;
-    bottom: 0;
+    top: 50%;
     left: var(--score-position, 50%);
-    transform: translateX(-50%);
+    transform: translate(-50%, -50%);
     pointer-events: none;
   }
-  .spectrum-marker-line {
-    position: absolute;
-    top: 16%;
-    bottom: 4%;
-    left: 50%;
-    width: 2px;
-    background: var(--blue);
-    transform: translateX(-50%);
-  }
   .spectrum-marker-dot {
-    position: absolute;
-    top: 42%;
-    left: 50%;
-    width: 20px;
-    height: 20px;
+    display: block;
+    width: 22px;
+    height: 22px;
     border-radius: 50%;
     background: var(--blue);
-    border: 3px solid #fff;
-    transform: translate(-50%, -50%);
-  }
-  .spectrum-marker-label {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    font-size: 12px;
-    font-weight: 600;
-    color: var(--ink);
-    white-space: nowrap;
+    border: 3px solid var(--bg-card);
   }
   .spectrum-labels {
     display: flex;
@@ -699,16 +681,8 @@
                                 <span class="score"><strong>{{ result.score }}</strong> / {{ result.max }}</span>
                             </div>
                             <div class="spectrum-chart" id="spectrum-{{ forloop.counter }}">
-                                <svg class="spectrum-curve"
-                                     viewBox="0 0 800 180"
-                                     preserveAspectRatio="none"
-                                     aria-hidden="true">
-                                    <line x1="0" y1="140" x2="800" y2="140" stroke="#cfcfcf" stroke-width="1" />
-                                    <path d="M 0,140 C 100,140 150,135 200,120 C 260,100 300,55 400,50 C 500,55 540,100 600,120 C 650,135 700,140 800,140 Z" fill="#e0e0e0" stroke="#b0b0b0" stroke-width="1" />
-                                </svg>
+                                <div class="spectrum-track" aria-hidden="true"></div>
                                 <div class="spectrum-marker" role="img" aria-label="Your position">
-                                    <span class="spectrum-marker-label">You</span>
-                                    <span class="spectrum-marker-line"></span>
                                     <span class="spectrum-marker-dot"></span>
                                 </div>
                             </div>
