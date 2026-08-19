@@ -86,6 +86,10 @@ class Survey(models.Model):
         blank=True,
         help_text="Maximum of the display range for results (e.g. 100)."
     )
+    result_description = models.TextField(
+        blank=True,
+        help_text="Short explanation shown to participants beside or below their chart (e.g. 'Higher scores indicate greater vividness of mental imagery')."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
