@@ -2,6 +2,9 @@ from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse
 from django.contrib import messages
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.conf import settings
 import markdown as md
 from .models import ConsentForm, WithdrawalText, WithdrawalRecord
 from surveys.utils import get_all_results
@@ -190,6 +193,21 @@ def exit_survey_submit(request):
         exit_survey_title=exit_survey_title,
         responses=response_snapshot,
     )
+
+    # Send withdrawal confirmation before deleting — email address unavailable after
+    try:
+        context = {'email': user.email, 'participant_id': participant_id}
+        subject = render_to_string('account/email/withdrawal_confirmation_subject.txt', context).strip()
+        message = render_to_string('account/email/withdrawal_confirmation_message.txt', context)
+        send_mail(
+            subject=subject,
+            message=message,
+            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@phantasiaresearchhub.com'),
+            recipient_list=[user.email],
+            fail_silently=True,
+        )
+    except Exception:
+        pass
 
     logout(request)
     user.delete()

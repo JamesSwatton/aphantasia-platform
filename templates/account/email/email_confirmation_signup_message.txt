@@ -1,0 +1,17 @@
+Hello{% if user.first_name %} {{ user.first_name }}{% endif %},
+
+Thank you for joining the Phantasia Research Hub — we are thrilled to have you as part of our research community.
+
+By signing up, you are helping us better understand the full spectrum of human mental imagery, from aphantasia to hyperphantasia. Your contributions, however large or small, make a real difference to this research.
+
+You can log in at any time to complete surveys and tasks at your own pace:
+
+{{ current_site.domain }}
+
+If you have any questions about the study, please do not hesitate to contact Dr Bérengère Digard at berengere.digard@ed.ac.uk.
+
+Thank you again for your support.
+
+Best wishes,
+The Eye's Mind Research Group
+University of Edinburgh

@@ -1,0 +1,15 @@
+Hello,
+
+This email confirms that your Phantasia Research Hub account ({{ email }}) has been deleted as requested.
+
+Your participant ID was: {{ participant_id }}
+
+All of your personal data has been removed from our systems. If any of your anonymised data had already been exported for analysis before your withdrawal, it may still be included in that analysis — but it cannot be linked back to you.
+
+If you have any questions, please contact Dr Bérengère Digard at berengere.digard@ed.ac.uk.
+
+Thank you for your contribution to this research.
+
+Best wishes,
+The Eye's Mind Research Group
+University of Edinburgh
