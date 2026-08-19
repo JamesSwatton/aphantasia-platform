@@ -96,27 +96,48 @@
   }
   .info-panel ul li { margin-bottom: 6px; }
 
-  /* Consent items */
-  .consent-item {
-    padding: 20px 0;
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
+  /* Consent list */
+  .consent-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    counter-reset: consent-counter;
   }
-  .consent-item:last-child { border-bottom: none; }
-  .consent-item label {
+  .consent-list__item {
+    counter-increment: consent-counter;
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    gap: 10px 12px;
+    align-items: start;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .consent-list__num::before {
+    content: counter(consent-counter) ".";
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    display: block;
+    line-height: 1.6;
+  }
+  .consent-list__text {
     font-size: 14px;
     line-height: 1.6;
     color: var(--ink-muted);
-    flex: 1;
-    cursor: pointer;
-    user-select: none;
   }
-  .consent-item label strong { color: var(--ink); }
-
-  .check {
+  .consent-list__label {
+    display: flex;
+    align-items: flex-start;
+    cursor: pointer;
+  }
+  .consent-list__label input[type="checkbox"] {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  .check-indicator {
     appearance: none;
-    -webkit-appearance: none;
     width: 18px;
     height: 18px;
     border: 1.5px solid var(--ink);
@@ -127,9 +148,12 @@
     position: relative;
     transition: background 0.15s ease;
     background: transparent;
+    display: block;
   }
-  .check:checked { background: var(--ink); }
-  .check:checked::after {
+  .consent-list__label input[type="checkbox"]:checked + .check-indicator {
+    background: var(--ink);
+  }
+  .consent-list__label input[type="checkbox"]:checked + .check-indicator::after {
     content: "";
     position: absolute;
     left: 4px;
@@ -139,6 +163,18 @@
     border: solid #fff;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
+  }
+  .consent-list .field-errors {
+    grid-column: 2 / 4;
+    margin: 0;
+  }
+
+
+  .consent-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 0;
   }
 
   /* Signup form */
@@ -218,6 +254,8 @@
 {% endblock %}
 {% block body %}
     {% get_active_consent_form as consent_form_obj %}
+    <form method="post" action="{% url 'account_signup' %}" id="signup-form">
+    {% csrf_token %}
     <div class="page">
         <div class="page__heading page__heading--info">
             <h1 class="heading">Before we begin!</h1>
@@ -396,13 +434,30 @@
                 <article class="info-panel" data-panel="consent">
                     {% if consent_form_obj %}
                         <p>
-                            <strong>Please read the consent form below</strong> and tick the box on the right to confirm your agreement before signing up.
+                            <strong>Please read and tick each statement below</strong> to confirm your agreement before signing up.
                         </p>
-                        <h3>{{ consent_form_obj.title }}</h3>
-                        <div style="white-space: pre-wrap;
-                                    font-size: 15px;
-                                    line-height: 1.65;
-                                    color: var(--ink-muted)">{{ consent_form_obj.content }}</div>
+                        <ol class="consent-list">
+                            {% for field in form %}
+                                {% if 'consent_' in field.html_name %}
+                                    <li class="consent-list__item">
+                                        <span class="consent-list__num"></span>
+                                        <span class="consent-list__text">{{ field.label }}</span>
+                                        <label class="consent-list__label" for="{{ field.id_for_label }}">
+                                            <input type="checkbox"
+                                                   name="{{ field.html_name }}"
+                                                   id="{{ field.id_for_label }}"
+                                                   {% if field.value %}checked{% endif %}>
+                                            <span class="check-indicator"></span>
+                                        </label>
+                                        {% if field.errors %}
+                                            <ul class="field-errors">
+                                                {% for e in field.errors %}<li>{{ e }}</li>{% endfor %}
+                                            </ul>
+                                        {% endif %}
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ol>
                     {% else %}
                         <p>
                             <strong>No active consent form found.</strong> Please contact the research team.
@@ -414,8 +469,7 @@
         </section>
         <!-- Right: signup form -->
         <section class="signup-region">
-            <form class="signup-form" method="post" action="{% url 'account_signup' %}">
-                {% csrf_token %}
+            <div class="signup-form">
                 {% if form.non_field_errors %}
                     <ul class="non-field-errors">
                         {% for error in form.non_field_errors %}<li>{{ error }}</li>{% endfor %}
@@ -497,9 +551,10 @@
     style="color: var(--ink);
            text-decoration: underline">Log in</a>
                 </p>
-            </form>
+            </div>
         </section>
     </div>
+    </form>
 {% endblock %}
 {% block extra_js %}
     <script>
@@ -528,15 +583,20 @@
     });
   });
 
-  // Enable submit only when consent checkbox is ticked
-  var consentCheck = document.getElementById('{{ form.consent.id_for_label }}');
+  // Enable submit only when all consent checkboxes (left panel + right side) are ticked
   var signupBtn = document.getElementById('signup-btn');
+  var consentCheck = document.getElementById('{{ form.consent.id_for_label }}');
 
   function updateConsent() {
-    signupBtn.disabled = !consentCheck.checked;
+    var boxes = document.querySelectorAll('.consent-list input[type="checkbox"]');
+    var allTicked = Array.prototype.every.call(boxes, function (b) { return b.checked; });
+    signupBtn.disabled = !(allTicked && consentCheck && consentCheck.checked);
   }
 
-  consentCheck.addEventListener('change', updateConsent);
+  document.querySelectorAll('.consent-list input[type="checkbox"]').forEach(function (box) {
+    box.addEventListener('change', updateConsent);
+  });
+  if (consentCheck) consentCheck.addEventListener('change', updateConsent);
   updateConsent();
     </script>
 {% endblock %}

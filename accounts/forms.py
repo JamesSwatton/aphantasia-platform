@@ -2,30 +2,31 @@ from django import forms
 from allauth.account.forms import SignupForm
 
 
-# Fallback consent text in case no consent form exists in the database
 DEFAULT_CONSENT_TEXT = """
-RESEARCH PARTICIPATION CONSENT FORM
+I confirm that I have read and understand the Participant Information Sheet for the above study.
 
-Thank you for your interest in participating in our research study on aphantasia and related conditions.
-
-PURPOSE OF THE STUDY:
-This research aims to better understand the experiences of individuals with aphantasia and contribute to scientific knowledge in this area.
-
-WHAT YOU WILL DO:
-- Complete surveys about your experiences
-- Participate in research tasks
-- Your responses will be used for research purposes only
-
-CONFIDENTIALITY:
-- Your data will be kept confidential and secure
-- Only aggregated, de-identified data may be published
-- You can withdraw from the study at any time
-
-VOLUNTARY PARTICIPATION:
-Your participation is completely voluntary. You may choose to stop participating at any time without penalty.
-
-By checking the box below and creating an account, you acknowledge that you have read and understood this consent form and agree to participate in this research.
+I agree to take part in the above study.
 """
+
+
+def extract_consent_items(content):
+    """
+    Pull out markdown list items (lines starting with '- ') from consent content.
+    Continuation lines (non-blank lines not starting a new item) are joined
+    onto the previous item, matching how markdown parsers handle wrapped text.
+    Returns a list of plain-text label strings.
+    """
+    items = []
+    for line in content.splitlines():
+        stripped = line.strip()
+        if stripped.startswith('- '):
+            label = stripped[2:].strip()
+            if label:
+                items.append(label)
+        elif stripped and items:
+            # Continuation of the previous item
+            items[-1] = items[-1] + ' ' + stripped
+    return items
 
 
 class ParticipantSignupForm(SignupForm):
@@ -37,23 +38,26 @@ class ParticipantSignupForm(SignupForm):
     consent = forms.BooleanField(
         required=True,
         label="I have read and agree to the research participation consent form",
-        error_messages={
-            'required': 'You must agree to the consent form to participate in this research.'
-        }
+        error_messages={'required': 'You must agree to the consent form to participate in this research.'},
     )
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        items = extract_consent_items(self.get_active_consent_form())
+        for i, label in enumerate(items):
+            self.fields[f'consent_{i}'] = forms.BooleanField(
+                required=True,
+                label=label,
+                error_messages={'required': 'You must tick all boxes to participate.'},
+            )
+
     def get_active_consent_form(self):
-        """
-        Get the currently active consent form from the database.
-        Returns the default consent text if no active form exists.
-        """
         from .models import ConsentForm
         try:
             consent_form = ConsentForm.objects.filter(is_active=True).first()
             if consent_form:
                 return consent_form.content
         except Exception:
-            # If there's any database error, use the default
             pass
         return DEFAULT_CONSENT_TEXT
 
