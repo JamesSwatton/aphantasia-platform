@@ -4,7 +4,6 @@ from . import views
 app_name = 'accounts'
 
 urlpatterns = [
-    path('invite/accept/<uuid:token>/', views.accept_invitation, name='accept_invitation'),
     path('account/', views.account, name='account'),
     path('account/feedback/submit/', views.feedback_submit, name='feedback_submit'),
     path('account/withdraw/', views.exit_survey, name='exit_survey'),

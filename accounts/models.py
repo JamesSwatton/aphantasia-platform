@@ -1,8 +1,5 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
-from django.utils import timezone
-from datetime import timedelta
-import uuid
 
 
 class User(AbstractUser):
@@ -164,73 +161,3 @@ class WithdrawalText(models.Model):
         super().save(*args, **kwargs)
 
 
-class ResearcherInvitation(models.Model):
-    """
-    Stores invitations for new researchers to join the platform.
-    Uses a unique token for secure, one-time registration.
-    """
-    email = models.EmailField(
-        help_text="Email address of the person being invited"
-    )
-    token = models.UUIDField(
-        default=uuid.uuid4,
-        editable=False,
-        unique=True,
-        help_text="Unique invitation token"
-    )
-    invited_by = models.ForeignKey(
-        User,
-        on_delete=models.CASCADE,
-        related_name='sent_invitations',
-        help_text="The researcher who sent this invitation"
-    )
-    expires_at = models.DateTimeField(
-        help_text="When this invitation expires"
-    )
-    used = models.BooleanField(
-        default=False,
-        help_text="Whether this invitation has been used"
-    )
-    used_at = models.DateTimeField(
-        null=True,
-        blank=True,
-        help_text="When this invitation was used"
-    )
-    created_at = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        ordering = ['-created_at']
-        verbose_name = 'Researcher Invitation'
-        verbose_name_plural = 'Researcher Invitations'
-
-    def __str__(self):
-        status = "Used" if self.used else ("Expired" if self.is_expired() else "Pending")
-        return f"Invitation to {self.email} ({status})"
-
-    def save(self, *args, **kwargs):
-        """
-        Set default expiration time if not provided (7 days from creation).
-        """
-        if not self.expires_at:
-            self.expires_at = timezone.now() + timedelta(days=7)
-        super().save(*args, **kwargs)
-
-    def is_expired(self):
-        """
-        Check if this invitation has expired.
-        """
-        return timezone.now() > self.expires_at
-
-    def is_valid(self):
-        """
-        Check if this invitation is valid (not used and not expired).
-        """
-        return not self.used and not self.is_expired()
-
-    def mark_as_used(self):
-        """
-        Mark this invitation as used.
-        """
-        self.used = True
-        self.used_at = timezone.now()
-        self.save()
