@@ -1042,6 +1042,28 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 
 ---
 
+## Session 32: Bug Fixes & New Features (August 2026)
+
+**Branch**: `bug-fixes-and-misc`
+
+### Bug fixes & misc
+- **Researcher invitation system removed** — redundant since admins create researchers directly via the Users admin panel; removed `ResearcherInvitation` model, `accept_invitation` view/URL, `InviteResearcherForm`, `ResearcherSignupForm`, and `ResearcherInvitationAdmin`
+- **Consent form as individual checkboxes** — signup page now parses the active `ConsentForm` markdown into individual required `BooleanField`s; multi-line list items joined correctly; server-side validation enforces all boxes ticked
+- **Consent card height constrained** — consent record card on the account page is `max-height: 260px` with scroll, reducing visual weight
+- **`btn--primary` hover outline** — added `border-color: var(--ink)` to `.btn--primary:hover` site-wide
+- **Spectrum chart typography** — "Your score" label and score value switched from serif (`--font-display`) to body font to match the radar chart style
+
+### New features
+- **Random answers button** — "Fill with random answers" button on the survey preview page; fills all visible questions with valid random values including gate/branch support
+- **Welcome email** — overrides allauth's `email_confirmation_signup_message.txt` with a branded welcome; uses `{{ user.first_name }}` and `{{ current_site.domain }}`
+- **Withdrawal confirmation email** — sent via `send_mail` + `render_to_string` before `user.delete()`; template at `templates/account/email/withdrawal_confirmation_message.txt`
+- **Withdrawal audit log** — `WithdrawalRecord` model snapshots anonymised participant ID, exit survey title, and responses as JSON before account deletion; admin with long-format CSV export
+- **`dropdown_year_month` question type** — combined Month + Year dropdowns side-by-side in one question card; stores as `YYYY-MM`; standalone `dropdown_year` and `dropdown_month` types removed
+- **`result_description` field on Survey** — short explanation shown below participant chart in both spectrum and radar variants; admin fieldset renamed to "Results Display Information"
+- **Production email documentation** — `EMAIL_SETUP.md` covering SMTP options, DNS records, `settings.py` config, and testing checklist
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1056,7 +1078,7 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 10. ~~**Admin dashboard improvements**~~ ✅ **Completed** (Session 13 — domain filtering, download logging, progress tracking)
 11. ~~**Add feedback form to participant account page**~~ ✅ **Completed** (Session 27)
 12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
-13. **Customise allauth confirmation email** — override `templates/account/email/email_confirmation_subject.txt` and `email_confirmation_message.txt` with branded plain-text templates; decide on verification mode (`"optional"` vs `"none"`), tone, and whether to name Dr Digard / the Eye's Mind Research Group
+13. ~~**Customise allauth confirmation email**~~ ✅ **Completed** (Session 31 — overrides `templates/account/email/email_confirmation_signup_message.txt` with branded welcome; withdrawal confirmation email sent via `send_mail` before account deletion)
 14. ~~**Implement demographic survey gateway**~~ ✅ **Completed** (Session 29 — `DemographicSurvey` proxy model; dashboard locked state with greyed-out cards; URL-level guards on `survey_take` and `task_run`)
 15. **CSS refactor** — extract duplicated inline `<style>` blocks from all templates into `static/css/styles.css`; do one template group at a time, test in browser, commit after each batch. Do this after all functionality is finalised.
 16. **Configure production settings** (PostgreSQL, static files, security)
@@ -1080,16 +1102,16 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 - ~~**CSV export and participant responses**~~ ✅ Fixed — `participant_email` field removed from survey response CSV export; `participant_id` remains
 - ~~**Researcher preview**~~ ✅ Fixed — after test submission the form, banner, and progress readout are hidden; only the results table, chart, and a "← Back to survey management" link are shown
 - **Admin textarea fields** — survey description/instructions textareas are too tall in the admin inline; set `rows` to a smaller value
-- **Researcher invitation email** — the researcher invitation email system is sufficient; no need for a separate researcher-facing email flow. Remove or simplify any redundant researcher email config.
-- **Random answers button** — add a "Fill with random answers" button to the survey preview/test page that populates all fields with valid random values before submitting; ideally shows the filled form before auto-submitting so the researcher can see what was selected
+- ~~**Researcher invitation email**~~ ✅ Removed — invitation system was redundant since admins create researchers directly via the Users admin panel; all related models, views, URLs, and forms cleaned up
+- ~~**Random answers button**~~ ✅ Added — "Fill with random answers" button on the survey preview page populates all fields with valid random values including gate/branch support; styled as an outline pill button outside the preview banner
 
 #### New Features
-- **Real consent form** — replace placeholder consent text with the actual form; use markdown to render checkboxes and structured content
-- **Withdrawal audit log** — when a participant deletes their account, retain an anonymised audit record (participant ID string only, no PII) so withdrawal can be logged without keeping personal data
-- **Withdrawal email** — send a confirmation email to the participant when they withdraw from the study
-- **Exit survey data on withdrawal** — confirm the intended behaviour: what happens to exit survey responses when an account is deleted? Decide whether to retain or anonymise them
-- **Year + Month demographic fields** — the demographic survey needs both a year dropdown and a month dropdown (not just year); ensure both are available as question types
-- **Chart result label** — add a `result_description` text field to Survey for a short explanation shown to participants beside or below their chart (e.g. "Higher scores indicate greater vividness of mental imagery")
+- ~~**Real consent form**~~ ✅ Implemented (Session 31) — markdown consent content parsed into individual required checkboxes on the signup page; server-side validation; dynamic fields generated from active `ConsentForm` in the database
+- ~~**Withdrawal audit log**~~ ✅ Implemented (Session 31) — `WithdrawalRecord` model snapshots participant ID, exit survey title, and responses as JSON before account deletion; admin with CSV export in long format
+- ~~**Withdrawal email**~~ ✅ Implemented (Session 31) — confirmation email sent via `send_mail` + `render_to_string` before `user.delete()`; template at `templates/account/email/withdrawal_confirmation_message.txt`
+- ~~**Exit survey data on withdrawal**~~ ✅ Resolved (Session 31) — exit survey responses snapshotted into `WithdrawalRecord.responses` (JSONField) before the user record is deleted; exportable as CSV from admin
+- ~~**Year + Month demographic fields**~~ ✅ Implemented (Session 32) — new `dropdown_year_month` question type renders two side-by-side selects; stores as `YYYY-MM`; standalone `dropdown_year` and `dropdown_month` types removed
+- ~~**Chart result label**~~ ✅ Implemented (Session 32) — `result_description` TextField added to Survey; shown below participant chart in both spectrum and radar card variants; admin section renamed to "Results Display Information"
 - **Chart axis label arrays** — extend the `result_label` field on QuestionGroup to accept either a plain string or a JSON array `["V", "Visual"]`; the first item is the short chart label, the second is the long description rendered as "V = Visual" in a legend. Add help text in admin and document in the user manual
 - **Browser window size check for visual tasks** — before a lab task starts, check the window is above a minimum size (ideally fullscreen); warn the participant if not. Also log window dimensions in the task submission so researchers can judge data quality
 - **Forgot password flow** — implement the full allauth password reset pipeline (request email → reset link → set new password → confirmation); verify old password no longer works after reset
