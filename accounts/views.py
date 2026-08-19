@@ -1,8 +1,9 @@
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.urls import reverse
 from django.contrib import messages
 import markdown as md
-from .models import ConsentForm, WithdrawalText
+from .models import ConsentForm, WithdrawalText, WithdrawalRecord
 from surveys.utils import get_all_results
 from surveys.models import Survey, ParticipantResponse
 
@@ -162,6 +163,33 @@ def exit_survey_submit(request):
                     )
         except ExitSurvey.DoesNotExist:
             pass
+
+    # Build anonymised participant ID before deleting the user
+    participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
+
+    # Snapshot exit survey responses if any were just saved
+    exit_survey_title = ''
+    response_snapshot = []
+    if survey_id and action == 'submit':
+        try:
+            from surveys.models import ExitSurvey
+            survey_obj = ExitSurvey.objects.get(id=survey_id)
+            exit_survey_title = survey_obj.title
+            for r in ParticipantResponse.objects.filter(
+                participant=user, survey=survey_obj
+            ).select_related('question').order_by('question__order'):
+                response_snapshot.append({
+                    'question': r.question.text,
+                    'answer': r.answer,
+                })
+        except Exception:
+            pass
+
+    WithdrawalRecord.objects.create(
+        participant_id=participant_id,
+        exit_survey_title=exit_survey_title,
+        responses=response_snapshot,
+    )
 
     logout(request)
     user.delete()

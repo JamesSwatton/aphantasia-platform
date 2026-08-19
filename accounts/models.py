@@ -1,5 +1,6 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.utils import timezone
 
 
 class User(AbstractUser):
@@ -159,5 +160,35 @@ class WithdrawalText(models.Model):
         if self.is_active:
             WithdrawalText.objects.filter(is_active=True).exclude(pk=self.pk).update(is_active=False)
         super().save(*args, **kwargs)
+
+
+class WithdrawalRecord(models.Model):
+    """
+    Anonymised record created when a participant deletes their account.
+    No foreign keys to User — survives account deletion permanently.
+    responses is a list of {question, answer} dicts snapshotted from the exit survey.
+    """
+    participant_id = models.CharField(
+        max_length=50,
+        help_text="Anonymised participant ID at time of withdrawal (e.g. PRH-2026-0042)"
+    )
+    withdrawn_at = models.DateTimeField(default=timezone.now)
+    exit_survey_title = models.CharField(
+        max_length=200,
+        blank=True,
+        help_text="Title of the exit survey completed, if any"
+    )
+    responses = models.JSONField(
+        default=list,
+        help_text="List of {question, answer} dicts from the exit survey"
+    )
+
+    class Meta:
+        ordering = ['-withdrawn_at']
+        verbose_name = 'Withdrawal Record'
+        verbose_name_plural = 'Withdrawal Records'
+
+    def __str__(self):
+        return f"{self.participant_id} — {self.withdrawn_at.strftime('%Y-%m-%d')}"
 
 

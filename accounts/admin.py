@@ -3,8 +3,11 @@ from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib import messages
 from django.shortcuts import render, redirect
 from django.urls import path
+from django.http import HttpResponse
 from allauth.account.models import EmailAddress
-from .models import User, ConsentForm, WithdrawalText
+from .models import User, ConsentForm, WithdrawalText, WithdrawalRecord
+import csv
+from datetime import date
 
 # Unregister allauth's EmailAddress model from admin
 # We don't need manual management of email verification records
@@ -168,5 +171,53 @@ class WithdrawalTextAdmin(admin.ModelAdmin):
                 request,
                 'Withdrawal text updated and is now active.',
             )
+
+
+@admin.register(WithdrawalRecord)
+class WithdrawalRecordAdmin(admin.ModelAdmin):
+    list_display = ['participant_id', 'exit_survey_title', 'withdrawn_at', 'response_count']
+    list_filter = ['withdrawn_at', 'exit_survey_title']
+    search_fields = ['participant_id']
+    readonly_fields = ['participant_id', 'withdrawn_at', 'exit_survey_title', 'responses']
+    actions = ['export_csv']
+
+    def has_add_permission(self, request):
+        return False
+
+    def response_count(self, obj):
+        return len(obj.responses)
+    response_count.short_description = 'Responses'
+
+    @admin.action(description='Export withdrawal records as CSV')
+    def export_csv(self, request, queryset):
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="withdrawal_records_{date.today().isoformat()}.csv"'
+
+        writer = csv.DictWriter(response, fieldnames=[
+            'participant_id', 'withdrawn_at', 'exit_survey_title', 'question', 'answer',
+        ])
+        writer.writeheader()
+
+        for record in queryset:
+            if record.responses:
+                for item in record.responses:
+                    writer.writerow({
+                        'participant_id': record.participant_id,
+                        'withdrawn_at': record.withdrawn_at.isoformat(),
+                        'exit_survey_title': record.exit_survey_title,
+                        'question': item.get('question', ''),
+                        'answer': item.get('answer', ''),
+                    })
+            else:
+                # Withdrawal with no exit survey responses — still record the row
+                writer.writerow({
+                    'participant_id': record.participant_id,
+                    'withdrawn_at': record.withdrawn_at.isoformat(),
+                    'exit_survey_title': record.exit_survey_title,
+                    'question': '',
+                    'answer': '',
+                })
+
+        return response
 
 
