@@ -340,6 +340,7 @@ ol {
 }
 .btn--primary:hover {
   opacity: 0.88;
+  border-color: var(--ink);
 }
 
 /* "is-active" — used when a button represents the page the user is currently
