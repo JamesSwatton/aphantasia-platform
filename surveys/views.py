@@ -99,9 +99,8 @@ def survey_preview(request, pk):
             question.scale_options = question.get_scale_options()
         elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
             question.multiple_choice_options = question.get_multiple_choice_options()
-        elif question.question_type == 'dropdown_year':
+        elif question.question_type == 'dropdown_year_month':
             question.year_options = question.get_year_options()
-        elif question.question_type == 'dropdown_month':
             question.month_options = question.get_month_options()
         elif question.question_type == 'dropdown_country':
             question.country_options = question.get_country_options()
@@ -304,22 +303,21 @@ def survey_preview(request, pk):
                             'is_auto_filled': False
                         })
 
-            elif q.question_type in ['dropdown_year', 'dropdown_month', 'dropdown_country']:
-                answer = request.POST.get(field_name, '').strip()
+            elif q.question_type in ['dropdown_year_month', 'dropdown_country']:
+                if q.question_type == 'dropdown_year_month':
+                    month_val = request.POST.get(f'{field_name}_month', '').strip()
+                    year_val = request.POST.get(f'{field_name}_year', '').strip()
+                    answer = f"{year_val}-{month_val}" if year_val and month_val else ''
+                    month_names = {str(i): name for i, name in q.get_month_options()}
+                    answer_label = f"{month_names.get(month_val, month_val)} {year_val}" if answer else ''
+                else:  # dropdown_country
+                    answer = request.POST.get(field_name, '').strip()
+                    answer_label = answer
+
                 if q.required and not answer:
                     errors.append(f"Question {index} is required.")
                 elif answer:
                     responses[q] = answer
-                    # Build display data
-                    if q.question_type == 'dropdown_year':
-                        answer_label = answer  # Year displays as itself
-                    elif q.question_type == 'dropdown_month':
-                        # Get month name from number
-                        month_names = {str(i): name for i, name in q.get_month_options()}
-                        answer_label = month_names.get(answer, answer)
-                    else:  # dropdown_country
-                        answer_label = answer  # Country name displays as itself
-
                     display_responses.append({
                         'question_id': q.get_question_identifier(),
                         'question_text': q.text,
@@ -331,7 +329,6 @@ def survey_preview(request, pk):
                         'is_auto_filled': False
                     })
                 else:
-                    # Optional question left blank - record as NULL
                     if not q.required:
                         responses[q] = "NULL"
                         display_responses.append({
@@ -438,9 +435,8 @@ def survey_take(request, pk):
             question.scale_options = question.get_scale_options()
         elif question.question_type in ['multiple_choice_single', 'multiple_choice_multi']:
             question.multiple_choice_options = question.get_multiple_choice_options()
-        elif question.question_type == 'dropdown_year':
+        elif question.question_type == 'dropdown_year_month':
             question.year_options = question.get_year_options()
-        elif question.question_type == 'dropdown_month':
             question.month_options = question.get_month_options()
         elif question.question_type == 'dropdown_country':
             question.country_options = question.get_country_options()
@@ -543,15 +539,19 @@ def survey_take(request, pk):
                     if not q.required:
                         responses[q] = "NULL"
 
-            elif q.question_type in ['dropdown_year', 'dropdown_month', 'dropdown_country']:
-                answer = request.POST.get(field_name, '').strip()
+            elif q.question_type in ['dropdown_year_month', 'dropdown_country']:
+                if q.question_type == 'dropdown_year_month':
+                    month_val = request.POST.get(f'{field_name}_month', '').strip()
+                    year_val = request.POST.get(f'{field_name}_year', '').strip()
+                    answer = f"{year_val}-{month_val}" if year_val and month_val else ''
+                else:
+                    answer = request.POST.get(field_name, '').strip()
 
                 if q.required and not answer:
                     errors.append(f"Question {index} is required.")
                 elif answer:
                     responses[q] = answer
                 else:
-                    # Optional question left blank - record as NULL
                     if not q.required:
                         responses[q] = "NULL"
 

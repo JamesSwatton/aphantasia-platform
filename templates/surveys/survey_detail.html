@@ -657,6 +657,13 @@
     outline: none;
     border-color: var(--blue);
   }
+  .q-year-month {
+    display: flex;
+    gap: 12px;
+  }
+  .q-year-month .q-select {
+    flex: 1;
+  }
 
   /* =========================================================================
      Submit row
@@ -1088,29 +1095,28 @@
                             rows="4"
                             {% if question.required %}required{% endif %}></textarea>
 
-                {# ── Year dropdown ── #}
-                {% elif question.question_type == 'dropdown_year' %}
-                  <select class="q-select"
-                          name="question_{{ question.id }}"
-                          id="q{{ question.id }}"
-                          {% if question.required %}required{% endif %}>
-                    <option value="">— Select year —</option>
-                    {% for value, label in question.year_options %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
-
-                {# ── Month dropdown ── #}
-                {% elif question.question_type == 'dropdown_month' %}
-                  <select class="q-select"
-                          name="question_{{ question.id }}"
-                          id="q{{ question.id }}"
-                          {% if question.required %}required{% endif %}>
-                    <option value="">— Select month —</option>
-                    {% for value, label in question.month_options %}
-                      <option value="{{ value }}">{{ label }}</option>
-                    {% endfor %}
-                  </select>
+                {# ── Year + Month dropdown ── #}
+                {% elif question.question_type == 'dropdown_year_month' %}
+                  <div class="q-year-month">
+                    <select class="q-select"
+                            name="question_{{ question.id }}_month"
+                            id="q{{ question.id }}_month"
+                            {% if question.required %}required{% endif %}>
+                      <option value="">— Month —</option>
+                      {% for value, label in question.month_options %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                    <select class="q-select"
+                            name="question_{{ question.id }}_year"
+                            id="q{{ question.id }}_year"
+                            {% if question.required %}required{% endif %}>
+                      <option value="">— Year —</option>
+                      {% for value, label in question.year_options %}
+                        <option value="{{ value }}">{{ label }}</option>
+                      {% endfor %}
+                    </select>
+                  </div>
 
                 {# ── Country dropdown ── #}
                 {% elif question.question_type == 'dropdown_country' %}
@@ -1178,21 +1184,21 @@
                         {% elif bq.question_type == 'free_text' %}
                           <textarea class="q-textarea" name="question_{{ bq.id }}" id="bq{{ bq.id }}" rows="4" {% if bq.required %}required{% endif %}></textarea>
 
-                        {% elif bq.question_type == 'dropdown_year' %}
-                          <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>
-                            <option value="">— Select year —</option>
-                            {% for value, label in bq.year_options %}
-                              <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                          </select>
-
-                        {% elif bq.question_type == 'dropdown_month' %}
-                          <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>
-                            <option value="">— Select month —</option>
-                            {% for value, label in bq.month_options %}
-                              <option value="{{ value }}">{{ label }}</option>
-                            {% endfor %}
-                          </select>
+                        {% elif bq.question_type == 'dropdown_year_month' %}
+                          <div class="q-year-month">
+                            <select class="q-select" name="question_{{ bq.id }}_month" id="bq{{ bq.id }}_month" {% if bq.required %}required{% endif %}>
+                              <option value="">— Month —</option>
+                              {% for value, label in bq.month_options %}
+                                <option value="{{ value }}">{{ label }}</option>
+                              {% endfor %}
+                            </select>
+                            <select class="q-select" name="question_{{ bq.id }}_year" id="bq{{ bq.id }}_year" {% if bq.required %}required{% endif %}>
+                              <option value="">— Year —</option>
+                              {% for value, label in bq.year_options %}
+                                <option value="{{ value }}">{{ label }}</option>
+                              {% endfor %}
+                            </select>
+                          </div>
 
                         {% elif bq.question_type == 'dropdown_country' %}
                           <select class="q-select" name="question_{{ bq.id }}" id="bq{{ bq.id }}" {% if bq.required %}required{% endif %}>

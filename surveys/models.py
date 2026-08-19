@@ -322,8 +322,7 @@ class Question(models.Model):
         ('multiple_choice_single', 'Multiple Choice (Select One)'),
         ('multiple_choice_multi', 'Multiple Choice (Select Multiple)'),
         ('free_text', 'Free Text'),
-        ('dropdown_year', 'Dropdown (Year)'),
-        ('dropdown_month', 'Dropdown (Month)'),
+        ('dropdown_year_month', 'Dropdown (Year + Month)'),
         ('dropdown_country', 'Dropdown (Country)'),
     ]
 
