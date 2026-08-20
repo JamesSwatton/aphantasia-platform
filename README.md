@@ -1098,6 +1098,81 @@ Visual tasks need enough screen space to produce usable data, so researchers can
 
 ---
 
+## CSS Refactor Plan
+
+A prior attempt at this refactor was done in one large sweep, became unwieldy, and had to be reset. This plan replaces that approach. **Work through it in small chunks on the `css-refactor` branch — one phase, one template group, one commit at a time. Never batch unrelated templates together.**
+
+### Current state (audited 2026-08-20)
+
+17 templates still have inline `<style>` blocks, totalling ~3,650 lines. `static/css/styles.css` is 1,021 lines and already holds the shared design system (tokens, topbar, footer, buttons, alerts, avatar).
+
+| Template | Inline CSS lines |
+|---|---|
+| `surveys/survey_detail.html` | 756 |
+| `accounts/account.html` | 490 |
+| `dashboard/participant_dashboard.html` | 279 |
+| `account/signup.html` | 242 |
+| `tasks/task_list.html` | 210 |
+| `surveys/survey_list.html` | 210 |
+| `account/login.html` | 202 |
+| `core/messages.html` | 192 |
+| `home.html` | 187 |
+| `accounts/exit_survey.html` | 157 |
+| `account/password_reset.html` | 135 |
+| `account/password_change.html` | 135 |
+| `account/password_reset_from_key.html` | 134 |
+| `tasks/task_start.html` | 102 |
+| `tasks/task_complete.html` | 79 |
+| `account/password_reset_done.html` | 73 |
+| `account/password_reset_from_key_done.html` | 68 |
+
+Selector-frequency audit found the duplication isn't random — it clusters into families of templates that share a layout skeleton and copy-pasted its CSS wholesale:
+
+- **Auth-page family** (`.page`, `.page__heading*`, `.field`, `.field-errors`, `.non-field-errors`, `.form-submit`, `.back-link`, `.info-region`, `.heading`) — shared by `login.html`, `signup.html`, `password_reset.html`, `password_reset_from_key.html`, `password_change.html`. This is exactly the family that caused the button/link spacing bug fixed in Session 33 — the same rule had drifted three separate ways because it was defined three separate times.
+- **Dashboard-grid family** (`.page__sidebar`, `.page__main`, `.sidebar-panel`, `.domain-list__*`, `.task-card*`, `.empty-state`) — shared by `participant_dashboard.html`, `survey_list.html`, `task_list.html`, and partially `survey_detail.html`.
+- **Results/chart cluster** (`.radar`, `.radar-wrap`, `.radar-legend`, `.spectrum-*`) — shared by `account.html` and `survey_detail.html`.
+- Everything else (`home.html`, `messages.html`, `exit_survey.html`, `task_start.html`, `task_complete.html`, the two `*_done.html` confirmation pages) is largely page-specific with lighter duplication.
+
+### Phase 1 — Audit (no code changes)
+
+For each of the 17 templates, classify every inline rule as one of:
+- **Duplicate-identical** — byte-for-byte (or near enough) the same rule already exists in another template or in `styles.css`.
+- **Duplicate-drifted** — same intent, slightly different values (the dangerous category — these are bugs waiting to be found, like the Session 33 spacing issue).
+- **Page-specific** — genuinely unique to this template, no equivalent elsewhere.
+
+Output: a short checklist per template group (reuse the clusters above as a starting grouping). This becomes the literal task list for Phase 2. Do this as its own pass before touching any template — it's cheap, low-risk, and prevents Phase 2 from rediscovering the same duplication piecemeal.
+
+### Phase 2 — Extract-only (relocate, don't unify)
+
+Move each template's inline `<style>` block into `static/css/styles.css` **verbatim**, scoped under a clear comment header (e.g. `/* === survey_detail.html === */`), one template (or one tightly-coupled pair, like the two `*_done.html` confirmation pages) per session:
+
+1. Pick the next template from the Phase 1 checklist.
+2. Cut its `<style>` block, paste into `styles.css` under its own labelled section.
+3. Delete the empty `{% block extra_head %}` style tag from the template (or the block entirely if nothing else lives there).
+4. Run the dev server, load the page, visually compare against how it looked before (screenshot or side-by-side if possible) — check light and dark theme if the page supports both.
+5. Commit — one template's extraction per commit, README updated with a one-line log entry.
+6. Stop. Do not continue to the next template in the same sitting unless explicitly asked.
+
+At the end of Phase 2, every template uses `{% load static %}` + the shared stylesheet only — zero inline `<style>` blocks — but `styles.css` will be large and still contain the duplication identified in Phase 1. That's expected and fine at this stage.
+
+### Phase 3 — De-duplicate (unify, once everything is in one file)
+
+Only start this once Phase 2 is fully complete for all 17 templates. With everything living in one file, duplicate-identical and duplicate-drifted rules are easy to `diff` side by side:
+
+1. Work through the Phase 1 duplicate list, one cluster at a time (start with the auth-page family — it's the best-understood and lowest-risk).
+2. For **duplicate-identical** rules: merge into a single shared rule, update the selector list, delete the redundant copies, verify all affected pages still render correctly.
+3. For **duplicate-drifted** rules: this is a judgement call, not an automatic merge — decide whether the drift was intentional (a real design difference) or accidental (a bug like Session 33's). Confirm with the user before unifying if it's ambiguous.
+4. Commit per cluster, not per rule — each commit should leave the site in a fully working state.
+
+### Ground rules for every session on this branch
+
+- One phase, one template/cluster, one commit. Never mix phases in a single change.
+- Always verify in the browser before committing — type checking and `manage.py check` don't catch visual regressions.
+- If a chunk starts to feel unwieldy mid-session, stop and split it further rather than pushing through — this is exactly the failure mode that caused the original reset.
+- Update this section's checklist (or a linked progress note) as templates are completed, so any future session can see at a glance what's done.
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1114,7 +1189,7 @@ Visual tasks need enough screen space to produce usable data, so researchers can
 12. ~~**Add exit survey and withdrawal info to account page**~~ ✅ **Completed** (Session 28 — `WithdrawalText` model with markdown rendering; `ExitSurvey` proxy model; full withdrawal flow: account page → exit survey page → account deletion → goodbye page)
 13. ~~**Customise allauth confirmation email**~~ ✅ **Completed** (Session 31 — overrides `templates/account/email/email_confirmation_signup_message.txt` with branded welcome; withdrawal confirmation email sent via `send_mail` before account deletion)
 14. ~~**Implement demographic survey gateway**~~ ✅ **Completed** (Session 29 — `DemographicSurvey` proxy model; dashboard locked state with greyed-out cards; URL-level guards on `survey_take` and `task_run`)
-15. **CSS refactor** — extract duplicated inline `<style>` blocks from all templates into `static/css/styles.css`; do one template group at a time, test in browser, commit after each batch. Do this after all functionality is finalised.
+15. **CSS refactor** — see [CSS Refactor Plan](#css-refactor-plan) below for the full three-phase approach.
 16. **Configure production settings** (PostgreSQL, static files, security)
 
 ### Bug Fixes & Misc (current branch: `bug-fixes-and-misc`)
@@ -1761,5 +1836,5 @@ The production config work (PostgreSQL, static files, `DEBUG=False`, environment
 
 ### What needs doing before tagging
 
-- CSS refactor (extract inline `<style>` blocks from templates into `static/css/styles.css`)
+- CSS refactor — see [CSS Refactor Plan](#css-refactor-plan)
 - Customise allauth confirmation email templates
