@@ -1078,6 +1078,12 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 ### Bug fix: researcher preview radar chart not rendering
 Found while testing the above (pre-existing, unrelated to this session's changes — confirmed via `git blame` and by reproducing on a clean `HEAD`). The progress-counter script in `survey_detail.html` queries `[data-progress-done]` / `[data-progress-total]` / `[data-progress-fill]` unconditionally, but that markup is intentionally omitted once a researcher's test submission renders (`{% if not test_responses %}`, added in Session 25). The resulting `null.textContent` threw on page load, and this was blocking the later radar-chart-init script from running. Fixed by null-guarding both the `refresh()` function and the `survey:refresh` event listener's inline duplicate of the same lookup in `templates/surveys/survey_detail.html` — confirmed the radar chart now renders correctly on the researcher preview page.
 
+### Compact admin inline widgets
+`surveys/admin.py`:
+- `QuestionInline` and `LikertScaleInline`: `formfield_overrides` narrows `TextField`/`JSONField` widgets (question `text`/`options`, Likert `scale_labels`) from Django's tall default to 5 rows
+- New `QuestionInlineForm` narrows `trigger_value` to a 4-character `TextInput` — it only ever holds a single digit
+- Survey-level `description`/`instructions` fields deliberately left at default size (only the inline table rows were the actual pain point)
+
 **Branch**: `bug-fixes-and-misc`
 
 ---
@@ -1119,7 +1125,7 @@ Found while testing the above (pre-existing, unrelated to this session's changes
 - ~~**Participant display in admin Users list**~~ ✅ Fixed — participants now display as `PRH-{year}-{id:04d}` in the Users list; researchers and superusers show username/email as before
 - ~~**CSV export and participant responses**~~ ✅ Fixed — `participant_email` field removed from survey response CSV export; `participant_id` remains
 - ~~**Researcher preview**~~ ✅ Fixed — after test submission the form, banner, and progress readout are hidden; only the results table, chart, and a "← Back to survey management" link are shown
-- **Admin textarea fields** — survey description/instructions textareas are too tall in the admin inline; set `rows` to a smaller value
+- ~~**Admin textarea fields**~~ ✅ Fixed (Session 33) — `QuestionInline` question `text`/`options` and `LikertScaleInline` `scale_labels` textareas were using Django's tall default; narrowed to 5 rows via `formfield_overrides`. `trigger_value` narrowed to a 4-char text input (only ever holds a single digit) via a small `QuestionInlineForm`. Survey-level `description`/`instructions` fields left at default size.
 - ~~**Researcher invitation email**~~ ✅ Removed — invitation system was redundant since admins create researchers directly via the Users admin panel; all related models, views, URLs, and forms cleaned up
 - ~~**Random answers button**~~ ✅ Added — "Fill with random answers" button on the survey preview page populates all fields with valid random values including gate/branch support; styled as an outline pill button outside the preview banner
 
