@@ -1084,6 +1084,16 @@ Found while testing the above (pre-existing, unrelated to this session's changes
 - New `QuestionInlineForm` narrows `trigger_value` to a 4-character `TextInput` — it only ever holds a single digit
 - Survey-level `description`/`instructions` fields deliberately left at default size (only the inline table rows were the actual pain point)
 
+### Minimum window size gate for lab tasks
+Visual tasks need enough screen space to produce usable data, so researchers can now flag a `LabTask` as requiring a minimum browser window size:
+- **`LabTask.requires_min_window_size`** (bool, default `False`), **`min_window_width`** / **`min_window_height`** (default `1024`×`768`) — new admin "Screen Requirements" fieldset
+- **`templates/tasks/task_start.html`**: when enabled, checks `window.innerWidth`/`innerHeight` against the task's minimum on load and on every `resize`; shows a warning banner and disables the Start button while too small
+- **Window size always logged** on `TaskSubmission.window_width`/`window_height` when a participant starts a task, regardless of whether a minimum is enforced — a data-quality fallback researchers can check later. Captured client-side and appended as `?w=&h=` query params on the Start link
+- Because there was previously no reliable moment to capture window size for tasks with no instructions text (they skipped straight from the dashboard into the lab.js task), `task_preview`/`task_run` (`tasks/views.py`) now always route through `task_start.html` on first entry, not just when instructions exist
+- **`TaskSubmissionAdmin`**: list view shows recorded window size, flagged red if below the task's minimum; detail view has a "Browser Window" fieldset
+
+**TODO**: the warning banner styling on `task_start.html` is functional but needs proper design treatment — currently a bare `.alert--warning` strip.
+
 **Branch**: `bug-fixes-and-misc`
 
 ---
@@ -1119,6 +1129,7 @@ Found while testing the above (pre-existing, unrelated to this session's changes
 - ~~**Spectrum chart**~~ ✅ Fixed — replaced bell curve SVG with a simple horizontal track and blue dot marker; applied to both the participant account page and the researcher preview chart
 - **Environment warning** — added inline to the dashboard info panel and "how to answer" sidebar in survey detail; considered sufficient
 - **"World's largest study" hero text** — remove or replace; needs new copy (discuss with Dr Digard)
+- **Window size warning styling** — the min-window-size gate on `task_start.html` (Session 33) is functional but the warning banner needs proper design treatment, currently a bare `.alert--warning` strip
 - ~~**Username instead of Name at signup**~~ ✅ Fixed — field label updated in both `accounts/forms.py` and `templates/account/signup.html`
 
 #### Fixes — Admin / Researcher-facing
@@ -1137,7 +1148,7 @@ Found while testing the above (pre-existing, unrelated to this session's changes
 - ~~**Year + Month demographic fields**~~ ✅ Implemented (Session 32) — new `dropdown_year_month` question type renders two side-by-side selects; stores as `YYYY-MM`; standalone `dropdown_year` and `dropdown_month` types removed
 - ~~**Chart result label**~~ ✅ Implemented (Session 32) — `result_description` TextField added to Survey; shown below participant chart in both spectrum and radar card variants; admin section renamed to "Results Display Information"
 - ~~**Chart axis label arrays**~~ ✅ Implemented (Session 33) — `QuestionGroup.result_label` accepts either a plain string or a JSON array `["V", "Visual"]`; `display_label` (short, used for the chart axis) and new `display_label_long` property parse it. Radar legend on both the participant results panel and researcher preview shows "V = Visual" when a long form is set, falling back to just the short label otherwise. Admin help text documents the array syntax.
-- **Browser window size check for visual tasks** — before a lab task starts, check the window is above a minimum size (ideally fullscreen); warn the participant if not. Also log window dimensions in the task submission so researchers can judge data quality
+- ~~**Browser window size check for visual tasks**~~ ✅ Implemented (Session 33) — see below. **Remaining**: warning banner on `task_start.html` needs proper styling (currently functional but placeholder-looking)
 - **Forgot password flow** — implement the full allauth password reset pipeline (request email → reset link → set new password → confirmation); verify old password no longer works after reset
 
 ### Survey Redesign Plan (Session 8+)
