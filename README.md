@@ -1142,16 +1142,51 @@ For each of the 17 templates, classify every inline rule as one of:
 
 Output: a short checklist per template group (reuse the clusters above as a starting grouping). This becomes the literal task list for Phase 2. Do this as its own pass before touching any template — it's cheap, low-risk, and prevents Phase 2 from rediscovering the same duplication piecemeal.
 
+#### Phase 1 results (completed 2026-08-20)
+
+**Important correction to Phase 2 below**: `static/css/styles.css` already contains shared versions of the entire auth-page-grid and dashboard-grid families (`.page--auth`, `.field`, `.form-submit`, `.domain-list__*`, `.empty-state`, `.page`, `.page__sidebar`, `.sidebar-panel`, `.info-content`/`.info-region`, `.form-region` — roughly 440 lines). Because `styles.css` loads before each template's inline block and both use equal-specificity bare class selectors, **every template's inline copy currently shadows the shared version** — the shared rules are written but effectively dead code right now. For the auth-page and dashboard-grid templates, Phase 2 is "delete the inline copy and confirm the existing shared rule still renders correctly," not "write a new shared rule from scratch."
+
+**Cluster 1 — Auth-page family** (`login.html`, `signup.html`, `password_reset.html`, `password_reset_from_key.html`, `password_change.html`, `password_reset_done.html`, `password_reset_from_key_done.html`)
+- `.page` grid, `--bg-page: #ffffff`, `.field`/`.field-errors`/`.non-field-errors`, `.info-region`, `.message-region` — duplicate-identical across all 7 + `styles.css` (styles.css scopes the grid as `.page--auth`, a rename not a value change).
+- Padding variable, always `60px` — duplicate-identical value, naming drift only (`--login-padding-x`, `--signup-padding-x`, `--pad-x` ×5, `--auth-padding-x` in styles.css). Trivial Phase 3 unify.
+- `.page__heading`/`.page__label` BEM suffixes — naming split, not drift: 5 pages use `--left`/`--right` (matches styles.css verbatim); login.html uses `--brand`/`--login`, signup.html uses `--info`/`--signup` (page-specific semantic names, same values).
+- Submit button — duplicate-identical values, 3-way naming split (`.login-submit`, `.signup-submit`, `.form-submit` + styles.css).
+  - **By-design, do not unify to one value**: `margin-top` is `8px` on `.login-submit` (sits after `.remember-row`'s own 20px padding) vs `28px` on `.form-submit` on the 3 reset/change pages (no preceding spacer, so the value compensates — this is the Session 33 fix, correct as shipped). Preserve the *visual* gap, not a single numeric value.
+  - **Dead code**: `signup.html`'s `.signup-submit` has a commented-out `margin-top: 32px;` with no active margin-top — clean up in Phase 2/3.
+- `.back-link`/`.forgot-link` — duplicate-identical at `24px`, naming-only variance. signup.html has no equivalent (genuine absence, not drift).
+- Per-template split: login.html/signup.html ~35% shared-family, ~65% page-specific (hero copy, view-switch). Reset/change pages ~70%+ shared-family. The two `*_done.html` pages are almost entirely shared-family.
+
+**Cluster 2 — Dashboard-grid family** (`participant_dashboard.html`, `survey_list.html`, `task_list.html`, `survey_detail.html` partial)
+- `.page` grid (360px/1fr), `.page::before`, `.page__sidebar`, `.page__main`, `.sidebar-panel`, `.info-content`, `.domain-list__*` — duplicate-identical across all 4 + styles.css (unscoped here, matches directly).
+- `.task-card` family (`__body`/`__title`/`__desc`/`__actions`/`__meta`) — duplicate-identical between `survey_list.html` (`.survey-card*`) and `task_list.html` (`.task-card*`), naming-only, safe merge.
+- `.pill--priority`/`.pill--inactive`/`.pill--active` — likely duplicate-identical with styles.css's `.pill` component; not independently re-verified line-by-line, confirm in Phase 2.
+- **Flag for a decision before Phase 3 touches these — do not auto-merge**:
+  - `.empty-state` — real 3-way visual inconsistency, not by-design: `survey_list.html`/`task_list.html` use `padding:80px 0; color:var(--ink-muted)` (matches styles.css); `participant_dashboard.html` uses `padding:60px 0; font-size:14px; color:var(--ink-subtle)` (smaller, subtler); `core/messages.html` uses `padding:80px 24px; text-align:center` (different shape, centered). Needs a decision — pick one, or keep as deliberate per-context variants.
+  - `participant_dashboard.html`'s own `.task-card` — genuinely more complex than the list-page cards: adds `text-decoration:none; color:inherit`, hover/focus-visible states, `--done`/`--priority` modifiers, an `__indicator` dot; also omits `align-items: stretch` that the list-page cards have. This is the dashboard's unified survey+task card (Session 18) — likely stays a distinct component that shares a base rather than a full merge.
+- Per-template split: `participant_dashboard.html` (277 lines) ~half shared-family, ~half page-specific-but-drifted card variant, small genuine page-specific remainder (progress header). `survey_list.html`/`task_list.html` (~209 lines each) high overlap with each other, moderate overlap with dashboard (grid skeleton only). `survey_detail.html` (754 lines) only shares the outer `.page` grid with this family (~5% of its CSS) — the rest is page-specific (question rendering, matrix tables, branch/gate UI, progress bar, modal).
+
+**Cluster 3 — Results/chart cluster** (`accounts/account.html`, `surveys/survey_detail.html`)
+- `.spectrum-chart`/`.spectrum-track`/`.spectrum-marker`/`.spectrum-marker-dot`/`.spectrum-labels`, `.radar-wrap`, `.radar-legend` (`h5`/`li`/`.modality`/`.value`) — duplicate-identical (survey_detail's copy is condensed-formatted, not a value change).
+- **Flag for a decision**: `.radar` `max-width` is `380px` on `account.html` (participant results) vs `340px` on `survey_detail.html` (researcher preview) — a real 40px difference in rendered chart size. Could be intentional (preview is secondary/compact) or accidental. Don't auto-merge to one value without checking.
+- Small fraction of either template's total CSS — most of both files is unrelated to charts.
+
+**Cluster 4 — Page-specific only, no reconciliation needed** — `home.html` (187 lines), `core/messages.html` (192 lines, except its `.empty-state` drift above), `accounts/exit_survey.html` (157 lines), `tasks/task_start.html` (100 lines), `tasks/task_complete.html` (77 lines). Zero cross-template selector hits found against the clusters above. Good Phase 2 quick wins — plain relocation, no reconciliation against the shared stylesheet needed.
+
+**Ranked risk list for Phase 3** (highest judgement-call risk first): (1) `.empty-state` 3-way drift, (2) `.radar` max-width 340 vs 380, (3) dashboard `.task-card` vs list-page `.task-card`/`.survey-card` — structurally more complex, needs design judgement not just a value merge.
+
 ### Phase 2 — Extract-only (relocate, don't unify)
 
-Move each template's inline `<style>` block into `static/css/styles.css` **verbatim**, scoped under a clear comment header (e.g. `/* === survey_detail.html === */`), one template (or one tightly-coupled pair, like the two `*_done.html` confirmation pages) per session:
+Move each template's inline `<style>` block into `static/css/styles.css` **verbatim**, scoped under a clear comment header (e.g. `/* === survey_detail.html === */`), one template (or one tightly-coupled pair, like the two `*_done.html` confirmation pages) per session.
+
+**For auth-page-family and dashboard-grid-family templates (clusters 1 and 2 above), `styles.css` already has a shared rule for most of the inline block** — for those, the step is "delete the inline copy and confirm the page still renders correctly against the existing shared rule," not "paste a new copy in." Only genuinely page-specific rules (the page-specific remainder noted per template in the Phase 1 results) get newly added to `styles.css`.
 
 1. Pick the next template from the Phase 1 checklist.
-2. Cut its `<style>` block, paste into `styles.css` under its own labelled section.
-3. Delete the empty `{% block extra_head %}` style tag from the template (or the block entirely if nothing else lives there).
-4. Run the dev server, load the page, visually compare against how it looked before (screenshot or side-by-side if possible) — check light and dark theme if the page supports both.
-5. Commit — one template's extraction per commit, README updated with a one-line log entry.
-6. Stop. Do not continue to the next template in the same sitting unless explicitly asked.
+2. For rules already covered by an existing shared rule in `styles.css`: delete the inline copy, don't re-paste it.
+3. For genuinely page-specific rules: cut from the inline block, paste into `styles.css` under a labelled section for that template.
+4. Delete the empty `{% block extra_head %}` style tag from the template (or the block entirely if nothing else lives there).
+5. Run the dev server, load the page, visually compare against how it looked before (screenshot or side-by-side if possible) — check light and dark theme if the page supports both.
+6. Commit — one template's extraction per commit, README updated with a one-line log entry.
+7. Stop. Do not continue to the next template in the same sitting unless explicitly asked.
 
 At the end of Phase 2, every template uses `{% load static %}` + the shared stylesheet only — zero inline `<style>` blocks — but `styles.css` will be large and still contain the duplication identified in Phase 1. That's expected and fine at this stage.
 
