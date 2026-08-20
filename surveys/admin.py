@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django import forms
+from django.db import models
 from django.utils.html import format_html
 from django.urls import reverse
 from django.http import HttpResponse
@@ -31,6 +32,9 @@ class LikertScaleInline(admin.TabularInline):
     fields = ["name", "min_value", "max_value", "scale_labels"]
     verbose_name = "Likert Scale"
     verbose_name_plural = "Likert Scales"
+    formfield_overrides = {
+        models.JSONField: {'widget': forms.Textarea(attrs={'rows': 5})},
+    }
 
 
 class QuestionGroupInline(admin.TabularInline):
@@ -48,11 +52,25 @@ class QuestionGroupInline(admin.TabularInline):
         return qs.order_by("order")
 
 
+class QuestionInlineForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = '__all__'
+        widgets = {
+            'trigger_value': forms.TextInput(attrs={'size': 4}),
+        }
+
+
 class QuestionInline(admin.TabularInline):
     model = Question
+    form = QuestionInlineForm
     extra = 1
     fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "controls_next_n_questions", "trigger_value"]
     readonly_fields = ["question_id"]
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(attrs={'rows': 5})},
+        models.JSONField: {'widget': forms.Textarea(attrs={'rows': 5})},
+    }
 
     def get_queryset(self, request):
         """
