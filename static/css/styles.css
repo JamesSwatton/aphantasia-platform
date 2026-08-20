@@ -26,6 +26,7 @@
    11.  Auth form fields (.field, .field-errors, .non-field-errors, .form-submit)
    12.  Two-column page grid (.page, .page__sidebar, .page__main, .sidebar-panel, .info-content)
    13.  Home page (.hero, .join, .about, .goals, .people)
+   14.  Task start page (.task-start, window-size warning)
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
@@ -1209,3 +1210,112 @@ ol {
   text-underline-offset: 2px;
 }
 .person__bio-more:hover { color: var(--ink); }
+
+/* -----------------------------------------------------------------------------
+   14. Task start page
+
+   Page-specific to tasks/task_start.html — the pre-task info card
+   (metadata, description, instructions) and the min-window-size warning
+   banner / disabled-start-link states.
+   ----------------------------------------------------------------------------- */
+
+.task-start {
+  max-width: 680px;
+  margin: 64px auto;
+  padding: 48px 56px;
+  background: var(--bg-card);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
+}
+
+.task-start__meta {
+  display: flex;
+  gap: 24px;
+  padding-bottom: 24px;
+  margin-bottom: 40px;
+  border-bottom: 1px solid var(--rule);
+  flex-wrap: wrap;
+}
+
+.task-start__meta-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.task-start__meta-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+.task-start__meta-value {
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.task-start__title {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+.task-start__description {
+  font-size: 16px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-bottom: 40px;
+}
+
+.task-start__instructions {
+  border: 1px solid var(--rule);
+  border-radius: var(--radius-card);
+  padding: 28px 32px;
+  margin-bottom: 40px;
+}
+
+.task-start__instructions-heading {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  margin-bottom: 16px;
+}
+
+.task-start__instructions-body {
+  font-size: 15px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+.task-start__instructions-body p {
+  margin-bottom: 12px;
+}
+
+.task-start__instructions-body p:last-child {
+  margin-bottom: 0;
+}
+
+.task-start__actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.task-start__window-warning {
+  display: none;
+}
+.task-start__window-warning.is-visible {
+  display: block;
+}
+
+#start-task-link.is-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+  cursor: not-allowed;
+}
