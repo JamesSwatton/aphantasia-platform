@@ -24,7 +24,7 @@ def get_survey_result(survey, participant, is_test=False):
             'survey': survey,
             'has_subscales': True,
             'subscales': [
-                {'label': 'Openness', 'score': 4.67, 'min': 1.0, 'max': 5.0},
+                {'label': 'Openness', 'label_long': None, 'score': 4.67, 'min': 1.0, 'max': 5.0},
                 ...
             ],
             'chart_json': '[{"label": "Openness", "score": 4.67, "min": 1.0, "max": 5.0}, ...]',
@@ -99,6 +99,7 @@ def _subscale_result(survey, responses):
             continue
         subscales.append({
             'label': group.display_label,
+            'label_long': group.display_label_long,
             'score': round(score, 2),
             'min': group.effective_result_min,
             'max': group.effective_result_max,

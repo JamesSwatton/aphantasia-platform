@@ -921,7 +921,9 @@
               <ul>
                 {% for subscale in test_result.subscales %}
                   <li>
-                    <span class="modality">{{ subscale.label }}</span>
+                    <span class="modality">
+                      {% if subscale.label_long %}{{ subscale.label }} = {{ subscale.label_long }}{% else %}{{ subscale.label }}{% endif %}
+                    </span>
                     <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
                   </li>
                 {% endfor %}
@@ -1298,6 +1300,8 @@
   }
 
   function refresh() {
+    if (!doneEl || !totalEl || !fill) return;
+
     var units = Array.prototype.slice.call(
       document.querySelectorAll('[data-question-id]')
     ).filter(function (el) {
@@ -1398,6 +1402,7 @@
     }
     var doneEl  = document.querySelector('[data-progress-done]');
     var totalEl = document.querySelector('[data-progress-total]');
+    if (!doneEl || !totalEl) return;
     var total = units.length;
     var done  = units.filter(isAnswered).length;
     doneEl.textContent  = done;

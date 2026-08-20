@@ -1,3 +1,4 @@
+import json
 from django.db import models
 from django.conf import settings
 from django.core.validators import MinValueValidator
@@ -249,7 +250,12 @@ class QuestionGroup(models.Model):
     result_label = models.CharField(
         max_length=100,
         blank=True,
-        help_text="Short label for this group in charts/results (e.g. 'Scene 1'). Falls back to group title if blank."
+        help_text=(
+            "Short label for this group in charts/results (e.g. 'Scene 1'). "
+            "Falls back to group title if blank. To show a short chart-axis "
+            "label with a longer legend description, enter a JSON array of "
+            "two strings, e.g. [\"V\", \"Visual\"]."
+        )
     )
     result_min = models.FloatField(
         null=True,
@@ -280,9 +286,34 @@ class QuestionGroup(models.Model):
             return self.result_max
         return self.survey.result_max
 
+    def _parsed_result_label(self):
+        """
+        result_label may be a plain string, or a JSON array of
+        [short_label, long_label] for a short chart-axis label paired with
+        a longer legend description. Returns (short, long) — long is None
+        if not provided in array form.
+        """
+        raw = (self.result_label or '').strip()
+        if raw.startswith('['):
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, list) and len(parsed) >= 1:
+                    short = str(parsed[0]).strip()
+                    long = str(parsed[1]).strip() if len(parsed) > 1 else None
+                    return short or self.title, long
+            except (ValueError, TypeError):
+                pass
+        return raw, None
+
     @property
     def display_label(self):
-        return self.result_label or self.title
+        short, _ = self._parsed_result_label()
+        return short or self.title
+
+    @property
+    def display_label_long(self):
+        _, long = self._parsed_result_label()
+        return long
 
     class Meta:
         ordering = ['survey', 'order', 'id']

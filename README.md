@@ -1064,6 +1064,24 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 
 ---
 
+## Session 33: Chart Axis Label Arrays & Radar Chart Fix (August 2026)
+
+### Chart axis label arrays
+`QuestionGroup.result_label` now accepts either a plain string or a JSON array of two strings, e.g. `["V", "Visual"]`:
+- **`_parsed_result_label()`** (`surveys/models.py`) parses the field, returning `(short, long)` — falls back to plain-string / title behaviour when the field isn't a JSON array
+- **`display_label`** (existing property) now returns just the short form — used for chart axis labels, unchanged in shape
+- **`display_label_long`** (new property) returns the long form, or `None` if not set
+- **`surveys/utils.py`**: `_subscale_result()` includes `label_long` alongside `label` in each subscale dict (and in `chart_json`)
+- **Templates**: radar legend on both `accounts/account.html` (participant results panel) and `surveys/survey_detail.html` (researcher preview) renders "V = Visual" when `label_long` is present, otherwise just the short label — chart axis labels (Chart.js `labels:` array) are unaffected, they only ever use the short form
+- Admin help text on `result_label` documents the array syntax
+
+### Bug fix: researcher preview radar chart not rendering
+Found while testing the above (pre-existing, unrelated to this session's changes — confirmed via `git blame` and by reproducing on a clean `HEAD`). The progress-counter script in `survey_detail.html` queries `[data-progress-done]` / `[data-progress-total]` / `[data-progress-fill]` unconditionally, but that markup is intentionally omitted once a researcher's test submission renders (`{% if not test_responses %}`, added in Session 25). The resulting `null.textContent` threw on page load, and this was blocking the later radar-chart-init script from running. Fixed by null-guarding both the `refresh()` function and the `survey:refresh` event listener's inline duplicate of the same lookup in `templates/surveys/survey_detail.html` — confirmed the radar chart now renders correctly on the researcher preview page.
+
+**Branch**: `bug-fixes-and-misc`
+
+---
+
 ## Next Steps
 
 1. ~~**Implement survey views** for participants to complete surveys~~ ✅ **Completed**
@@ -1112,7 +1130,7 @@ Added a blue hover state to `.avatar` in `styles.css`: fades from lime-green to 
 - ~~**Exit survey data on withdrawal**~~ ✅ Resolved (Session 31) — exit survey responses snapshotted into `WithdrawalRecord.responses` (JSONField) before the user record is deleted; exportable as CSV from admin
 - ~~**Year + Month demographic fields**~~ ✅ Implemented (Session 32) — new `dropdown_year_month` question type renders two side-by-side selects; stores as `YYYY-MM`; standalone `dropdown_year` and `dropdown_month` types removed
 - ~~**Chart result label**~~ ✅ Implemented (Session 32) — `result_description` TextField added to Survey; shown below participant chart in both spectrum and radar card variants; admin section renamed to "Results Display Information"
-- **Chart axis label arrays** — extend the `result_label` field on QuestionGroup to accept either a plain string or a JSON array `["V", "Visual"]`; the first item is the short chart label, the second is the long description rendered as "V = Visual" in a legend. Add help text in admin and document in the user manual
+- ~~**Chart axis label arrays**~~ ✅ Implemented (Session 33) — `QuestionGroup.result_label` accepts either a plain string or a JSON array `["V", "Visual"]`; `display_label` (short, used for the chart axis) and new `display_label_long` property parse it. Radar legend on both the participant results panel and researcher preview shows "V = Visual" when a long form is set, falling back to just the short label otherwise. Admin help text documents the array syntax.
 - **Browser window size check for visual tasks** — before a lab task starts, check the window is above a minimum size (ideally fullscreen); warn the participant if not. Also log window dimensions in the task submission so researchers can judge data quality
 - **Forgot password flow** — implement the full allauth password reset pipeline (request email → reset link → set new password → confirmation); verify old password no longer works after reset
 

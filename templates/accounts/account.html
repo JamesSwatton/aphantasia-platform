@@ -676,7 +676,9 @@
                                     <ul>
                                         {% for subscale in result.subscales %}
                                             <li>
-                                                <span class="modality">{{ subscale.label }}</span>
+                                                <span class="modality">
+                                                    {% if subscale.label_long %}{{ subscale.label }} = {{ subscale.label_long }}{% else %}{{ subscale.label }}{% endif %}
+                                                </span>
                                                 <span class="value">{{ subscale.score }} / {{ subscale.max }}</span>
                                             </li>
                                         {% endfor %}
