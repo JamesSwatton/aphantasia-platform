@@ -25,6 +25,7 @@
    10.  Empty state (.empty-state)
    11.  Auth form fields (.field, .field-errors, .non-field-errors, .form-submit)
    12.  Two-column page grid (.page, .page__sidebar, .page__main, .sidebar-panel, .info-content)
+   13.  Home page (.hero, .join, .about, .goals, .people)
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
@@ -1019,3 +1020,192 @@ ol {
 .info-content p:last-child {
   margin-bottom: 0;
 }
+
+/* -----------------------------------------------------------------------------
+   13. Home page
+
+   Page-specific to home.html — hero, "join the study" split section, and
+   the "about" section (research goals + researcher profiles).
+   ----------------------------------------------------------------------------- */
+
+.hero {
+  position: relative;
+  height: calc(100vh - var(--topbar-h) + 2px);
+  min-height: 640px;
+  padding: 64px var(--page-padding-x);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.hero__bg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  z-index: 0;
+  pointer-events: none;
+}
+.hero > :not(.hero__bg) {
+  position: relative;
+  z-index: 1;
+}
+.hero__title {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 54px;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  max-width: 18ch;
+}
+.feature-list { max-width: 720px; }
+.feature-list__item {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 16px 4px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.35);
+  font-size: 20px;
+}
+.feature-list__dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--ink);
+  flex-shrink: 0;
+}
+
+.section-header {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 40px;
+  letter-spacing: -0.005em;
+  padding: 16px var(--page-padding-x);
+  border-top: 1px solid var(--rule);
+  border-bottom: 1px solid var(--rule);
+}
+.section-header__sep {
+  color: var(--ink-subtle);
+  margin: 0 18px;
+}
+
+.join {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+.join__visual {
+  position: relative;
+  min-height: 640px;
+  border-right: 1px solid var(--rule);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.join__visual img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+}
+.join__text {
+  padding: 60px;
+  max-width: 620px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+.join__text p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+}
+.join__text p strong { color: var(--ink); font-weight: 600; }
+.join__text p em { font-style: italic; }
+.join__text ul {
+  margin: 4px 0;
+  padding-left: 20px;
+  color: var(--ink-muted);
+  font-size: 15px;
+  line-height: 1.6;
+  list-style: disc;
+}
+.join__text ul li { margin-bottom: 6px; }
+.join__cta { margin-top: 32px; align-self: flex-start; }
+
+.about {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--rule);
+}
+.goals {
+  border-right: 1px solid var(--rule);
+  padding: 48px 0 0 44px;
+}
+.goals__intro {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  padding: 0 60px 32px 44px;
+  border-bottom: 1px solid var(--rule);
+}
+.goals__intro strong { color: var(--ink); font-weight: 600; }
+.goal {
+  position: relative;
+  padding: 32px 60px 32px 44px;
+  border-bottom: 1px solid var(--rule);
+}
+.goal:last-child { border-bottom: none; }
+.goal__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.goal__number { font-family: var(--font-body); font-size: 28px; font-weight: 400; }
+.goal__marker { width: 14px; height: 14px; border-radius: 50%; background: var(--ink); }
+.goal p { font-size: 14px; line-height: 1.6; color: var(--ink-muted); }
+
+.people {
+  padding: 48px 44px 0 0;
+  display: flex;
+  flex-direction: column;
+}
+.person {
+  padding: 0 44px 40px 60px;
+  border-bottom: 1px solid var(--rule);
+  margin-bottom: 40px;
+}
+.person:last-child { border-bottom: none; padding-bottom: 0; }
+.person__head {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 24px;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.person__photo {
+  width: 140px;
+  height: 140px;
+  background: #222;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-display);
+  font-size: 28px;
+  color: var(--ink-muted);
+  font-weight: 400;
+}
+.person__name { font-family: var(--font-display); font-weight: 400; font-size: 30px; }
+.person__title { font-size: 13px; color: var(--ink-muted); margin-bottom: 14px; line-height: 1.5; }
+.person__bio { font-size: 13px; line-height: 1.6; color: var(--ink-muted); margin-bottom: 12px; }
+.person__bio:last-child { margin-bottom: 0; }
+.person__bio-more {
+  color: var(--ink-muted);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.person__bio-more:hover { color: var(--ink); }
