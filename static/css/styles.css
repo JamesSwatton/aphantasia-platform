@@ -30,6 +30,8 @@
    15.  Task complete page (.task-complete)
    16.  Exit survey page (.exit-wrap — selectors scoped under it; see note
         in the section header about generic class names)
+   17.  Messages page (.messages-page — .page-head/.page-subtitle/.content
+        scoped under it; .empty-state left global, see Phase 3 note)
    ============================================================================= */
 
 /* -----------------------------------------------------------------------------
@@ -1576,4 +1578,214 @@ ol {
   color: var(--ink-muted);
   line-height: 1.65;
   margin-bottom: 28px;
+}
+
+/* -----------------------------------------------------------------------------
+   17. Messages page
+
+   Page-specific to core/messages.html. .page-head, .page-subtitle, and
+   .content collide with different (drifted) rules of the same name in
+   account.html — scoped under a new .messages-page wrapper div (added to
+   the template) to preserve the original appearance without a global
+   collision. .empty-state is also scoped here for the same reason: it's
+   one of the three drifted .empty-state variants flagged in the Phase 1
+   audit (participant_dashboard / survey_list+task_list / messages), left
+   deliberately unresolved pending a Phase 3 decision — do not merge with
+   the global .empty-state in section 10 without checking that note.
+
+   Underlying cause, for Phase 3: this page uses a one-off .page-head +
+   .page-subtitle + .content pattern instead of reusing account.html's
+   .page-title/.page-subtitle/.content pattern — the header layout itself
+   is inconsistent with the rest of the app, not just the CSS values.
+   ----------------------------------------------------------------------------- */
+
+.messages-page .page-head {
+  padding: 32px var(--page-padding-x) 0;
+}
+.messages-page .page-subtitle {
+  font-size: 15px;
+  color: var(--ink-muted);
+  margin: var(--content-spacing) 0 40px;
+  max-width: 60ch;
+}
+
+.messages-page .content {
+  padding: 0 var(--page-padding-x) 80px;
+}
+
+.messages-page .section-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--rule);
+}
+.messages-page .message-count {
+  font-size: 13px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.messages-page .filter-link {
+  font-size: 13px;
+  color: var(--ink-muted);
+  text-decoration: none;
+  letter-spacing: 0.02em;
+}
+.messages-page .filter-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.message {
+  border-bottom: 1px solid var(--rule-soft);
+  background: transparent;
+  transition: background 0.15s ease;
+}
+.message[open] {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  margin: 8px 0;
+  border-bottom: none;
+}
+.message[open] + .message {
+  border-top: none;
+}
+
+.message summary {
+  list-style: none;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 20px 1fr auto;
+  gap: 20px;
+  padding: 20px 24px;
+  align-items: center;
+}
+.message summary::-webkit-details-marker {
+  display: none;
+}
+.message summary:hover {
+  background: rgba(0, 0, 0, 0.02);
+}
+.message[open] summary {
+  border-bottom: 1px solid var(--rule-soft);
+}
+.message[open] summary:hover {
+  background: transparent;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: transparent;
+}
+.message.is-unread .status-dot {
+  background: var(--blue);
+  border-color: var(--blue);
+}
+
+.message-summary-main {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.message-subject {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.message.is-unread .message-subject {
+  font-weight: 700;
+}
+
+.message-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.message-sender {
+  font-weight: 500;
+}
+.message-preview {
+  color: var(--ink-subtle);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.message-date {
+  font-size: 13px;
+  color: var(--ink-muted);
+  white-space: nowrap;
+  align-self: start;
+  padding-top: 2px;
+}
+
+.message-body {
+  padding: 28px 60px 32px 64px;
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  max-width: 72ch;
+}
+.message-body p {
+  margin-bottom: 16px;
+}
+.message-body p:last-child {
+  margin-bottom: 0;
+}
+.message-body strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+.message-body em {
+  font-style: italic;
+}
+.message-body a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.message-body h4 {
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 24px 0 8px;
+}
+.message-body ul {
+  margin-bottom: 16px;
+  padding-left: 20px;
+  list-style: disc;
+}
+.message-body ul li {
+  margin-bottom: 6px;
+}
+
+.message-signoff {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--rule-soft);
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.messages-page .empty-state {
+  padding: 80px 24px;
+  text-align: center;
+  color: var(--ink-muted);
+}
+.messages-page .empty-state h3 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: 24px;
+  color: var(--ink);
+  margin-bottom: 8px;
 }
