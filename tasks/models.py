@@ -87,6 +87,18 @@ class LabTask(models.Model):
         blank=True,
         help_text="Instructions shown to participants before starting the task"
     )
+    requires_min_window_size = models.BooleanField(
+        default=False,
+        help_text="Require the browser window to be at least the minimum size below before participants can start (e.g. for visual tasks that need enough screen space for usable data)."
+    )
+    min_window_width = models.PositiveIntegerField(
+        default=1024,
+        help_text="Minimum browser window width in pixels (only enforced if 'requires min window size' is checked)."
+    )
+    min_window_height = models.PositiveIntegerField(
+        default=768,
+        help_text="Minimum browser window height in pixels (only enforced if 'requires min window size' is checked)."
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -235,6 +247,16 @@ class TaskSubmission(models.Model):
         null=True,
         blank=True,
         help_text="Total time spent on the task in seconds"
+    )
+    window_width = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Browser window width (px) recorded when the participant started the task. Logged regardless of whether a minimum size was enforced, as a data-quality fallback."
+    )
+    window_height = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text="Browser window height (px) recorded when the participant started the task."
     )
     started_at = models.DateTimeField(auto_now_add=True)
     completed_at = models.DateTimeField(null=True, blank=True)

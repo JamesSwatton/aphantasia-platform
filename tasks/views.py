@@ -65,8 +65,9 @@ def task_preview(request, pk):
         messages.error(request, "This task has not been properly unpacked yet.")
         return redirect('tasks:task_list')
 
-    # Show instructions page first if not already seen
-    if task.instructions and not request.GET.get('start'):
+    # Show the task start page first (always — this is also where window
+    # size is captured client-side, regardless of whether instructions exist)
+    if not request.GET.get('start'):
         context = {
             'task': task,
             'show_instructions': True,
@@ -135,14 +136,28 @@ def task_run(request, pk):
         )
         submission.refresh_from_db()
 
-    # Show instructions page first if task has instructions
-    if task.instructions and not request.GET.get('start'):
+    # Show the task start page first (always — this is also where window
+    # size is captured client-side, regardless of whether instructions exist)
+    if not request.GET.get('start'):
         context = {
             'task': task,
             'submission': submission,
             'show_instructions': True,
         }
         return render(request, 'tasks/task_start.html', context)
+
+    # Record the browser window size at the moment the participant chose to
+    # start, as a data-quality fallback researchers can check later —
+    # regardless of whether a minimum size was enforced.
+    try:
+        window_width = int(request.GET.get('w', ''))
+        window_height = int(request.GET.get('h', ''))
+    except ValueError:
+        window_width = window_height = None
+    if window_width and window_height:
+        submission.window_width = window_width
+        submission.window_height = window_height
+        submission.save(update_fields=['window_width', 'window_height'])
 
     # Redirect to the actual lab.js task (served as media)
     # The task will open in the same window, avoiding iframe issues

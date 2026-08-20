@@ -57,6 +57,15 @@ class LabTaskAdmin(admin.ModelAdmin):
         ('Settings', {
             'fields': ['is_active', 'is_priority', 'time_limit_minutes', 'instructions', 'trial_sender_filter']
         }),
+        ('Screen Requirements', {
+            'fields': ['requires_min_window_size', 'min_window_width', 'min_window_height'],
+            'description': (
+                'For visual tasks that need enough screen space to produce usable data. '
+                'When enabled, participants below the minimum window size are blocked from '
+                'starting the task until they resize their browser window. Window dimensions '
+                'are always logged on TaskSubmission regardless of this setting, as a data-quality fallback.'
+            ),
+        }),
         ('Metadata', {
             'fields': ['created_at', 'updated_at'],
             'classes': ['collapse']
@@ -109,7 +118,7 @@ class LabTaskAdmin(admin.ModelAdmin):
 
 @admin.register(TaskSubmission)
 class TaskSubmissionAdmin(admin.ModelAdmin):
-    list_display = ['task', 'participant', 'status', 'is_test_badge', 'started_at', 'completed_at', 'time_spent_seconds', 'trial_count']
+    list_display = ['task', 'participant', 'status', 'is_test_badge', 'started_at', 'completed_at', 'time_spent_seconds', 'trial_count', 'window_size_display']
     list_filter = ['status', 'is_test', 'started_at', 'completed_at']
     search_fields = ['task__title', 'participant__email']
     readonly_fields = ['started_at', 'updated_at', 'trial_data_display', 'is_test_badge']
@@ -129,6 +138,10 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         ('Submission Info', {
             'fields': ['task', 'participant', 'status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at', 'updated_at']
         }),
+        ('Browser Window', {
+            'fields': ['window_width', 'window_height'],
+            'description': 'Recorded when the participant started the task. Check against the task\'s minimum window size requirement to judge data quality.'
+        }),
         ('Trial Data', {
             'fields': ['trial_data_display'],
             'description': 'Filtered to rows where the participant actively responded (ended_on = "response").'
@@ -144,6 +157,19 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         """Number of response rows recorded for this submission."""
         return len(obj.get_trial_data())
     trial_count.short_description = 'Trials'
+
+    def window_size_display(self, obj):
+        """Show the recorded browser window size, flagged red if below the task's minimum."""
+        if not obj.window_width or not obj.window_height:
+            return '—'
+        text = f'{obj.window_width}×{obj.window_height}'
+        if obj.task.requires_min_window_size and (
+            obj.window_width < obj.task.min_window_width
+            or obj.window_height < obj.task.min_window_height
+        ):
+            return format_html('<span style="color: #c0392b;">{} ⚠</span>', text)
+        return text
+    window_size_display.short_description = 'Window Size'
 
     def is_test_badge(self, obj):
         """Visual indicator for test submissions."""

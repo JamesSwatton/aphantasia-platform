@@ -89,6 +89,19 @@
     gap: 12px;
     align-items: center;
   }
+
+  .task-start__window-warning {
+    display: none;
+  }
+  .task-start__window-warning.is-visible {
+    display: block;
+  }
+
+  #start-task-link.is-disabled {
+    opacity: 0.5;
+    pointer-events: none;
+    cursor: not-allowed;
+  }
     </style>
 {% endblock %}
 {% block content %}
@@ -122,17 +135,73 @@
                 <div class="task-start__instructions-body">{{ task.instructions|linebreaks }}</div>
             </div>
         {% endif %}
+        {% if task.requires_min_window_size %}
+            <div class="alert alert--warning task-start__window-warning" id="window-size-warning" role="alert">
+                Your browser window is too small for this task. Please resize or maximise your window to at least
+                {{ task.min_window_width }}×{{ task.min_window_height }} pixels to continue.
+            </div>
+        {% endif %}
         <div class="task-start__actions">
             {% if is_preview %}
                 <a href="{% url 'tasks:task_list' %}" class="btn btn--outline">Back to tasks</a>
                 <a href="{% url 'tasks:task_preview' task.pk %}?start=1"
+                   id="start-task-link"
                    class="btn btn--primary">Start preview</a>
             {% else %}
                 <a href="{% url 'dashboard:participant_dashboard' %}"
                    class="btn btn--outline">Back to dashboard</a>
                 <a href="{% url 'tasks:task_run' task.pk %}?start=1"
+                   id="start-task-link"
                    class="btn btn--primary">Start task</a>
             {% endif %}
         </div>
     </div>
+{% endblock %}
+{% block extra_js %}
+<script>
+(function () {
+  // Record the current window size on the Start link so it reaches the
+  // server as a data-quality fallback, regardless of whether a minimum
+  // size is enforced for this task.
+  var startLink = document.getElementById('start-task-link');
+  if (!startLink) return;
+  var baseHref = startLink.getAttribute('href');
+
+  function updateHref() {
+    startLink.setAttribute(
+      'href',
+      baseHref + '&w=' + window.innerWidth + '&h=' + window.innerHeight
+    );
+  }
+  updateHref();
+  window.addEventListener('resize', updateHref);
+
+  {% if task.requires_min_window_size %}
+  var minWidth = {{ task.min_window_width }};
+  var minHeight = {{ task.min_window_height }};
+  var warning = document.getElementById('window-size-warning');
+
+  function checkSize() {
+    var tooSmall = window.innerWidth < minWidth || window.innerHeight < minHeight;
+    warning.classList.toggle('is-visible', tooSmall);
+    startLink.classList.toggle('is-disabled', tooSmall);
+    startLink.setAttribute('aria-disabled', tooSmall ? 'true' : 'false');
+    if (tooSmall) {
+      startLink.setAttribute('tabindex', '-1');
+    } else {
+      startLink.removeAttribute('tabindex');
+    }
+  }
+
+  startLink.addEventListener('click', function (e) {
+    if (window.innerWidth < minWidth || window.innerHeight < minHeight) {
+      e.preventDefault();
+    }
+  });
+
+  window.addEventListener('resize', checkSize);
+  checkSize();
+  {% endif %}
+})();
+</script>
 {% endblock %}
