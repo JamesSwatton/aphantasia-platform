@@ -645,6 +645,11 @@ ol {
   padding: 48px var(--auth-padding-x);
   border-bottom: 1px solid var(--rule);
 }
+/* --left/--right is the shared BEM suffix for the two-column auth grid.
+   Phase 3 merge (2026-08-21): login.html used --brand/--login and
+   signup.html used --info/--signup for the same grid-column/grid-row
+   values — page-specific semantic names, not real drift. Both templates
+   now use --left/--right directly instead. */
 .page--auth .page__heading--left {
   grid-column: 1;
   grid-row: 1;
@@ -748,22 +753,6 @@ ol {
   padding-top: 40px;
 }
 
-/* === login.html ===
-   Uses page-specific --brand/--login grid-placement names instead of
-   .page--auth's --left/--right (same values, different semantic naming —
-   Phase 3 merge candidate per the Phase 1 audit). */
-.page--auth .page__heading--brand { grid-column: 1; grid-row: 1; }
-.page--auth .page__heading--login { grid-column: 2; grid-row: 1; }
-.page__brand-label {
-  grid-column: 1;
-  grid-row: 2;
-  padding: 48px var(--auth-padding-x) 0;
-}
-.page__login-label {
-  grid-column: 2;
-  grid-row: 2;
-  padding: 48px var(--auth-padding-x) 0;
-}
 
 /* Left brand region */
 .brand-region {
@@ -870,23 +859,14 @@ ol {
 }
 .login-submit:hover { opacity: 0.88; }
 
-/* === signup.html ===
-   Uses page-specific --info/--signup grid-placement names instead of
-   .page--auth's --left/--right (same values, different semantic naming —
-   Phase 3 merge candidate, same pattern as login.html's --brand/--login). */
-.page--auth .page__heading--info   { grid-column: 1; grid-row: 1; }
-.page--auth .page__heading--signup { grid-column: 2; grid-row: 1; }
-
 /* signup.html's own view-switch padding (48px) — kept off the shared
    `.page > .view-switch` rule (section 5, 32px, dashboard-grid family)
-   since signup.html no longer carries the bare `page` class. */
+   since signup.html no longer carries the bare `page` class. Fills the
+   row-2/col-1 slot that .page__label--left fills on the other auth pages;
+   signup.html has no left-label heading of its own (the view-switch nav
+   sits there instead), so there's no equivalent to merge for that slot. */
 .page--auth > .view-switch {
   grid-column: 1;
-  grid-row: 2;
-  padding: 48px var(--auth-padding-x) 0;
-}
-.page__signup-label {
-  grid-column: 2;
   grid-row: 2;
   padding: 48px var(--auth-padding-x) 0;
 }

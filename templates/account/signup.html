@@ -20,10 +20,10 @@
     <form method="post" action="{% url 'account_signup' %}" id="signup-form">
     {% csrf_token %}
     <div class="page--auth">
-        <div class="page__heading page__heading--info">
+        <div class="page__heading page__heading--left">
             <h1 class="heading">Before we begin!</h1>
         </div>
-        <div class="page__heading page__heading--signup">
+        <div class="page__heading page__heading--right">
             <h1 class="heading">Sign up</h1>
         </div>
         <nav class="view-switch" aria-label="Information view">
@@ -36,7 +36,7 @@
                 </li>
             </ul>
         </nav>
-        <div class="page__signup-label">
+        <div class="page__label--right">
             <h2 class="section-label">Become a participant</h2>
         </div>
         <!-- Left: info + consent panels -->
