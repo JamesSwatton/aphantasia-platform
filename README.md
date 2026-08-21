@@ -1206,6 +1206,8 @@ At the end of Phase 2, every template uses `{% load static %}` + the shared styl
 
 **Added during Phase 2 extraction of `password_change.html` (2026-08-21)**: straightforward — same shape as `password_reset.html`, fully covered by the `.page--auth`/`.field`/`.form-submit`/`.back-link` shared rules. Added `.change-form` to `styles.css`, confirmed byte-for-byte identical to `.reset-form` added in the previous session — a Phase 3 merge candidate, left as a naming-only duplicate for now per the extract-only rule.
 
+**Added during Phase 2 extraction of `password_reset_from_key.html` (2026-08-21)**: no new page-specific CSS needed — `.reset-form` was already added to `styles.css` during the `password_reset.html` session and everything else maps onto existing shared rules. Verified both branches (normal form and the `token_fail` invalid-link state) render correctly; the `token_fail` branch's inline `style=""` attributes on its `<p>`/`<a>` are pre-existing element-level styles, not part of the extracted `<style>` block, and were left as-is (out of scope for Phase 2, which only targets `<style>` blocks).
+
 ### Phase 3 — De-duplicate (unify, once everything is in one file)
 
 Only start this once Phase 2 is fully complete for all 17 templates. With everything living in one file, duplicate-identical and duplicate-drifted rules are easy to `diff` side by side:
