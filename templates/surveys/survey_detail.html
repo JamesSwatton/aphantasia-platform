@@ -108,7 +108,7 @@
 
     <!-- Test response table (shown after a researcher test submission) -->
     {% if test_responses %}
-      <div class="test-result">
+      <div class="card-surface test-result">
         <p class="test-result__heading">✓ Test submission saved</p>
         <table class="test-result__table">
           <thead>
@@ -154,7 +154,7 @@
     <!-- Test result chart (shown after a researcher test submission) -->
     {% if test_result %}
       {% if test_result.has_subscales %}
-        <div class="test-chart" id="test-chart" data-chart="radar" data-chart-json="{{ test_result.chart_json }}">
+        <div class="card-surface test-chart" id="test-chart" data-chart="radar" data-chart-json="{{ test_result.chart_json }}">
           <p class="test-chart__heading">Computed result</p>
           <div class="radar-wrap">
             <div class="radar">
@@ -176,7 +176,7 @@
           </div>
         </div>
       {% else %}
-        <div class="test-chart" id="test-chart" data-chart="spectrum" data-chart-json="{{ test_result.chart_json }}">
+        <div class="card-surface test-chart" id="test-chart" data-chart="spectrum" data-chart-json="{{ test_result.chart_json }}">
           <p class="test-chart__heading">Computed result</p>
           <div class="test-chart__score">
             <span>Score</span>
@@ -212,7 +212,7 @@
 
           {# Grouped questions — render as a single matrix card #}
           {% if group %}
-            <section class="q-card">
+            <section class="card-surface q-card">
               <p class="q-num">Question {{ group.group_code }}</p>
               {# Visible group title sits inside the card as q-title #}
               {% if group.show_title %}
@@ -259,7 +259,7 @@
           {% else %}
             {# --- UNGROUPED QUESTIONS — each gets its own card --- #}
             {% for question in group_questions %}
-              <section class="q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.branch_questions %}data-gate data-trigger-value="{{ question.trigger_value }}" data-controls="branch-{{ question.id }}"{% endif %}>
+              <section class="card-surface q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.branch_questions %}data-gate data-trigger-value="{{ question.trigger_value }}" data-controls="branch-{{ question.id }}"{% endif %}>
 
                 <p class="q-num">Question {{ question.order }}</p>
 

@@ -22,6 +22,8 @@
    7.   Domain list sidebar nav (.domain-list)
    8.   Modal overlay (.modal-overlay, .modal)
    9.   Pill badges (.pill)
+        9.1  Card surface (.card-surface — shared base for .card/.q-card/
+             .test-result/.test-chart, added Phase 3 2026-08-21)
    10.  Empty state (.empty-state)
    11.  Auth form fields (.field, .field-errors, .non-field-errors, .form-submit)
    12.  Two-column page grid (.page, .page__sidebar, .page__main, .sidebar-panel, .info-content)
@@ -1435,6 +1437,26 @@ ol {
 }
 
 /* -----------------------------------------------------------------------------
+   9.1  Card surface
+
+   Shared visual base for every card-like block on the site: account.html's
+   result/profile cards (.card), survey_detail.html's question cards
+   (.q-card) and researcher-preview cards (.test-result, .test-chart).
+   Phase 3 unification (2026-08-21): these four had independently-written,
+   near-identical rules (background + border-radius always matched, padding
+   drifted between 24px/28px, 28px/32px, and 32px/40px) — a duplication
+   that predates this refactor's Phase 1 audit (Phase 1 only compared child
+   selectors like .q-num across pages, not the card containers themselves).
+   Standardised on .q-card's 28px/32px padding. Each page keeps its own
+   class name for page-specific children (.test-result__heading etc.) —
+   add both classes in markup, e.g. class="card-surface q-card". */
+.card-surface {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 28px 32px;
+}
+
+/* -----------------------------------------------------------------------------
    10. Empty state
 
    Centred placeholder shown when a list has no items.
@@ -2326,13 +2348,19 @@ ol {
    collision (matches the .signup-info-region precedent of preferring an
    unambiguous name over a bare one for anything non-trivial).
 
-   .spectrum-chart, .radar-wrap, and .radar-legend are shared with survey_detail.html
-   (not yet extracted) — confirmed structurally identical property-for-
+   .spectrum-chart, .radar-wrap, and .radar-legend are shared with
+   survey_detail.html — confirmed structurally identical property-for-
    property except .radar's max-width, which is a genuine, intentional
    40px difference: 340px on survey_detail.html's researcher preview vs
-   380px on this page's participant-facing results. Added the 340px value
-   as the shared base (survey_detail.html's plain unscoped rule) with an
-   .account-page override bumping it to 380px here.
+   380px on this page's participant-facing results. The shared rule uses
+   340px as the base with an .account-page override bumping it to 380px
+   here.
+
+   .content's max-width: 860px (2026-08-21, Phase 3) matches
+   survey_detail.html's .page__main, so .card (now using the shared
+   .card-surface base, section 9.1) is the same effective width as
+   .q-card/.test-result/.test-chart there — .card no longer needs its own
+   max-width, since it now inherits the column's width like the others do.
    ----------------------------------------------------------------------------- */
 
 .account-page .view-switch {
@@ -2341,6 +2369,7 @@ ol {
 
 .account-page .content {
   padding: var(--content-spacing) var(--page-padding-x) 80px;
+  max-width: 860px;
 }
 
 .account-page .page-title {
@@ -2364,12 +2393,6 @@ ol {
   display: block;
 }
 
-.account-page .card {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 32px 40px;
-  max-width: 860px;
-}
 .account-page .card + .card {
   margin-top: 16px;
 }
@@ -2924,9 +2947,6 @@ ol {
 
 /* Test response table (shown after researcher test submission) */
 .test-result {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 24px 28px;
   margin-bottom: 16px;
 }
 .test-result__heading {
@@ -2987,9 +3007,6 @@ ol {
 
 /* Test result chart (preview mode) */
 .test-chart {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 24px 28px;
   margin-bottom: 16px;
 }
 .test-chart__heading {
@@ -3014,9 +3031,6 @@ ol {
 
 /* Question cards */
 .q-card {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 28px 32px;
   margin-bottom: 16px;
 }
 

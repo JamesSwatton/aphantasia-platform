@@ -25,7 +25,7 @@
         <p class="page-subtitle">Participant since {{ user.date_joined|date:"F Y" }}</p>
         <!-- Profile panel -->
         <section class="panel is-active" data-panel="profile">
-            <div class="card">
+            <div class="card-surface card">
                 <h3>Account details</h3>
                 <dl class="field-grid">
                     <dt>Name</dt>
@@ -50,7 +50,7 @@
                     </dd>
                 </dl>
             </div>
-            <div class="card">
+            <div class="card-surface card">
                 <h3>Security</h3>
                 <div class="action-row">
                     <p>
@@ -61,12 +61,12 @@
                 </div>
             </div>
             {% if feedback_submitted or feedback_already_done %}
-                <div class="card">
+                <div class="card-surface card">
                     <h3>Study feedback</h3>
                     <p class="feedback-thanks">Thank you — your feedback has been received.</p>
                 </div>
             {% elif feedback_survey %}
-                <div class="card">
+                <div class="card-surface card">
                     <h3>Study feedback</h3>
                     <div style="font-size: 14px; color: var(--ink-muted); margin-bottom: 24px">
                         {{ feedback_survey.description|render_markdown }}
@@ -121,7 +121,7 @@
         </section>
         <!-- Consent panel -->
         <section class="panel" data-panel="consent">
-            <div class="card">
+            <div class="card-surface card">
                 <h3>Consent record</h3>
                 {% if consent_form %}
                     <dl class="consent-meta">
@@ -172,7 +172,7 @@
             {% if results %}
                 {% for result in results %}
                     {% if result.has_subscales %}
-                        <div class="card"
+                        <div class="card-surface card"
                              data-chart="radar"
                              data-chart-id="radar-{{ forloop.counter }}"
                              data-chart-json="{{ result.chart_json }}">
@@ -201,7 +201,7 @@
                             {% endif %}
                         </div>
                     {% else %}
-                        <div class="card"
+                        <div class="card-surface card"
                              data-chart="spectrum"
                              data-chart-id="spectrum-{{ forloop.counter }}"
                              data-chart-json="{{ result.chart_json }}">
@@ -227,7 +227,7 @@
                     {% endif %}
                 {% endfor %}
             {% else %}
-                <div class="card">
+                <div class="card-surface card">
                     <p style="font-size: 15px; color: var(--ink-muted);">No results yet. Complete a survey to see your scores here.</p>
                 </div>
             {% endif %}
