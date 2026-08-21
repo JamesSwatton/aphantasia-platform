@@ -751,6 +751,147 @@ ol {
   padding-top: 40px;
 }
 
+/* === login.html ===
+   Uses page-specific --brand/--login grid-placement names instead of
+   .page--auth's --left/--right (same values, different semantic naming —
+   Phase 3 merge candidate per the Phase 1 audit). */
+.page--auth .page__heading--brand { grid-column: 1; grid-row: 1; }
+.page--auth .page__heading--login { grid-column: 2; grid-row: 1; }
+.page__brand-label {
+  grid-column: 1;
+  grid-row: 2;
+  padding: 48px var(--auth-padding-x) 0;
+}
+.page__login-label {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 48px var(--auth-padding-x) 0;
+}
+
+/* Left brand region */
+.brand-region {
+  grid-column: 1;
+  grid-row: 4;
+  position: relative;
+  overflow: hidden;
+  align-self: stretch;
+}
+.brand-scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding: 0 var(--auth-padding-x) 60px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+.brand-scroll::-webkit-scrollbar { width: 6px; }
+.brand-scroll::-webkit-scrollbar-thumb { background: var(--rule); border-radius: 3px; }
+
+.brand-intro {
+  padding-top: 40px;
+}
+.brand-intro p {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  margin-bottom: 20px;
+}
+.brand-intro p strong { color: var(--ink); font-weight: 600; }
+.brand-intro p em { font-style: italic; }
+.brand-intro a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Right: login form */
+.login-region {
+  grid-column: 2;
+  grid-row: 4;
+  padding: 0 var(--auth-padding-x) 60px;
+  align-self: start;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 40px;
+}
+
+.remember-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 20px 0;
+}
+
+.check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid var(--ink);
+  border-radius: 3px;
+  cursor: pointer;
+  flex-shrink: 0;
+  position: relative;
+  transition: background 0.15s ease;
+  background: transparent;
+}
+.check:checked { background: var(--ink); }
+.check:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 5px;
+  height: 10px;
+  border: solid #fff;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+.remember-label {
+  font-size: 14px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  user-select: none;
+}
+
+/* Submit button — same component as .form-submit, but login.html's copy
+   needs margin-top: 8px instead of 28px because it sits right after
+   .remember-row's own 20px vertical padding (Session 33 fix: this
+   compensates so the *visual* gap matches .form-submit's pages, even
+   though the numbers differ. Do not unify to one value). */
+.login-submit {
+  align-self: flex-start;
+  font-family: var(--font-body);
+  font-size: 15px;
+  font-weight: 500;
+  padding: 12px 32px;
+  border-radius: var(--radius-pill);
+  background: var(--bg-accent);
+  color: var(--ink);
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  margin-top: 8px;
+}
+.login-submit:hover { opacity: 0.88; }
+
+/* Identical to .back-link — page-specific name, Phase 3 merge candidate. */
+.forgot-link {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.forgot-link a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* Shared by password_reset.html, password_change.html, and
    password_reset_from_key.html. login.html has an equivalent
    (.forgot-link) with the same values but a page-specific name. */
