@@ -1230,13 +1230,19 @@ ol {
   min-width: 120px;
 }
 
-/* Local .empty-state override — real 3-way drift against the shared
-   bare .empty-state (section 10: padding 80px, ink-muted, max-width 680px)
-   flagged in Phase 1. survey_list.html/task_list.html haven't been
-   extracted yet, so scoping under .task-list here rather than touching the
-   shared rule — revisit and pick one true value in Phase 3 once all three
-   are extracted and can be compared side by side. */
-.task-list .empty-state {
+/* Phase 3 resolution (2026-08-21) of the 3-way .empty-state drift flagged
+   in Phase 1: this isn't one component with drifted values across
+   survey_list.html/task_list.html/messages.html/participant_dashboard.html
+   — it's genuinely different content wearing the same class name. The
+   shared bare .empty-state (section 10) is an <h3> + <p> + CTA button
+   block, used by survey_list.html and task_list.html. messages.html's
+   scoped .messages-page .empty-state is also <h3> + <p> but centered, no
+   button — a deliberately different treatment, not drift, left as-is.
+   This page's version is structurally simpler than either: a single bare
+   <p>, no heading, no button — so it gets its own name instead of
+   overriding the shared .empty-state (which was never really the same
+   component to begin with). */
+.empty-state-note {
   padding: 60px 0;
   font-size: 14px;
   color: var(--ink-subtle);
