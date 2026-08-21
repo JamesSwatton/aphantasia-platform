@@ -741,6 +741,16 @@ ol {
   padding-top: 40px;
 }
 
+/* === password_change.html ===
+   Identical to .reset-form above — naming-only variance, Phase 3 merge
+   candidate. Not unified yet per the extract-only rule for Phase 2. */
+.change-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 40px;
+}
+
 /* Shared by password_reset.html, password_change.html, and
    password_reset_from_key.html. login.html has an equivalent
    (.forgot-link) with the same values but a page-specific name. */

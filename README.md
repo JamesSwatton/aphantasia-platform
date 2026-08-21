@@ -1204,6 +1204,8 @@ At the end of Phase 2, every template uses `{% load static %}` + the shared styl
 
 **Added during Phase 2 extraction of `password_reset.html` (2026-08-21)**: confirmed the by-design `.form-submit` drift noted in Phase 1 (8px vs 28px `margin-top`) was never actually reconciled in `styles.css` — the shared rule had 8px (login.html's value), which is wrong for password_reset.html/password_change.html/password_reset_from_key.html (28px, no preceding spacer). Decision: updated the shared `.form-submit` to 28px now, since 3 of the remaining 5 Cluster 1 templates need that value and only `login.html` needs the 8px exception — `login.html` will need a scoped override when it's extracted next, not the other way around. Also added `.back-link` to `styles.css` (used identically by this template, `password_change.html`, and `password_reset_from_key.html`; `login.html` has an equivalent `.forgot-link` with the same values but a different name — Phase 3 naming unify, not now) and `.reset-form` (page-specific flex wrapper, shared verbatim with `password_reset_from_key.html`).
 
+**Added during Phase 2 extraction of `password_change.html` (2026-08-21)**: straightforward — same shape as `password_reset.html`, fully covered by the `.page--auth`/`.field`/`.form-submit`/`.back-link` shared rules. Added `.change-form` to `styles.css`, confirmed byte-for-byte identical to `.reset-form` added in the previous session — a Phase 3 merge candidate, left as a naming-only duplicate for now per the extract-only rule.
+
 ### Phase 3 — De-duplicate (unify, once everything is in one file)
 
 Only start this once Phase 2 is fully complete for all 17 templates. With everything living in one file, duplicate-identical and duplicate-drifted rules are easy to `diff` side by side:
