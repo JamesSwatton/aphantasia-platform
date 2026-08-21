@@ -1139,6 +1139,177 @@ ol {
 }
 
 /* -----------------------------------------------------------------------------
+   7.1  participant_dashboard.html
+
+   Task/survey list in the main column, plus the section header above it.
+   .task-card is this page's own unified survey+task card — it has hover/
+   focus states, an indicator dot, and --done/--priority/--gateway/--locked
+   modifiers that the list-page cards (survey_list.html/task_list.html)
+   don't have. Flagged in Phase 1 as likely staying a distinct component
+   rather than a full Phase 3 merge — revisit once those two are extracted.
+   ----------------------------------------------------------------------------- */
+
+.page__tasks-header {
+  grid-column: 2;
+  grid-row: 2;
+  padding: 32px var(--page-padding-x) 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.page__tasks-counter {
+  font-size: 14px;
+  letter-spacing: 0.02em;
+  color: var(--ink-muted);
+}
+
+.task-list {
+  padding: 0 var(--page-padding-x) 80px;
+}
+
+.task-list-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.section-divider {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  margin: 32px 0 16px;
+}
+.section-divider:first-child {
+  margin-top: 0;
+}
+
+.task-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 24px 32px;
+  text-decoration: none;
+  color: inherit;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+.task-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.06);
+}
+.task-card:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+
+.task-card--done {
+  opacity: 0.6;
+  cursor: default;
+}
+.task-card--done:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.task-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+.task-card__head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.task-card__indicator {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--blue);
+  flex-shrink: 0;
+}
+.task-card--priority .task-card__indicator {
+  background: var(--warn);
+}
+.task-card--done .task-card__indicator {
+  background: transparent;
+  border: 1.5px solid var(--ink-subtle);
+}
+.task-card__title {
+  font-size: 16px;
+  font-weight: 700;
+}
+.task-card__desc {
+  font-size: 14px;
+  line-height: 1.55;
+  color: var(--ink-muted);
+  max-width: 62ch;
+}
+.task-card__meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 10px;
+  padding-left: 32px;
+  border-left: 1px solid var(--rule-soft);
+  font-size: 13px;
+  color: var(--ink-muted);
+  min-width: 120px;
+}
+
+/* Local .empty-state override — real 3-way drift against the shared
+   bare .empty-state (section 10: padding 80px, ink-muted, max-width 680px)
+   flagged in Phase 1. survey_list.html/task_list.html haven't been
+   extracted yet, so scoping under .task-list here rather than touching the
+   shared rule — revisit and pick one true value in Phase 3 once all three
+   are extracted and can be compared side by side. */
+.task-list .empty-state {
+  padding: 60px 0;
+  font-size: 14px;
+  color: var(--ink-subtle);
+}
+
+/* Demographic gateway card */
+.task-card--gateway {
+  border: 2px solid var(--blue);
+}
+.task-card--gateway .task-card__indicator {
+  background: var(--blue);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 20%, transparent);
+}
+.task-card--gateway-done {
+  opacity: 0.6;
+}
+
+/* Locked state (before the gateway survey is completed) */
+.task-card--locked {
+  opacity: 0.45;
+  pointer-events: none;
+  user-select: none;
+}
+.locked-notice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: color-mix(in srgb, var(--ink) 5%, transparent);
+  border-radius: var(--radius-card);
+  font-size: 13px;
+  color: var(--ink-muted);
+  max-width: 680px;
+  margin-bottom: 16px;
+}
+.locked-notice__icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
    8.  Modal overlay
 
    Full-screen backdrop + centred card. Hidden by default (opacity: 0,
@@ -1380,6 +1551,14 @@ ol {
 
 .info-content {
   padding: 0 0 40px;
+}
+.info-content h3 {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 12px;
 }
 .info-content p {
   font-size: 14px;
