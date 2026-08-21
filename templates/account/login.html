@@ -50,7 +50,7 @@
         </div>
         <!-- Right: login form -->
         <section class="login-region">
-            <form class="login-form" method="post" action="{% url 'account_login' %}">
+            <form class="auth-form" method="post" action="{% url 'account_login' %}">
                 {% csrf_token %}
                 {% if form.non_field_errors %}
                     <ul class="non-field-errors">
@@ -91,7 +91,7 @@
                     <label for="{{ form.remember.id_for_label }}" class="remember-label">Remember me</label>
                 </div>
                 <button type="submit" class="login-submit">Log in</button>
-                <p class="forgot-link">
+                <p class="back-link">
                     <a href="{% url 'account_reset_password' %}">Forgot your password?</a>
                 </p>
             </form>

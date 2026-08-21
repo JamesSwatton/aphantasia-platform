@@ -733,18 +733,15 @@ ol {
   text-underline-offset: 2px;
 }
 
-/* === password_reset.html / password_reset_from_key.html === */
-.reset-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 40px;
-}
-
-/* === password_change.html ===
-   Identical to .reset-form above — naming-only variance, Phase 3 merge
-   candidate. Not unified yet per the extract-only rule for Phase 2. */
-.change-form {
+/* Shared form-wrapper flex column, used by password_reset.html,
+   password_reset_from_key.html, password_change.html, and login.html.
+   Phase 3 merge (2026-08-21) of what were four identically-valued but
+   differently-named rules (.reset-form, .change-form, .login-form) —
+   confirmed byte-for-byte identical before merging. signup.html's
+   .signup-form is NOT included here: it's missing the padding-top: 40px
+   these four share, a real (if minor) drift, not naming-only — flagged
+   separately below, not merged silently. */
+.auth-form {
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -812,13 +809,6 @@ ol {
   align-self: start;
 }
 
-.login-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding-top: 40px;
-}
-
 .remember-row {
   display: flex;
   align-items: center;
@@ -879,18 +869,6 @@ ol {
   margin-top: 8px;
 }
 .login-submit:hover { opacity: 0.88; }
-
-/* Identical to .back-link — page-specific name, Phase 3 merge candidate. */
-.forgot-link {
-  margin-top: 24px;
-  font-size: 13px;
-  color: var(--ink-muted);
-}
-.forgot-link a {
-  color: var(--ink);
-  text-decoration: underline;
-  text-underline-offset: 2px;
-}
 
 /* === signup.html ===
    Uses page-specific --info/--signup grid-placement names instead of
@@ -1047,6 +1025,14 @@ ol {
   align-self: start;
 }
 
+/* NOT merged into .auth-form (the shared form-wrapper flex column used by
+   the other 4 auth pages) — this is missing padding-top: 40px, which the
+   others all share. Real, if minor, drift rather than naming-only
+   variance; flagged 2026-08-21 during the Phase 3 auth-page-family merge,
+   left as its own rule rather than silently changing signup.html's
+   spacing. Revisit if/when the .signup-submit margin-top decision (see
+   below) is made, since the two may be related (both about the vertical
+   rhythm at the top/bottom of this form). */
 .signup-form {
   display: flex;
   flex-direction: column;
@@ -1079,9 +1065,11 @@ ol {
   cursor: not-allowed;
 }
 
-/* Shared by password_reset.html, password_change.html, and
-   password_reset_from_key.html. login.html has an equivalent
-   (.forgot-link) with the same values but a page-specific name. */
+/* Shared by password_reset.html, password_change.html,
+   password_reset_from_key.html, and login.html. Phase 3 merge (2026-08-21)
+   of .back-link and login.html's identically-valued .forgot-link into
+   this one rule — confirmed byte-for-byte identical before merging.
+   signup.html has no equivalent element (genuine absence, not drift). */
 .back-link {
   margin-top: 24px;
   font-size: 13px;

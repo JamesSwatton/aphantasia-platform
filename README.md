@@ -1258,6 +1258,14 @@ Only start this once Phase 2 is fully complete for all 17 templates. With everyt
 3. For **duplicate-drifted** rules: this is a judgement call, not an automatic merge — decide whether the drift was intentional (a real design difference) or accidental (a bug like Session 33's). Confirm with the user before unifying if it's ambiguous.
 4. Commit per cluster, not per rule — each commit should leave the site in a fully working state.
 
+**Phase 3 progress log:**
+
+**Auth-page family naming merges (2026-08-21)** — first Phase 3 cluster, per the "start with auth-page family" guidance above.
+- **Form wrapper**: `.reset-form`/`.change-form`/`.login-form` (all `display: flex; flex-direction: column; gap: 4px; padding-top: 40px;`, confirmed byte-for-byte identical) merged into one shared `.auth-form`, used by `password_reset.html`, `password_change.html`, `password_reset_from_key.html`, and `login.html`. **`signup.html`'s `.signup-form` was deliberately NOT included** — it's missing `padding-top: 40px`, a real (if minor) drift rather than naming-only variance. Left as its own rule with a comment flagging it, rather than silently changing `signup.html`'s spacing. Possibly related to the still-open `.signup-submit` margin-top question (see the Cluster 1 note above) — both are about the vertical rhythm at the top/bottom of that form.
+- **Back link**: `.back-link`/`.forgot-link` (both `margin-top: 24px; font-size: 13px; color: var(--ink-muted);` + identical `a` styling, confirmed byte-for-byte identical) merged into `.back-link`, used by `password_reset.html`, `password_change.html`, `password_reset_from_key.html`, and `login.html`. `signup.html` has no equivalent element (genuine absence, not drift, per Phase 1).
+- Submit buttons (`.login-submit`/`.signup-submit`/`.form-submit`) were **not** touched — their `margin-top` drift (8px / unset / 28px) is already documented as by-design (Session 33 fix), not naming-only duplication.
+- Verified in browser across all 4 affected templates (`login.html`, `password_reset.html`, `password_change.html`, `password_reset_from_key.html`) — no visual change, since only class names were merged, not values.
+
 ### Ground rules for every session on this branch
 
 - One phase, one template/cluster, one commit. Never mix phases in a single change.
