@@ -2466,3 +2466,492 @@ ol {
   color: var(--ink);
   margin-bottom: 8px;
 }
+
+/* -----------------------------------------------------------------------------
+   18. Account page
+
+   Page-specific to accounts/account.html. .page-title, .page-subtitle, and
+   .content are scoped under a new .account-page wrapper div (added to the
+   template) for the same reason as .messages-page above: they collide with
+   messages.html's own drifted rules of the same name — see section 17's
+   note. .card and .panel are also scoped here even though nothing else
+   currently claims those bare names, as cheap insurance against a future
+   collision (matches the .signup-info-region/.task-list-card precedent of
+   preferring an unambiguous name over a bare one for anything non-trivial).
+
+   .spectrum-chart, .radar-wrap, and .radar-legend are shared with survey_detail.html
+   (not yet extracted) — confirmed structurally identical property-for-
+   property except .radar's max-width, which is a genuine, intentional
+   40px difference: 340px on survey_detail.html's researcher preview vs
+   380px on this page's participant-facing results. Added the 340px value
+   as the shared base (survey_detail.html's plain unscoped rule) with an
+   .account-page override bumping it to 380px here.
+   ----------------------------------------------------------------------------- */
+
+.account-page .view-switch {
+  padding: 32px var(--page-padding-x) 0;
+}
+
+.account-page .content {
+  padding: var(--content-spacing) var(--page-padding-x) 80px;
+}
+
+.account-page .page-title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 42px;
+  letter-spacing: -0.01em;
+  margin: 0 0 6px;
+}
+.account-page .page-subtitle {
+  font-size: 15px;
+  color: var(--ink-muted);
+  margin-bottom: 40px;
+}
+
+.account-page .panel {
+  display: none;
+  line-height: 1.6;
+}
+.account-page .panel.is-active {
+  display: block;
+}
+
+.account-page .card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 32px 40px;
+  max-width: 860px;
+}
+.account-page .card + .card {
+  margin-top: 16px;
+}
+.account-page .card h3 {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.account-page .card h3::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink);
+  transform: translateY(-1px);
+}
+
+/* Profile panel */
+.account-page .field-grid {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  row-gap: 20px;
+  column-gap: 24px;
+}
+.account-page .field-grid dt {
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  padding-top: 2px;
+}
+.account-page .field-grid dd {
+  font-size: 16px;
+  color: var(--ink);
+}
+.account-page .field-grid dd.participant-id {
+  font-family: "SF Mono", Monaco, Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: var(--ink-muted);
+}
+
+.account-page .action-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 4px 0;
+}
+.account-page .action-row p {
+  font-size: 14px;
+  color: var(--ink-muted);
+  max-width: 48ch;
+}
+
+/* Consent panel */
+.account-page .consent-meta {
+  display: flex;
+  gap: 48px;
+  padding-bottom: 20px;
+  margin-bottom: 28px;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 13px;
+}
+.account-page .consent-meta div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.account-page .consent-meta dt {
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+.account-page .consent-meta dd {
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.account-page .consent-body {
+  font-size: 15px;
+  line-height: 1.65;
+  color: var(--ink-muted);
+  max-height: 260px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--rule) transparent;
+}
+.account-page .consent-body * {
+  max-width: 600px;
+}
+.account-page .consent-body h3 {
+  margin-bottom: 16px;
+}
+.account-page .consent-body ul,
+.account-page .consent-body ol {
+  list-style: revert;
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
+
+/* Results panel */
+.account-page .result-summary {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 28px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid var(--rule-soft);
+}
+.account-page .result-summary h4 {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+.account-page .result-summary .score {
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-muted);
+}
+.account-page .result-summary .score strong {
+  color: var(--ink);
+  font-weight: 700;
+}
+.account-page .result-desc {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-top: 20px;
+  max-width: 72ch;
+}
+.account-page .result-description {
+  margin-top: 16px;
+  font-size: 14px;
+  color: var(--ink-muted);
+  font-style: italic;
+}
+
+/* Spectrum chart — shared with survey_detail.html, see section note above */
+.spectrum-chart {
+  position: relative;
+  width: 100%;
+  height: 48px;
+  display: flex;
+  align-items: center;
+}
+.spectrum-track {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: var(--rule);
+  border-radius: 3px;
+}
+.spectrum-marker {
+  position: absolute;
+  top: 50%;
+  left: var(--score-position, 50%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+.spectrum-marker-dot {
+  display: block;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--blue);
+  border: 3px solid var(--bg-card);
+}
+.spectrum-labels {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 8px;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+}
+
+/* Radar chart — shared with survey_detail.html, see section note above.
+   max-width is 340px here (survey_detail.html's researcher-preview value);
+   .account-page overrides it to 380px below for the participant-facing
+   results panel. Do not unify to one value without checking Phase 1's note
+   on this — it's a deliberate 40px difference, not drift. */
+.radar-wrap {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.radar {
+  width: 100%;
+  max-width: 340px;
+  aspect-ratio: 1;
+  margin: 0 auto;
+  position: relative;
+}
+.radar canvas {
+  width: 100% !important;
+  height: 100% !important;
+}
+.radar-legend h5 {
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  margin-bottom: 16px;
+}
+.radar-legend li {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--rule-soft);
+  font-size: 14px;
+}
+.radar-legend li:last-child { border-bottom: none; }
+.radar-legend .modality { color: var(--ink); }
+.radar-legend .value {
+  color: var(--ink-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.account-page .radar {
+  max-width: 380px;
+}
+
+/* Feedback form — duplicate-identical to exit_survey.html's .exit-wrap
+   scoped copy (section 16) except for scope name; a Phase 3 merge
+   candidate. Kept as its own .feedback-form scope here since exit_survey's
+   version is scoped under .exit-wrap, and unifying the two scope names is
+   a judgement call, not a mechanical extraction. */
+.feedback-form .q-label {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+  color: var(--ink);
+  display: block;
+  margin-bottom: 14px;
+}
+.feedback-form .q-num {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-subtle);
+  display: block;
+  margin-bottom: 6px;
+}
+.feedback-form .likert-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.feedback-form .likert-row label {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  flex: 1;
+  min-width: 48px;
+  text-align: center;
+}
+.feedback-form .likert-row input[type="radio"] {
+  accent-color: var(--blue);
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+}
+.feedback-form textarea {
+  width: 100%;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  padding: 10px 14px;
+  font-family: var(--font-body);
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--bg-page);
+  resize: vertical;
+  min-height: 90px;
+  box-sizing: border-box;
+}
+.feedback-form textarea:focus {
+  outline: 2px solid var(--blue);
+  outline-offset: 1px;
+}
+.feedback-form .q-block + .q-block {
+  margin-top: 28px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule-soft);
+}
+.feedback-thanks {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  color: var(--ink-muted);
+}
+.feedback-thanks::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-accent);
+  color: var(--ink);
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+
+/* Feedback completion modal — .modal-overlay/.modal base already exist in
+   section 8; these are account.html-specific inner elements. */
+.modal__badge {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: var(--blue);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.modal__badge::after {
+  content: "";
+  width: 22px;
+  height: 11px;
+  border-left: 2.5px solid var(--bg-card);
+  border-bottom: 2.5px solid var(--bg-card);
+  transform: rotate(-45deg) translate(2px, -2px);
+}
+.modal__title {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 24px;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.modal__body {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-bottom: 28px;
+}
+.modal__actions .btn {
+  width: 100%;
+}
+
+/* Withdraw section */
+.account-page .withdraw {
+  margin-top: 16px;
+  background: var(--warn-soft);
+  border-radius: var(--radius-card);
+  padding: 32px 40px;
+  color: white;
+  max-width: 860px;
+}
+.account-page .withdraw h3 {
+  margin-bottom: 16px;
+  max-width: 600px;
+}
+.account-page .withdraw h3::before {
+  background: var(--warn);
+}
+.account-page .withdraw p {
+  font-size: 14px;
+  line-height: 1.6;
+  margin-bottom: 16px;
+  max-width: 600px;
+}
+.account-page .withdraw summary {
+  list-style: none;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--warn);
+  padding: 8px 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.account-page .withdraw summary::-webkit-details-marker {
+  display: none;
+}
+.account-page .withdraw summary::before {
+  content: "›";
+  display: inline-block;
+  transition: transform 0.15s ease;
+}
+.account-page .withdraw details[open] summary::before {
+  transform: rotate(90deg);
+}
+.account-page .withdraw-actions {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+.account-page .withdraw-actions span {
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+}
+.account-page .withdraw-detail {
+  margin-top: 20px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+.account-page .withdraw-detail ul,
+.account-page .withdraw-detail ol {
+  list-style: revert;
+  padding-left: 1.5em;
+  margin: 0.75em 0;
+}
