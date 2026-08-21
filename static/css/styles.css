@@ -1112,9 +1112,9 @@ ol {
    show a completed/total count here). The .task-card family right below is
    participant_dashboard.html's own unified survey+task card — it has hover/
    focus states, an indicator dot, and --done/--priority/--gateway/--locked
-   modifiers that the list-page cards (.survey-card/.task-card below) don't
-   have. Flagged in Phase 1 as likely staying a distinct component rather
-   than a full Phase 3 merge.
+   modifiers that the list-page cards (.list-card below, section 7.2) don't
+   have. Kept as a distinct component per the Phase 1/3 decision — see
+   section 7.2's note.
    ----------------------------------------------------------------------------- */
 
 .page__tasks-header {
@@ -1278,28 +1278,29 @@ ol {
 }
 
 /* -----------------------------------------------------------------------------
-   7.2  survey_list.html
+   7.2  survey_list.html / task_list.html
 
-   List of surveys for researchers to manage. .survey-card is duplicate-
-   identical in structure to task_list.html's .task-list-card below
-   (naming-only variance, confirmed in Phase 1) — a Phase 3 merge
-   candidate, but distinct from participant_dashboard.html's own richer
-   .task-card (hover/focus/indicator/modifiers) above, which stays
-   separate.
+   Shared by both researcher-facing management lists. Phase 3 merge
+   (2026-08-21) of what were two identically-valued but differently-named
+   rule sets (.survey-card / .task-list-card, and their wrap/list
+   containers) — confirmed byte-for-byte identical before merging.
+   Distinct from participant_dashboard.html's own richer .task-card
+   (hover/focus/indicator/modifiers) above, which stays separate — that's
+   why this shared card component is named .list-card, not .task-card.
    ----------------------------------------------------------------------------- */
 
-.survey-list-wrap {
+.list-wrap {
   padding: 0 var(--page-padding-x) 80px;
 }
 
-.survey-list {
+.list-items {
   display: flex;
   flex-direction: column;
   gap: 16px;
   max-width: 680px;
 }
 
-.survey-card {
+.list-card {
   background: var(--bg-card);
   border-radius: var(--radius-card);
   padding: 24px 32px;
@@ -1309,94 +1310,31 @@ ol {
   align-items: stretch;
 }
 
-.survey-card__body {
+.list-card__body {
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-width: 0;
 }
-.survey-card__title {
+.list-card__title {
   font-size: 16px;
   font-weight: 700;
   color: var(--ink);
   margin: 0;
 }
-.survey-card__desc {
+.list-card__desc {
   font-size: 14px;
   color: var(--ink-muted);
   line-height: 1.5;
   margin: 0;
 }
-.survey-card__actions {
+.list-card__actions {
   display: flex;
   gap: 10px;
   align-items: center;
   flex-wrap: wrap;
 }
-.survey-card__meta {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  gap: 10px;
-  padding-left: 32px;
-  border-left: 1px solid var(--rule-soft);
-  font-size: 13px;
-  color: var(--ink-muted);
-  min-width: 120px;
-}
-
-/* -----------------------------------------------------------------------------
-   7.3  task_list.html
-
-   Structurally identical to .survey-card above (naming-only variance,
-   Phase 3 merge candidate) — but named .task-list-card rather than
-   .task-card, since .task-card is already taken by
-   participant_dashboard.html's own richer card component (hover/focus
-   states, indicator dot, modifiers) above. Reusing that name here would
-   have silently collided, the same bug class as the .page/.page--auth
-   collision from the password_reset_done.html session.
-   ----------------------------------------------------------------------------- */
-
-.task-list-wrap {
-  padding: 0 var(--page-padding-x) 80px;
-}
-
-.task-list-card {
-  background: var(--bg-card);
-  border-radius: var(--radius-card);
-  padding: 24px 32px;
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 32px;
-  align-items: stretch;
-}
-
-.task-list-card__body {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  min-width: 0;
-}
-.task-list-card__title {
-  font-size: 16px;
-  font-weight: 700;
-  color: var(--ink);
-  margin: 0;
-}
-.task-list-card__desc {
-  font-size: 14px;
-  color: var(--ink-muted);
-  line-height: 1.5;
-  margin: 0;
-}
-.task-list-card__actions {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-.task-list-card__meta {
+.list-card__meta {
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -1590,18 +1528,26 @@ ol {
 
    Used by the participant dashboard, survey detail, survey list, and task list.
    Columns: 360px sidebar | 1fr main content
-   Rows:    topbar (auto) | sub-header (auto) | spacer (64px) | content (auto)
+   Rows:    topbar (auto) | sub-header (auto) | spacer (64px) | content (1fr)
 
    Each page places its own child elements into named grid areas via additional
    inline rules (.page__tasks-header, .page__survey-header, etc.). The shared
    rules here only define the grid container and the fixed child placements
    that are identical on every page.
-   ----------------------------------------------------------------------------- */
+
+   flex: 1 + the last row being 1fr (2026-08-21, Phase 3) makes .page grow
+   to fill the viewport instead of sizing to content — otherwise the
+   sidebar/main divider (.page::before, grid-row: 2 / -1 below) stops
+   wherever the shorter column's content ends, well above the bottom of
+   the page. Same fix and root cause as .page--auth's version (see that
+   section's note) — these 4 templates all suppress the global footer, so
+   there's no footer to coordinate with, just the viewport bottom. */
 
 .page {
   display: grid;
   grid-template-columns: 360px 1fr;
-  grid-template-rows: auto auto var(--content-spacing) auto;
+  grid-template-rows: auto auto var(--content-spacing) 1fr;
+  flex: 1;
 }
 
 .page > .topbar {
@@ -2442,8 +2388,8 @@ ol {
    messages.html's own drifted rules of the same name — see section 17's
    note. .card and .panel are also scoped here even though nothing else
    currently claims those bare names, as cheap insurance against a future
-   collision (matches the .signup-info-region/.task-list-card precedent of
-   preferring an unambiguous name over a bare one for anything non-trivial).
+   collision (matches the .signup-info-region precedent of preferring an
+   unambiguous name over a bare one for anything non-trivial).
 
    .spectrum-chart, .radar-wrap, and .radar-legend are shared with survey_detail.html
    (not yet extracted) — confirmed structurally identical property-for-

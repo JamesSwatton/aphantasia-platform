@@ -84,23 +84,23 @@
 
   <!-- Row 4: main task list -->
   <section class="page__main">
-    <div class="task-list-wrap">
+    <div class="list-wrap">
 
       {% if tasks %}
-      <ul class="task-list">
+      <ul class="list-items">
         {% for task in tasks %}
-        <li class="task-list-card">
-          <div class="task-list-card__body">
-            <h2 class="task-list-card__title">{{ task.title }}</h2>
+        <li class="list-card">
+          <div class="list-card__body">
+            <h2 class="list-card__title">{{ task.title }}</h2>
             {% if task.description %}
-              <p class="task-list-card__desc">{{ task.description|truncatewords:30 }}</p>
+              <p class="list-card__desc">{{ task.description|truncatewords:30 }}</p>
             {% endif %}
-            <div class="task-list-card__actions">
+            <div class="list-card__actions">
               <a href="{% url 'tasks:task_preview' task.pk %}" class="btn btn--primary">Preview</a>
               <a href="/admin/tasks/labtask/{{ task.pk }}/change/" class="btn btn--outline">Edit</a>
             </div>
           </div>
-          <div class="task-list-card__meta">
+          <div class="list-card__meta">
             <span class="pill {% if task.is_active %}pill--active{% else %}pill--inactive{% endif %}">
               {% if task.is_active %}Active{% else %}Inactive{% endif %}
             </span>

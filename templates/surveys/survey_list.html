@@ -84,23 +84,23 @@
 
   <!-- Row 4: main survey list -->
   <section class="page__main">
-    <div class="survey-list-wrap">
+    <div class="list-wrap">
 
       {% if surveys %}
-      <ul class="survey-list">
+      <ul class="list-items">
         {% for survey in surveys %}
-        <li class="survey-card">
-          <div class="survey-card__body">
-            <h2 class="survey-card__title">{{ survey.title }}</h2>
+        <li class="list-card">
+          <div class="list-card__body">
+            <h2 class="list-card__title">{{ survey.title }}</h2>
             {% if survey.description %}
-              <p class="survey-card__desc">{{ survey.description|truncatewords:30 }}</p>
+              <p class="list-card__desc">{{ survey.description|truncatewords:30 }}</p>
             {% endif %}
-            <div class="survey-card__actions">
+            <div class="list-card__actions">
               <a href="{% url 'surveys:survey_preview' survey.pk %}" class="btn btn--primary">Preview &amp; Test</a>
               <a href="/admin/surveys/survey/{{ survey.pk }}/change/" class="btn btn--outline">Edit</a>
             </div>
           </div>
-          <div class="survey-card__meta">
+          <div class="list-card__meta">
             <span class="pill {% if survey.is_active %}pill--active{% else %}pill--inactive{% endif %}">
               {% if survey.is_active %}Active{% else %}Inactive{% endif %}
             </span>
