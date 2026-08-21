@@ -1197,6 +1197,11 @@ Move each template's inline `<style>` block into `static/css/styles.css` **verba
 
 At the end of Phase 2, every template uses `{% load static %}` + the shared stylesheet only — zero inline `<style>` blocks — but `styles.css` will be large and still contain the duplication identified in Phase 1. That's expected and fine at this stage.
 
+**Added during Phase 2 extraction of `password_reset_done.html` + `password_reset_from_key_done.html` (2026-08-21)**: both were 100% covered by the existing `.page--auth` shared rule (no page-specific remainder), but two things bit on extraction, relevant to the rest of Cluster 1 (`login.html`, `signup.html`, `password_reset.html`, `password_change.html`, `password_reset_from_key.html`) when they're extracted next:
+
+- **Don't keep the bare `page` class alongside `page--auth`.** `styles.css` has a *separate*, later-in-file bare `.page` rule (dashboard-grid family, section 5, `360px 1fr` columns) that collides at equal specificity with `.page--auth`'s `1fr 1fr` columns — `class="page page--auth"` renders with the wrong (dashboard) grid because the dashboard rule appears later in the cascade. Use `class="page--auth"` alone.
+- **`--bg-page: #ffffff` on `.page--auth` doesn't reach `body`/the topbar.** `body`'s background reads `--bg-page` from `:root`/`body` itself; `.page--auth` is a descendant div, and CSS custom properties don't cascade upward to ancestors. The shared `.page--auth` rule's own `--bg-page` override is therefore dead for that purpose (it only affects things nested inside `.page--auth`). Each auth template still needs its own small `:root { --bg-page: #ffffff; }` in `extra_head` — this is expected to stay page-level, not something to fold into `styles.css`.
+
 ### Phase 3 — De-duplicate (unify, once everything is in one file)
 
 Only start this once Phase 2 is fully complete for all 17 templates. With everything living in one file, duplicate-identical and duplicate-drifted rules are easy to `diff` side by side:
