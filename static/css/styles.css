@@ -733,6 +733,28 @@ ol {
   text-underline-offset: 2px;
 }
 
+/* === password_reset.html / password_reset_from_key.html === */
+.reset-form {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 40px;
+}
+
+/* Shared by password_reset.html, password_change.html, and
+   password_reset_from_key.html. login.html has an equivalent
+   (.forgot-link) with the same values but a page-specific name. */
+.back-link {
+  margin-top: 24px;
+  font-size: 13px;
+  color: var(--ink-muted);
+}
+.back-link a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
 /* -----------------------------------------------------------------------------
    7.  Domain list (sidebar navigation)
 
@@ -931,7 +953,11 @@ ol {
   list-style: none;
 }
 
-/* Primary submit button used inside auth forms (password reset, change). */
+/* Primary submit button used inside auth forms (password reset, change).
+   margin-top is 28px here because these pages have no preceding spacer
+   element. login.html's own submit button sits after .remember-row (which
+   has its own 20px padding) and needs an 8px override to match visually —
+   see the Session 33 fix note in the CSS Refactor Plan. */
 .form-submit {
   align-self: flex-start;
   font-family: var(--font-body);
@@ -944,7 +970,7 @@ ol {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s ease;
-  margin-top: 8px;
+  margin-top: 28px;
 }
 .form-submit:hover {
   opacity: 0.88;
