@@ -3,219 +3,6 @@
 
 {% block title %}Task Management — Phantasia Research Hub{% endblock %}
 
-{% block extra_head %}
-<style>
-  /* ----- Page grid (mirrors survey list) ----- */
-  .page {
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    grid-template-rows: auto auto var(--content-spacing) auto;
-  }
-
-  .page > .topbar {
-    grid-column: 1 / -1;
-    grid-row: 1;
-  }
-
-  .page > .view-switch {
-    grid-column: 1;
-    grid-row: 2;
-    padding: 32px var(--page-padding-x) 0;
-  }
-
-  .page__tasks-header {
-    grid-column: 2;
-    grid-row: 2;
-    padding: 32px var(--page-padding-x) 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .page__sidebar {
-    grid-column: 1;
-    grid-row: 4;
-    padding: 0 var(--page-padding-x);
-  }
-
-  .page__main {
-    grid-column: 2;
-    grid-row: 4;
-  }
-
-  .page::before {
-    content: "";
-    grid-column: 1;
-    grid-row: 2 / -1;
-    border-right: 1px solid var(--rule);
-    pointer-events: none;
-  }
-
-  /* ----- Sidebar panels ----- */
-  .sidebar-panel {
-    display: none;
-  }
-  .sidebar-panel.is-active {
-    display: block;
-  }
-
-  .info-content {
-    padding: 0 0 40px;
-  }
-  .info-content p {
-    font-size: 14px;
-    line-height: 1.6;
-    color: var(--ink-muted);
-    margin-bottom: 16px;
-  }
-  .info-content p:last-child {
-    margin-bottom: 0;
-  }
-
-  .domain-list__item {
-    border-bottom: 1px solid var(--rule);
-  }
-  .domain-list__link {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 18px 0;
-    font-size: 14px;
-    font-weight: 500;
-    letter-spacing: 0.06em;
-    line-height: 1;
-    color: var(--ink);
-    text-decoration: none;
-    transition: color 0.15s ease;
-    text-transform: uppercase;
-  }
-  .domain-list__link:hover {
-    color: var(--ink-muted);
-  }
-  .domain-list__dot {
-    width: 11px;
-    height: 11px;
-    border-radius: 50%;
-    border: 1.5px solid var(--ink);
-    background: transparent;
-    flex-shrink: 0;
-    transform: translateY(-1px);
-  }
-  .domain-list__item--active .domain-list__link {
-    font-weight: 700;
-    font-style: italic;
-  }
-  .domain-list__item--active .domain-list__dot {
-    background: var(--ink);
-  }
-
-  /* ----- Main area ----- */
-  .task-list-wrap {
-    padding: 0 var(--page-padding-x) 80px;
-  }
-
-  .task-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    max-width: 680px;
-  }
-
-  /* ----- Task card ----- */
-  .task-card {
-    background: var(--bg-card);
-    border-radius: var(--radius-card);
-    padding: 24px 32px;
-    display: grid;
-    grid-template-columns: 1fr auto;
-    gap: 32px;
-    align-items: stretch;
-  }
-
-  .task-card__body {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    min-width: 0;
-  }
-  .task-card__title {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--ink);
-    margin: 0;
-  }
-  .task-card__desc {
-    font-size: 14px;
-    color: var(--ink-muted);
-    line-height: 1.5;
-    margin: 0;
-  }
-  .task-card__actions {
-    display: flex;
-    gap: 10px;
-    align-items: center;
-    flex-wrap: wrap;
-  }
-
-  /* ----- Meta column (right side) ----- */
-  .task-card__meta {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    gap: 10px;
-    padding-left: 32px;
-    border-left: 1px solid var(--rule-soft);
-    font-size: 13px;
-    color: var(--ink-muted);
-    min-width: 120px;
-  }
-
-  /* ----- Status pills ----- */
-  .pill {
-    display: inline-block;
-    font-size: 11px;
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    text-transform: uppercase;
-    padding: 4px 10px 2px;
-    border-radius: var(--radius-pill);
-    line-height: 1;
-    vertical-align: middle;
-  }
-  .pill--active {
-    background: #d4f7e0;
-    color: #1a6e3a;
-  }
-  .pill--inactive {
-    background: #fde8e8;
-    color: #9b1c1c;
-  }
-  .pill--priority {
-    background: var(--warn);
-    color: #fff;
-  }
-
-  /* ----- Empty state ----- */
-  .empty-state {
-    padding: 80px 0;
-    color: var(--ink-muted);
-    max-width: 680px;
-  }
-  .empty-state h3 {
-    font-family: var(--font-display);
-    font-weight: 400;
-    font-size: 24px;
-    color: var(--ink);
-    margin-bottom: 8px;
-  }
-  .empty-state p {
-    font-size: 14px;
-    margin-bottom: 24px;
-  }
-</style>
-{% endblock %}
-
 {% block header %}{% endblock %}
 {% block flash_messages %}{% endblock %}
 {% block footer %}{% endblock %}
@@ -302,18 +89,18 @@
       {% if tasks %}
       <ul class="task-list">
         {% for task in tasks %}
-        <li class="task-card">
-          <div class="task-card__body">
-            <h2 class="task-card__title">{{ task.title }}</h2>
+        <li class="task-list-card">
+          <div class="task-list-card__body">
+            <h2 class="task-list-card__title">{{ task.title }}</h2>
             {% if task.description %}
-              <p class="task-card__desc">{{ task.description|truncatewords:30 }}</p>
+              <p class="task-list-card__desc">{{ task.description|truncatewords:30 }}</p>
             {% endif %}
-            <div class="task-card__actions">
+            <div class="task-list-card__actions">
               <a href="{% url 'tasks:task_preview' task.pk %}" class="btn btn--primary">Preview</a>
               <a href="/admin/tasks/labtask/{{ task.pk }}/change/" class="btn btn--outline">Edit</a>
             </div>
           </div>
-          <div class="task-card__meta">
+          <div class="task-list-card__meta">
             <span class="pill {% if task.is_active %}pill--active{% else %}pill--inactive{% endif %}">
               {% if task.is_active %}Active{% else %}Inactive{% endif %}
             </span>

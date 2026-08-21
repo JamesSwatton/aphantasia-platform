@@ -1315,10 +1315,11 @@ ol {
    7.2  survey_list.html
 
    List of surveys for researchers to manage. .survey-card is duplicate-
-   identical in structure to task_list.html's .task-card below (naming-only
-   variance, confirmed in Phase 1) — a Phase 3 merge candidate, but distinct
-   from participant_dashboard.html's own richer .task-card (hover/focus/
-   indicator/modifiers) above, which stays separate.
+   identical in structure to task_list.html's .task-list-card below
+   (naming-only variance, confirmed in Phase 1) — a Phase 3 merge
+   candidate, but distinct from participant_dashboard.html's own richer
+   .task-card (hover/focus/indicator/modifiers) above, which stays
+   separate.
    ----------------------------------------------------------------------------- */
 
 .survey-list-wrap {
@@ -1367,6 +1368,69 @@ ol {
   flex-wrap: wrap;
 }
 .survey-card__meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding-left: 32px;
+  border-left: 1px solid var(--rule-soft);
+  font-size: 13px;
+  color: var(--ink-muted);
+  min-width: 120px;
+}
+
+/* -----------------------------------------------------------------------------
+   7.3  task_list.html
+
+   Structurally identical to .survey-card above (naming-only variance,
+   Phase 3 merge candidate) — but named .task-list-card rather than
+   .task-card, since .task-card is already taken by
+   participant_dashboard.html's own richer card component (hover/focus
+   states, indicator dot, modifiers) above. Reusing that name here would
+   have silently collided, the same bug class as the .page/.page--auth
+   collision from the password_reset_done.html session.
+   ----------------------------------------------------------------------------- */
+
+.task-list-wrap {
+  padding: 0 var(--page-padding-x) 80px;
+}
+
+.task-list-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 24px 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: stretch;
+}
+
+.task-list-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.task-list-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.task-list-card__desc {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.task-list-card__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.task-list-card__meta {
   display: flex;
   flex-direction: column;
   justify-content: center;
