@@ -1241,6 +1241,14 @@ Hit the same malformed-comment bug as the `signup.html` session (a literal `.spe
 
 Remaining for Phase 2: only `survey_detail.html` (756 lines — the largest template, only ~5% dashboard-grid, the rest fully page-specific: question rendering, matrix tables, branch/gate UI, progress bar, its own survey-completion modal). Once that's done, all 17 templates will be extraction-complete and Phase 3 (de-duplicate) can begin.
 
+**Added during Phase 2 extraction of `survey_detail.html` (2026-08-21)**: the last of the 17 templates — Phase 2 is now fully complete. As Phase 1 predicted, only ~5% of this page's CSS was shared with the dashboard-grid family (the outer `.page` grid and `.info-content`); the rest (question rendering, matrix tables, branch/gate UI, progress bar, test-mode preview tooling) was genuinely page-specific and added as a new section. The chart/modal cluster (`.spectrum-*`, `.radar-wrap`, `.radar`, `.radar-legend*`, `.modal-overlay`, `.modal`, `.modal__*`) was already in `styles.css` from the `account.html` session and matched byte-for-byte except the already-documented `.radar` max-width difference (340px here vs 380px on `account.html`) — no changes needed there.
+
+Caught a real collision before it happened: this page's own `.page__main` (`padding: 0 var(--page-padding-x) 80px; max-width: 860px;`) would have silently overridden the shared dashboard-grid family's bare `.page__main` (grid-placement only, no padding/max-width), leaking an 860px cap and 80px bottom padding onto `participant_dashboard.html`/`survey_list.html`/`task_list.html` too. Added a `survey-detail-page` wrapper class to the template's outer `.page` div and scoped the override under it (`.survey-detail-page .page__main`), same pattern as `.account-page`/`.messages-page`.
+
+Also hit the same malformed-comment bug a second time (`.radar-legend*/.modal-overlay` in explanatory text — the `*/` substring closed the comment early) — caught immediately this time by running the Python-based comment-balance/depth check before touching the template, rather than discovering it via a broken page after the fact. Worth remembering for any future `styles.css` comment: never write a literal `*/` sequence in comment text, including as unintentional punctuation (e.g. "`.foo*/.bar`" meaning "foo, and bar").
+
+**All 17 templates are now extraction-complete.** Every template uses the shared stylesheet only, except the 7 auth-page-family templates which each keep a small, intentional `:root { --bg-page: #ffffff; }` override (documented above, in the Cluster 1 note) — by design, not leftover work. Phase 3 (de-duplicate) can now begin.
+
 ### Phase 3 — De-duplicate (unify, once everything is in one file)
 
 Only start this once Phase 2 is fully complete for all 17 templates. With everything living in one file, duplicate-identical and duplicate-drifted rules are easy to `diff` side by side:
