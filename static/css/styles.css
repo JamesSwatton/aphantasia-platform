@@ -1139,14 +1139,16 @@ ol {
 }
 
 /* -----------------------------------------------------------------------------
-   7.1  participant_dashboard.html
+   7.1  Section header (shared by participant_dashboard.html, survey_list.html,
+   and — confirmed byte-for-byte identical on extraction — task_list.html)
 
-   Task/survey list in the main column, plus the section header above it.
-   .task-card is this page's own unified survey+task card — it has hover/
+   .page__tasks-counter is participant_dashboard.html-only (the others don't
+   show a completed/total count here). The .task-card family right below is
+   participant_dashboard.html's own unified survey+task card — it has hover/
    focus states, an indicator dot, and --done/--priority/--gateway/--locked
-   modifiers that the list-page cards (survey_list.html/task_list.html)
-   don't have. Flagged in Phase 1 as likely staying a distinct component
-   rather than a full Phase 3 merge — revisit once those two are extracted.
+   modifiers that the list-page cards (.survey-card/.task-card below) don't
+   have. Flagged in Phase 1 as likely staying a distinct component rather
+   than a full Phase 3 merge.
    ----------------------------------------------------------------------------- */
 
 .page__tasks-header {
@@ -1307,6 +1309,74 @@ ol {
 .locked-notice__icon {
   font-size: 16px;
   flex-shrink: 0;
+}
+
+/* -----------------------------------------------------------------------------
+   7.2  survey_list.html
+
+   List of surveys for researchers to manage. .survey-card is duplicate-
+   identical in structure to task_list.html's .task-card below (naming-only
+   variance, confirmed in Phase 1) — a Phase 3 merge candidate, but distinct
+   from participant_dashboard.html's own richer .task-card (hover/focus/
+   indicator/modifiers) above, which stays separate.
+   ----------------------------------------------------------------------------- */
+
+.survey-list-wrap {
+  padding: 0 var(--page-padding-x) 80px;
+}
+
+.survey-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  max-width: 680px;
+}
+
+.survey-card {
+  background: var(--bg-card);
+  border-radius: var(--radius-card);
+  padding: 24px 32px;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  align-items: stretch;
+}
+
+.survey-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
+}
+.survey-card__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+}
+.survey-card__desc {
+  font-size: 14px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  margin: 0;
+}
+.survey-card__actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.survey-card__meta {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  padding-left: 32px;
+  border-left: 1px solid var(--rule-soft);
+  font-size: 13px;
+  color: var(--ink-muted);
+  min-width: 120px;
 }
 
 /* -----------------------------------------------------------------------------
