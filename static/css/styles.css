@@ -638,7 +638,15 @@ ol {
 .page--auth {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  grid-template-rows: auto auto var(--content-spacing) auto;
+  grid-template-rows: auto auto var(--content-spacing) 1fr;
+
+  /* Grow to fill the space between the topbar and the footer (body is a
+     flex column, see the sticky-footer note near .footer) rather than
+     sizing to content and leaving the footer's margin-top: auto absorb
+     the gap. Needed so the divider below (.page--auth::before, grid-row:
+     1 / 5) reaches the footer instead of stopping wherever the shorter
+     column's content happens to end. */
+  flex: 1;
 }
 
 .page--auth .page__heading {
@@ -738,14 +746,15 @@ ol {
   text-underline-offset: 2px;
 }
 
-/* Shared form-wrapper flex column, used by password_reset.html,
-   password_reset_from_key.html, password_change.html, and login.html.
-   Phase 3 merge (2026-08-21) of what were four identically-valued but
-   differently-named rules (.reset-form, .change-form, .login-form) —
-   confirmed byte-for-byte identical before merging. signup.html's
-   .signup-form is NOT included here: it's missing the padding-top: 40px
-   these four share, a real (if minor) drift, not naming-only — flagged
-   separately below, not merged silently. */
+/* Shared form-wrapper flex column, used by every auth page: password_reset.html,
+   password_reset_from_key.html, password_change.html, login.html, and
+   signup.html. Phase 3 merge (2026-08-21) of five identically-valued but
+   differently-named rules (.reset-form, .change-form, .login-form, and
+   .signup-form once its missing padding-top: 40px was confirmed as an
+   oversight rather than intentional — user confirmed .consent-item, the
+   element preceding signup.html's submit button, has the same padding:
+   20px 0 spacer as login.html's .remember-row, so the same 40px top
+   spacing belongs here too). */
 .auth-form {
   display: flex;
   flex-direction: column;
@@ -888,7 +897,7 @@ ol {
   position: absolute;
   inset: 0;
   overflow-y: auto;
-  padding: 0 var(--auth-padding-x) 60px;
+  padding: 40px var(--auth-padding-x) 60px;
   scrollbar-width: thin;
   scrollbar-color: var(--rule) transparent;
 }
@@ -1005,26 +1014,14 @@ ol {
   align-self: start;
 }
 
-/* NOT merged into .auth-form (the shared form-wrapper flex column used by
-   the other 4 auth pages) — this is missing padding-top: 40px, which the
-   others all share. Real, if minor, drift rather than naming-only
-   variance; flagged 2026-08-21 during the Phase 3 auth-page-family merge,
-   left as its own rule rather than silently changing signup.html's
-   spacing. Revisit if/when the .signup-submit margin-top decision (see
-   below) is made, since the two may be related (both about the vertical
-   rhythm at the top/bottom of this form). */
-.signup-form {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
 /* Submit button — same component family as .form-submit/.login-submit.
-   margin-top intentionally left unset, matching the original inline rule.
-   Proposed follow-up: match .login-submit's 8px margin-top so the button
-   doesn't sit flush against the checkbox above it — see the CSS Refactor
-   Plan's Cluster 1 note for the full reasoning. Not applied here to keep
-   this session extract-only. */
+   margin-top: 8px added 2026-08-21 (Phase 3), matching .login-submit —
+   .consent-item (the element right before this button) has the same
+   padding: 20px 0 spacer as .remember-row does on login.html, so the same
+   8px + 20px = 28px total visual gap applies here too, keeping this
+   consistent with the rest of the auth-page family's submit-button
+   spacing. Previously had no margin-top at all (the original inline rule
+   had it commented out as a dead `margin-top: 32px`). */
 .signup-submit {
   align-self: flex-start;
   font-family: var(--font-body);
@@ -1037,6 +1034,7 @@ ol {
   border: none;
   cursor: pointer;
   transition: opacity 0.15s ease;
+  margin-top: 8px;
 }
 .signup-submit:hover:not(:disabled) { opacity: 0.88; }
 .signup-submit:disabled {
