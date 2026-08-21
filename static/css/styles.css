@@ -313,18 +313,26 @@ ol {
 /* -----------------------------------------------------------------------------
    5.3  Buttons
 
-   .btn is the base; modifiers add visual variants. Heights are tuned so
-   .btn matches .avatar in the topbar.
+   .btn is the base; modifiers add visual variants. height: 40px (2026-08-21,
+   Phase 3) makes .btn pixel-exact to .avatar's fixed 40px, rather than
+   relying on padding + the font's default line-height to land there by
+   coincidence — the previous implicit height meant topbars with .avatar
+   present (signed-in pages) rendered a hair taller than topbars with only
+   buttons (home, auth pages), since the two elements' heights weren't
+   actually guaranteed to match.
    ----------------------------------------------------------------------------- */
 
 .btn {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-body);
   font-size: 14px;
-  padding: 10px 24px;
+  padding: 0 24px;
   border-radius: var(--radius-pill);
   cursor: pointer;
   text-decoration: none;
-  display: inline-block;
   transition:
     background 0.15s ease,
     color 0.15s ease,
