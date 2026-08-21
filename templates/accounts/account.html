@@ -73,7 +73,7 @@
                     </div>
                     <form method="post"
                           action="{% url 'accounts:feedback_submit' %}"
-                          class="feedback-form">
+                          class="survey-question-block">
                         {% csrf_token %}
                         <input type="hidden" name="survey_id" value="{{ feedback_survey.id }}">
                         {% for question in feedback_questions %}

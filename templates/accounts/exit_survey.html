@@ -15,7 +15,7 @@
             <div class="exit-card">
                 <h2>{{ exit_survey.title }}</h2>
                 {% if exit_survey.description %}<div class="exit-desc">{{ exit_survey.description|render_markdown }}</div>{% endif %}
-                <form method="post" action="{% url 'accounts:exit_survey_submit' %}">
+                <form method="post" action="{% url 'accounts:exit_survey_submit' %}" class="survey-question-block">
                     {% csrf_token %}
                     <input type="hidden" name="survey_id" value="{{ exit_survey.id }}">
                     {% for question in exit_questions %}
