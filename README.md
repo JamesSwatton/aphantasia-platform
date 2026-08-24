@@ -1965,5 +1965,7 @@ The production config work (PostgreSQL, static files, `DEBUG=False`, environment
 
 ### What needs doing before tagging
 
-- CSS refactor — see [CSS Refactor Plan](#css-refactor-plan)
-- Customise allauth confirmation email templates
+- [x] CSS refactor — see [CSS Refactor Plan](#css-refactor-plan)
+- [x] Customise allauth confirmation email templates (signup + withdrawal, `templates/account/email/`)
+
+Both items complete as of 2026-08-24 — ready to tag `v1.0`.
