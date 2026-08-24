@@ -1,9 +1,9 @@
 # Email Setup Guide
 
-This platform sends two types of automated email:
+This platform sends two types of automated email, both implemented and template-customised:
 
-1. **Signup confirmation** — sent by allauth when a participant creates an account (currently set to `"optional"` so not enforced, but the email is sent if a backend is configured)
-2. **Withdrawal confirmation** — sent to the participant when they delete their account (not yet implemented in code — waiting on email infrastructure)
+1. **Signup confirmation** — sent by allauth when a participant creates an account (currently set to `"optional"` so not enforced, but the email is sent if a backend is configured). Templates: `templates/account/email/email_confirmation_signup_subject.txt` / `email_confirmation_signup_message.txt`.
+2. **Withdrawal confirmation** — sent to the participant when they delete their account, via `send_mail` in `accounts/views.py`'s `exit_survey_submit`, just before `user.delete()`. Templates: `templates/account/email/withdrawal_confirmation_subject.txt` / `withdrawal_confirmation_message.txt`.
 
 Currently `EMAIL_BACKEND = console` in settings, meaning all emails are printed to the terminal and nothing is sent to real addresses. The steps below cover what is needed to make real emails work in production.
 
@@ -92,36 +92,13 @@ Your email provider (SendGrid, Mailgun etc.) will give you the exact DNS values 
 
 ## Step 5 — Customise email templates
 
+Both templates below already exist and are in use — this step is only relevant if you want to change their wording, not to implement them from scratch.
+
 ### Allauth signup confirmation email
-Override the default allauth templates by creating these two files:
-
-- `templates/account/email/email_confirmation_subject.txt` — subject line
-- `templates/account/email/email_confirmation_message.txt` — plain text body
-
-Example subject:
-```
-Confirm your Phantasia Research Hub account
-```
-
-Example body:
-```
-Hello,
-
-Thank you for signing up to the Phantasia Research Hub.
-
-Please confirm your email address by clicking the link below:
-
-{{ activate_url }}
-
-If you did not create an account, you can safely ignore this email.
-
-Best wishes,
-The Eye's Mind Research Group
-University of Edinburgh
-```
+`templates/account/email/email_confirmation_signup_subject.txt` and `email_confirmation_signup_message.txt` — branded welcome message with a login link and Dr Digard's contact address.
 
 ### Withdrawal confirmation email
-This needs to be implemented in code once the email infrastructure is in place. It would be sent in `accounts/views.py` inside `exit_survey_submit`, just before `user.delete()`, using the participant's email address which is still available at that point.
+`templates/account/email/withdrawal_confirmation_subject.txt` and `withdrawal_confirmation_message.txt` — confirms account deletion, includes the participant ID, and explains that already-exported anonymised data may still be retained. Sent via `send_mail` + `render_to_string` in `accounts/views.py`'s `exit_survey_submit`, just before `user.delete()`.
 
 ---
 
@@ -144,6 +121,4 @@ Before deploying, test the full email flow:
 - [ ] Add credentials to production `.env`
 - [ ] Update `settings.py` to read email config from environment
 - [ ] Add DNS records if using a custom domain (SPF, DKIM, DMARC)
-- [ ] Write allauth email templates (`email_confirmation_subject.txt`, `email_confirmation_message.txt`)
-- [ ] Implement withdrawal confirmation email in `accounts/views.py`
 - [ ] Test end-to-end before going live
