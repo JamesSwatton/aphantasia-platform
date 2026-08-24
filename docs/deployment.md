@@ -72,12 +72,17 @@ Both complete as of 2026-08-24 — `main` is ready to tag `v1.0`.
 
 ## Railway deployment notes
 
-Open items to resolve before/during the Railway deploy, separate from the tagging checklist above:
+Work happens on the `railway` branch, cut from the `v1.0` tag.
 
+**Done (verified locally, not yet deployed):**
+- **PostgreSQL**: `DATABASES` reads `DATABASE_URL` via `dj-database-url` when set, falling back to SQLite otherwise. `psycopg2-binary` added. Verified against a local Postgres 17 install: `manage.py migrate` builds the full schema from scratch, and existing SQLite data copies over cleanly via `dumpdata`/`loaddata`.
+- **Static files**: WhiteNoise added to `MIDDLEWARE` (compressed, cache-busted output via `STORAGES`). Verified `collectstatic` produces hashed files and they serve correctly under `DEBUG=False`.
+- **App server**: `gunicorn` added; `Procfile` defines a `release` step (`migrate --noinput`, runs before each deploy) and a `web` process (`gunicorn research_platform.wsgi:application`).
+- **HTTPS/security settings**: `SECURE_SSL_REDIRECT`, secure cookies, HSTS — all gated on `not DEBUG` so local dev is unaffected. `SECURE_PROXY_SSL_HEADER` trusts `X-Forwarded-Proto`, since Railway terminates TLS at its own proxy. `CSRF_TRUSTED_ORIGINS` reads from a new env var (needs the real `https://` origin once a domain is assigned).
+
+**Still open:**
 - **Media storage**: Railway's filesystem is ephemeral across redeploys — lab.js task uploads and any other persisted media would be lost on every deploy. Needs a Railway volume or S3-compatible storage before real testers upload/interact with anything persistent.
-- **Settings**: `DEBUG=False`, `ALLOWED_HOSTS`, `SECRET_KEY` from an env var, PostgreSQL via `DATABASE_URL`, static files via WhiteNoise.
-- **Requirements**: add `gunicorn`, `psycopg2-binary`, `whitenoise`, and an env/DB-url loader (`django-environ` or `dj-database-url`).
-- Run migrations against Postgres, create the first superuser, smoke-test the full participant + researcher flow against the deployed instance before pointing testers at it.
+- Set the actual env vars on Railway itself (`SECRET_KEY`, `ALLOWED_HOSTS`, `DATABASE_URL` from Railway's Postgres add-on, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`), add the Postgres add-on, deploy, create the first superuser, and smoke-test the full participant + researcher flow against the deployed instance before pointing testers at it.
 
 ## Responsive design vs. deployment
 
