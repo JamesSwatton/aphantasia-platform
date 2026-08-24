@@ -7,7 +7,6 @@ For project history, see [CHANGELOG.md](CHANGELOG.md). For the CSS refactor and 
 ## Known Open Items
 
 - **Window size warning banner styling** — the minimum-window-size gate on `templates/tasks/task_start.html` is functional but the warning banner is currently a bare `.alert--warning` strip; needs proper design treatment.
-- **"World's largest study" hero copy** — needs replacing on the home page; discuss wording with Dr Digard.
 - Responsive design has not yet been started — see `docs/css-refactor-plan.md` for the working pattern the responsive-design branch is expected to reuse.
 - **University hosting requirements** — none started yet: WCAG accessibility audit, accessibility statement, privacy statement, DPIA, and EqIA are all required before the university-servers production deploy can go live. See [docs/deployment.md](docs/deployment.md#university-hosting-requirements).
 

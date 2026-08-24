@@ -1,185 +1,177 @@
 {% extends "base.html" %}
 {% load static %}
-
 {% block title %}Phantasia Research Hub{% endblock %}
-{% block html_attrs %} data-theme="dark"{% endblock %}
+{% block html_attrs %}data-theme="dark"{% endblock %}
 {% block viewport %}width=device-width, initial-scale=1.0{% endblock %}
 {% block topbar_class %}topbar--static{% endblock %}
-
 {% block topbar_nav %}
-  <a href="#about" class="btn btn--outline">About</a>
-  {% if user.is_authenticated %}
-    <a href="{% url 'dashboard:participant_dashboard' %}" class="btn btn--outline">Dashboard</a>
-    <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
-      {% csrf_token %}
-      <button type="submit" class="btn btn--primary">Log out</button>
-    </form>
-  {% else %}
-    <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
-    <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
-  {% endif %}
+    <a href="#about" class="btn btn--outline">About</a>
+    {% if user.is_authenticated %}
+        <a href="{% url 'dashboard:participant_dashboard' %}"
+           class="btn btn--outline">Dashboard</a>
+        <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+            {% csrf_token %}
+            <button type="submit" class="btn btn--primary">Log out</button>
+        </form>
+    {% else %}
+        <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
+        <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
+    {% endif %}
 {% endblock %}
-
 {% block body %}
-  <section class="hero">
-    <img class="hero__bg" src="{% static 'images/hero-cloud.jpg' %}" alt="" />
-    <h2 class="hero__title">
-      Become a participant in the world's largest study to understand how we
-      create our inner world.
+    <section class="hero">
+        <img class="hero__bg" src="{% static 'images/hero-cloud.jpg' %}" alt="" />
+        <h2 class="hero__title">
+            Become a participant in the world's largest study to understand how we
+            imagine.
+        </h2>
+        <ul class="feature-list">
+            <li class="feature-list__item">
+                <span class="feature-list__dot"></span>Complete questionnaires and tasks.
+            </li>
+            <li class="feature-list__item">
+                <span class="feature-list__dot"></span>View detailed results.
+            </li>
+            <li class="feature-list__item">
+                <span class="feature-list__dot"></span>Learn about how you process the world around you.
+            </li>
+        </ul>
+    </section>
+    <h2 class="section-header">Join the study</h2>
+    <section class="join">
+        <div class="join__visual">
+            <img src="{% static 'images/join-cloud.jpg' %}" alt="" />
+        </div>
+        <div class="join__text">
+            <p>
+                <strong>Think about a pink elephant.</strong> Do you see it in your
+                mind's eye? We are all different in what we see in our mind's eye.
+                Mental imagery (imagining images, sounds, smells, etc.) varies
+                remarkably between people. Some people experience no imagery at all —
+                <em>aphantasia</em> — while others have imagery as vivid as real
+                perception — <em>hyperphantasia</em>. Most people fall somewhere in
+                between.
+            </p>
+            <p>
+                The Phantasia Research Hub is the most comprehensive and wide-ranging
+                research project examining these extremes of mental imagery. We aim to
+                understand how visual imagination interacts with broader cognitive
+                capacities — memory, creativity, and other mental processes — to shape
+                our inner experience. Our research investigates several related questions:
+            </p>
+            <ul>
+                <li>Are there subtypes of aphantasia and hyperphantasia, and, if so, what are their characteristics?</li>
+                <li>How do imagery extremes influence other areas of thinking?</li>
+                <li>How do imagery extremes interact with mental health?</li>
+            </ul>
+            <p>This Hub is a first step in answering those questions, and many more.</p>
+            <p>
+                Whatever you experience when thinking about a pink elephant, you can
+                contribute to the Phantasia Research Hub. We are the Edinburgh
+                University 'Eye's Mind' research team, and we look forward to working
+                with you as we advance our understanding of the human mind.
+            </p>
+            <a href="{% url 'account_signup' %}" class="btn btn--primary join__cta">Sign up</a>
+        </div>
+    </section>
+    <h2 id="about" class="section-header">
+        About<span class="section-header__sep">//</span>The Eye's Mind Study
     </h2>
-    <ul class="feature-list">
-      <li class="feature-list__item">
-        <span class="feature-list__dot"></span>Complete questionnaires and tasks.
-      </li>
-      <li class="feature-list__item">
-        <span class="feature-list__dot"></span>View detailed results.
-      </li>
-      <li class="feature-list__item">
-        <span class="feature-list__dot"></span>Learn about how you process the world around you.
-      </li>
-    </ul>
-  </section>
-
-  <h2 class="section-header">Join the study</h2>
-  <section class="join">
-    <div class="join__visual">
-      <img src="{% static 'images/join-cloud.jpg' %}" alt="" />
-    </div>
-    <div class="join__text">
-      <p>
-        <strong>Think about a pink elephant.</strong> Do you see it in your
-        mind's eye? We are all different in what we see in our mind's eye.
-        Mental imagery (imagining images, sounds, smells, etc.) varies
-        remarkably between people. Some people experience no imagery at all —
-        <em>aphantasia</em> — while others have imagery as vivid as real
-        perception — <em>hyperphantasia</em>. Most people fall somewhere in
-        between.
-      </p>
-      <p>
-        The Phantasia Research Hub is the most comprehensive and wide-ranging
-        research project examining these extremes of mental imagery. We aim to
-        understand how visual imagination interacts with broader cognitive
-        capacities — memory, creativity, and other mental processes — to shape
-        our inner experience. Our research investigates several related questions:
-      </p>
-      <ul>
-        <li>Are there subtypes of aphantasia and hyperphantasia, and, if so, what are their characteristics?</li>
-        <li>How do imagery extremes influence other areas of thinking?</li>
-        <li>How do imagery extremes interact with mental health?</li>
-      </ul>
-      <p>This Hub is a first step in answering those questions, and many more.</p>
-      <p>
-        Whatever you experience when thinking about a pink elephant, you can
-        contribute to the Phantasia Research Hub. We are the Edinburgh
-        University 'Eye's Mind' research team, and we look forward to working
-        with you as we advance our understanding of the human mind.
-      </p>
-      <a href="{% url 'account_signup' %}" class="btn btn--primary join__cta">Sign up</a>
-    </div>
-  </section>
-
-  <h2 id="about" class="section-header">
-    About<span class="section-header__sep">//</span>The Eye's Mind Study
-  </h2>
-  <section class="about">
-    <div class="goals">
-      <p class="goals__intro">
-        <strong>The Eye's Mind research group</strong> explores the basis of
-        mental imagery diversity and its role in people's lived experiences
-        and cultures. Our project builds upon our previous ground-breaking
-        work to examine imagery extremes in rich detail. We study links
-        between our brain, our mind, our experiences, science, and art.
-        <strong>We aim to address 3 main goals:</strong>
-      </p>
-      <ol>
-        <li class="goal">
-          <div class="goal__header">
-            <span class="goal__number">1</span>
-            <span class="goal__marker"></span>
-          </div>
-          <p>
-            Understand the cognitive profiles and experiences of people with
-            aphantasia and hyperphantasia. We know that aphantasic and
-            hyperphantasic people are not a monolith, and there are many
-            differences within each group. We want to understand whether
-            different kinds of aphantasia and hyperphantasia exist, and if so,
-            how these different kinds are alike and different.
-          </p>
-        </li>
-        <li class="goal">
-          <div class="goal__header">
-            <span class="goal__number">2</span>
-            <span class="goal__marker"></span>
-          </div>
-          <p>
-            Understand the relationships between mental imagery and other
-            psychological domains (i.e. memory, spatial navigation,
-            neurodiversity, mental health). We also wonder whether some of
-            these relationships are unique to aphantasia and hyperphantasia.
-          </p>
-        </li>
-        <li class="goal">
-          <div class="goal__header">
-            <span class="goal__number">3</span>
-            <span class="goal__marker"></span>
-          </div>
-          <p>
-            Identify which areas should be the priority for the next phase of
-            the international research community focused on imagery extremes.
-            Aphantasia and hyperphantasia have only been named in the last 10
-            years. They are both still drastically under-researched, but the
-            field is gaining more interest every year. Everything is still
-            left to be discovered, and this project will help us all know
-            which topics should be researched the most urgently.
-          </p>
-        </li>
-      </ol>
-    </div>
-
-    <div class="people">
-      <article class="person">
-        <div class="person__head">
-          <div class="person__photo">AZ</div>
-          <h3 class="person__name">Professor Adam Zeman</h3>
+    <section class="about">
+        <div class="goals">
+            <p class="goals__intro">
+                <strong>The Eye's Mind research group</strong> explores the basis of
+                mental imagery diversity and its role in people's lived experiences
+                and cultures. Our project builds upon our previous ground-breaking
+                work to examine imagery extremes in rich detail. We study links
+                between our brain, our mind, our experiences, science, and art.
+                <strong>We aim to address 3 main goals:</strong>
+            </p>
+            <ol>
+                <li class="goal">
+                    <div class="goal__header">
+                        <span class="goal__number">1</span>
+                        <span class="goal__marker"></span>
+                    </div>
+                    <p>
+                        Understand the cognitive profiles and experiences of people with
+                        aphantasia and hyperphantasia. We know that aphantasic and
+                        hyperphantasic people are not a monolith, and there are many
+                        differences within each group. We want to understand whether
+                        different kinds of aphantasia and hyperphantasia exist, and if so,
+                        how these different kinds are alike and different.
+                    </p>
+                </li>
+                <li class="goal">
+                    <div class="goal__header">
+                        <span class="goal__number">2</span>
+                        <span class="goal__marker"></span>
+                    </div>
+                    <p>
+                        Understand the relationships between mental imagery and other
+                        psychological domains (i.e. memory, spatial navigation,
+                        neurodiversity, mental health). We also wonder whether some of
+                        these relationships are unique to aphantasia and hyperphantasia.
+                    </p>
+                </li>
+                <li class="goal">
+                    <div class="goal__header">
+                        <span class="goal__number">3</span>
+                        <span class="goal__marker"></span>
+                    </div>
+                    <p>
+                        Identify which areas should be the priority for the next phase of
+                        the international research community focused on imagery extremes.
+                        Aphantasia and hyperphantasia have only been named in the last 10
+                        years. They are both still drastically under-researched, but the
+                        field is gaining more interest every year. Everything is still
+                        left to be discovered, and this project will help us all know
+                        which topics should be researched the most urgently.
+                    </p>
+                </li>
+            </ol>
         </div>
-        <p class="person__title">
-          Professor of Cognitive and Behavioural Neurology at University of Exeter Medical School.
-        </p>
-        <p class="person__bio">
-          Professor Zeman trained in Medicine at Oxford University Medical
-          School, after a first degree in Philosophy and Psychology, then
-          worked as a consultant neurologist in Edinburgh, from 1996, and,
-          from 2005–2023, in Exeter, as Professor of Cognitive and Behavioural
-          Neurology. He is now based again in Edinburgh, working as an expert
-          witness, author and researcher.
-        </p>
-        <p class="person__bio">
-          His specialised clinical work is in cognitive and behavioural
-          neurology, including neurological disorders of sleep. His research
-          interests include amnesia …
-          <a href="#" class="person__bio-more">more</a>
-        </p>
-      </article>
-
-      <article class="person">
-        <div class="person__head">
-          <div class="person__photo">BD</div>
-          <h3 class="person__name">Dr Bérengère Digard</h3>
+        <div class="people">
+            <article class="person">
+                <div class="person__head">
+                    <div class="person__photo">AZ</div>
+                    <h3 class="person__name">Professor Adam Zeman</h3>
+                </div>
+                <p class="person__title">Professor of Cognitive and Behavioural Neurology at University of Exeter Medical School.</p>
+                <p class="person__bio">
+                    Professor Zeman trained in Medicine at Oxford University Medical
+                    School, after a first degree in Philosophy and Psychology, then
+                    worked as a consultant neurologist in Edinburgh, from 1996, and,
+                    from 2005–2023, in Exeter, as Professor of Cognitive and Behavioural
+                    Neurology. He is now based again in Edinburgh, working as an expert
+                    witness, author and researcher.
+                </p>
+                <p class="person__bio">
+                    His specialised clinical work is in cognitive and behavioural
+                    neurology, including neurological disorders of sleep. His research
+                    interests include amnesia …
+                    <a href="#" class="person__bio-more">more</a>
+                </p>
+            </article>
+            <article class="person">
+                <div class="person__head">
+                    <div class="person__photo">BD</div>
+                    <h3 class="person__name">Dr Bérengère Digard</h3>
+                </div>
+                <p class="person__title">
+                    Postdoctoral research fellow at the Centre for Clinical Brain Sciences, University of Edinburgh.
+                </p>
+                <p class="person__bio">
+                    Dr Digard studied Biology (BSc) and Neurosciences (MSc) at the
+                    Université Claude Bernard Lyon 1, before completing a PhD in
+                    Psychiatry at the University of Edinburgh under the supervision of
+                    Prof. Sue Fletcher-Watson, Dr Andrew Stanfield, and Prof. Antonella
+                    Sorace. Her research so far has focused on the cognitive profiles
+                    and lived experiences of neurodiversity, in particular autism, with
+                    her PhD thesis researching bilingualism in autism …
+                    <a href="#" class="person__bio-more">more</a>
+                </p>
+            </article>
         </div>
-        <p class="person__title">
-          Postdoctoral research fellow at the Centre for Clinical Brain Sciences, University of Edinburgh.
-        </p>
-        <p class="person__bio">
-          Dr Digard studied Biology (BSc) and Neurosciences (MSc) at the
-          Université Claude Bernard Lyon 1, before completing a PhD in
-          Psychiatry at the University of Edinburgh under the supervision of
-          Prof. Sue Fletcher-Watson, Dr Andrew Stanfield, and Prof. Antonella
-          Sorace. Her research so far has focused on the cognitive profiles
-          and lived experiences of neurodiversity, in particular autism, with
-          her PhD thesis researching bilingualism in autism …
-          <a href="#" class="person__bio-more">more</a>
-        </p>
-      </article>
-    </div>
-  </section>
+    </section>
 {% endblock %}
