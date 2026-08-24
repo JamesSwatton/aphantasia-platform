@@ -43,6 +43,9 @@ db.sqlite3-journal
 # Local data fixtures (may contain real emails/personal data from dev/test accounts)
 /fixtures/
 
+# Personal notes/learning docs -- not part of the tracked docs/ structure
+/notes/
+
 # Migrations (optional - uncomment if you want to track migrations)
 # */migrations/*
 # !*/migrations/__init__.py
