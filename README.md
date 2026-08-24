@@ -389,8 +389,8 @@ All models are registered in the Django admin panel with:
 
 ### Custom Branding
 The admin panel has been customized with research platform branding:
-- **Site Header**: "Aphantasia Research Administration" (displayed at top of admin pages)
-- **Site Title**: "Aphantasia Research Admin" (browser tab title)
+- **Site Header**: "Phantasia Research Administration" (displayed at top of admin pages)
+- **Site Title**: "Phantasia Research Admin" (browser tab title)
 - **Index Title**: "Site Administration" (heading on admin home page)
 - Customizable in `research_platform/urls.py` (lines 11-13)
 

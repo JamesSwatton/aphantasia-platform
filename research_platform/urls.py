@@ -8,8 +8,8 @@ from django.contrib import admin
 from django.urls import include, path
 
 # Customize admin site headers
-admin.site.site_header = "Aphantasia Research Administration"
-admin.site.site_title = "Aphantasia Research Admin"
+admin.site.site_header = "Phantasia Research Administration"
+admin.site.site_title = "Phantasia Research Admin"
 admin.site.index_title = "Site Administration"
 
 urlpatterns = [
