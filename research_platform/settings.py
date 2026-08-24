@@ -172,8 +172,12 @@ STORAGES = {
 }
 
 # Media files (User uploaded content)
+# On Railway, MEDIA_ROOT points at a mounted persistent volume (set via env
+# var) so uploaded lab.js tasks survive redeploys -- the rest of the
+# container's filesystem is wiped and rebuilt on every deploy. Defaults to
+# the local media/ folder for development.
 MEDIA_URL = "media/"
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = config("MEDIA_ROOT", default=str(BASE_DIR / "media"))
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
