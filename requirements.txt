@@ -16,3 +16,5 @@ urllib3==2.5.0
 markdown>=3.4
 psycopg2-binary==2.9.10
 dj-database-url==2.3.0
+gunicorn==23.0.0
+whitenoise==6.11.0

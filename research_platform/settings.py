@@ -31,6 +31,23 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 # ALLOWED_HOSTS = ["192.168.1.189", "localhost", "127.0.0.1"]
 
+# CSRF_TRUSTED_ORIGINS needs a scheme (https://example.com), not just a hostname.
+_csrf_trusted_origins = config("CSRF_TRUSTED_ORIGINS", default="")
+CSRF_TRUSTED_ORIGINS = [o for o in _csrf_trusted_origins.split(",") if o]
+
+if not DEBUG:
+    # HTTPS-only settings -- would break local http://localhost:8000 dev if
+    # applied unconditionally, so these only take effect in production.
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year, per Django's deployment checklist
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    # Railway (and most PaaS) terminate TLS at a proxy and forward plain HTTP
+    # internally, signalling the original scheme via this header.
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -54,6 +71,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -144,6 +162,14 @@ USE_TZ = True
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+
+# WhiteNoise: compresses static files and adds cache-busting hashed filenames.
+# Only takes effect after `manage.py collectstatic` has been run.
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # Media files (User uploaded content)
 MEDIA_URL = "media/"
