@@ -166,6 +166,9 @@ STATICFILES_DIRS = [BASE_DIR / "static"]
 # WhiteNoise: compresses static files and adds cache-busting hashed filenames.
 # Only takes effect after `manage.py collectstatic` has been run.
 STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
     "staticfiles": {
         "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
