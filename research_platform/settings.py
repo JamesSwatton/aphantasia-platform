@@ -202,10 +202,13 @@ AUTHENTICATION_BACKENDS = [
 # On Railway, set EMAIL_HOST_PASSWORD (the Resend API key) to switch to real
 # SMTP delivery via Resend -- sends from the shared onboarding@resend.dev
 # address until a real domain is verified with Resend.
+# Port 2587 (not the standard 587) because Railway blocks outbound traffic on
+# the standard SMTP ports (25, 465, 587); Resend's alternate ports (2465,
+# 2587) exist specifically for platforms that do this.
 if config("EMAIL_HOST_PASSWORD", default=""):
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     EMAIL_HOST = config("EMAIL_HOST", default="smtp.resend.com")
-    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+    EMAIL_PORT = config("EMAIL_PORT", default=2587, cast=int)
     EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="resend")
     EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
     EMAIL_USE_TLS = True
