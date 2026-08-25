@@ -77,13 +77,21 @@ Work happens on the `railway` branch, cut from the `v1.0` tag.
 **Done (verified locally, not yet deployed):**
 - **PostgreSQL**: `DATABASES` reads `DATABASE_URL` via `dj-database-url` when set, falling back to SQLite otherwise. `psycopg2-binary` added. Verified against a local Postgres 17 install: `manage.py migrate` builds the full schema from scratch, and existing SQLite data copies over cleanly via `dumpdata`/`loaddata`.
 - **Static files**: WhiteNoise added to `MIDDLEWARE` (compressed, cache-busted output via `STORAGES`). Verified `collectstatic` produces hashed files and they serve correctly under `DEBUG=False`.
-- **App server**: `gunicorn` added; `Procfile` defines a `release` step (`migrate --noinput`, runs before each deploy) and a `web` process (`gunicorn research_platform.wsgi:application`).
+- **App server**: `gunicorn` added; `Procfile` defines a `release` step (`migrate --noinput && collectstatic --noinput`) and a `web` process (`gunicorn research_platform.wsgi:application`). **Note**: Railway's builder (Railpack) does not actually run the `release` line — see "Done (deployed and verified live)" below for what Railway actually executes. The `Procfile` is kept for documentation/portability to other platforms.
 - **HTTPS/security settings**: `SECURE_SSL_REDIRECT`, secure cookies, HSTS — all gated on `not DEBUG` so local dev is unaffected. `SECURE_PROXY_SSL_HEADER` trusts `X-Forwarded-Proto`, since Railway terminates TLS at its own proxy. `CSRF_TRUSTED_ORIGINS` reads from a new env var (needs the real `https://` origin once a domain is assigned).
 - **Media storage**: `MEDIA_ROOT` now reads from a `MEDIA_ROOT` env var, falling back to the local `media/` folder for development. On Railway, this should point at a mounted **Railway Volume** (a persistent disk attached to the service — survives redeploys, unlike the rest of the container's filesystem, which is rebuilt from scratch every deploy). Chose a volume over S3-compatible storage because `LabTask`'s zip-unpacking logic (`tasks/models.py`) uses raw filesystem calls (`os.path.join`, `shutil.rmtree`, `zipfile.extractall`) rather than Django's storage abstraction — a volume needs zero code changes, since it's still a real local filesystem from the app's point of view; S3 would need that unpacking logic rewritten first. Verified locally: an existing lab task's unpacked directory still resolves and its files are found on disk with the new `MEDIA_ROOT` config.
 
+**Done (deployed and verified live, 2026-08-25):**
+- Railway project created (`honest-presence` in the dashboard, app service named `phantasia-research-hub`), connected to the `railway` branch on GitHub.
+- Postgres add-on provisioned; env vars set (`SECRET_KEY`, `ALLOWED_HOSTS`, `DATABASE_URL` referencing the Postgres service, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`).
+- Public domain generated: `phantasia-research-hub-production.up.railway.app`.
+- Railway's builder (Railpack) does not run the `Procfile`'s `release:` line — `migrate` and `collectstatic` had to be moved into the service's Start Command directly: `python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn research_platform.wsgi:application`.
+- Local survey/question/user data migrated to Railway's Postgres via `dumpdata`/`loaddata` over a private SSH tunnel (`railway connect Postgres --tunnel-only`) — surveys, questions, consent/withdrawal text, domains, and all local users (including the existing superuser). Confirmed: admin login at `/admin/` works with existing local credentials.
+- Not migrated: `tasks.LabTask` (the one lab task, "Flanker Task") — its zip file lives on local disk only; needs the Volume set up first, then a re-upload through the admin. Participant response/submission data was deliberately left behind (test data, not needed on a fresh interim deploy).
+
 **Still open:**
-- Create the actual Railway Volume and mount it once the project exists on Railway; set `MEDIA_ROOT` to the mount path.
-- Set the remaining env vars on Railway itself (`SECRET_KEY`, `ALLOWED_HOSTS`, `DATABASE_URL` from Railway's Postgres add-on, `CSRF_TRUSTED_ORIGINS`, `DEBUG=False`), add the Postgres add-on, deploy, create the first superuser, and smoke-test the full participant + researcher flow against the deployed instance before pointing testers at it.
+- Create the actual Railway Volume and mount it; set `MEDIA_ROOT` to the mount path; re-upload the Flanker lab task through the admin once mounted.
+- Smoke-test the full participant + researcher flow against the deployed instance before pointing testers at it.
 
 ## Responsive design vs. deployment
 
