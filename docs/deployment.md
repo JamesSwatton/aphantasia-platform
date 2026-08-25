@@ -102,8 +102,13 @@ Work happens on the `railway` branch, cut from the `v1.0` tag.
 
 Railway deployment is considered **feature-complete and verified for interim/researcher use** as of 2026-08-25. Remaining items below are polish, not blockers for internal testing.
 
-**Still open:**
-- **Real email delivery.** `EMAIL_BACKEND` is still `django.core.mail.backends.console.EmailBackend` — no email actually sends anywhere, it just logs to Railway's console (confirmed during the smoke test: the welcome email rendered correctly but only appeared in Railway's logs, never delivered). Needs a real SMTP provider (SendGrid, Mailgun, etc.) and credentials. Bundled with this: the `Sites` framework row `SITE_ID` points at (id=1) is still the Django default `example.com`/`webmaster@localhost` placeholder, so even console-logged emails currently show the wrong domain/sender — fix both together once a provider is chosen (update the Site row to the real Railway domain as part of the same pass).
+**Email delivery — completed 2026-08-25.** Wired up [Resend](https://resend.com) as the SMTP provider. `EMAIL_BACKEND` switches from console to real SMTP automatically when `EMAIL_HOST_PASSWORD` (the Resend API key) is set as a Railway env var; local dev is unaffected (stays on console backend). Sends from the shared `onboarding@resend.dev` address — fine for interim/testing use since no custom domain exists yet; once a real domain is available, verify it with Resend and set `DEFAULT_FROM_EMAIL` to switch senders, no code change needed. Also fixed the `Sites` row (`SITE_ID=1`) that was still Django's `example.com`/`webmaster@localhost` placeholder — updated directly on Railway's DB to the real domain, so email content now links/attributes correctly.
+
+Hit one Railway-specific gotcha along the way: **Railway blocks outbound traffic on standard SMTP ports (25, 465, 587)** — the first deploy attempt crashed the gunicorn worker with a connection timeout on port 587. Confirmed via `railway ssh` that ports 587/465/25 all time out but Resend's alternate ports 2465/2587 connect fine; switched `EMAIL_PORT` default to **2587** (STARTTLS), verified with a full SMTP handshake test before deploying. If moving to a different SMTP provider later, check whether it also offers alternate ports for platforms that block the standard ones.
+
+Confirmed working live: signup welcome email and withdrawal confirmation email both received in a real inbox.
+
+**Still open:** none — Railway deployment (data, media, full participant/researcher flow, real email) is complete and verified as of 2026-08-25.
 
 ## Responsive design vs. deployment
 
