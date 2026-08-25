@@ -87,11 +87,12 @@ Work happens on the `railway` branch, cut from the `v1.0` tag.
 - Public domain generated: `phantasia-research-hub-production.up.railway.app`.
 - Railway's builder (Railpack) does not run the `Procfile`'s `release:` line — `migrate` and `collectstatic` had to be moved into the service's Start Command directly: `python manage.py migrate --noinput && python manage.py collectstatic --noinput && gunicorn research_platform.wsgi:application`.
 - Local survey/question/user data migrated to Railway's Postgres via `dumpdata`/`loaddata` over a private SSH tunnel (`railway connect Postgres --tunnel-only`) — surveys, questions, consent/withdrawal text, domains, and all local users (including the existing superuser). Confirmed: admin login at `/admin/` works with existing local credentials.
-- Not migrated: `tasks.LabTask` (the one lab task, "Flanker Task") — its zip file lives on local disk only; needs the Volume set up first, then a re-upload through the admin. Participant response/submission data was deliberately left behind (test data, not needed on a fresh interim deploy).
+- Participant response/submission data was deliberately left behind (test data, not needed on a fresh interim deploy).
+- **Railway Volume** created on the app service, mounted at `/data/media`; `MEDIA_ROOT` env var set to match. The Flanker Task zip was re-uploaded through the live admin and confirmed working end-to-end (upload → unpack → admin preview → participant task start).
+- Uploading surfaced two real bugs, unrelated to Railway/Railpack, that would have broken any `DEBUG=False` deploy: (1) the `STORAGES` setting only defined `"staticfiles"` and had silently dropped Django's `"default"` file storage entry, so any `FileField` save (`LabTask.zip_file`) raised `InvalidStorageError` — fixed by adding an explicit `"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}` entry; (2) `urls.py` only wired up `/media/...` serving when `DEBUG=True` (Django's dev-only `static()` helper) — WhiteNoise serves static files, not user-uploaded media, so on Railway media 404'd everywhere. Fixed by adding an `else` branch routing `MEDIA_URL` to `django.views.static.serve` when `DEBUG=False`. Both fixed, verified locally then on Railway.
 
 **Still open:**
-- Create the actual Railway Volume and mount it; set `MEDIA_ROOT` to the mount path; re-upload the Flanker lab task through the admin once mounted.
-- Smoke-test the full participant + researcher flow against the deployed instance before pointing testers at it.
+- Smoke-test the broader participant + researcher flow (survey completion, exit survey/withdrawal, feedback form) against the deployed instance before pointing testers at it — only the lab task upload/serve path has been end-to-end verified so far.
 
 ## Responsive design vs. deployment
 
