@@ -198,8 +198,20 @@ AUTHENTICATION_BACKENDS = [
     "allauth.account.auth_backends.AuthenticationBackend",
 ]
 
-# Email backend for development
-EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+# Email backend. Defaults to console (prints to stdout/logs) for local dev.
+# On Railway, set EMAIL_HOST_PASSWORD (the Resend API key) to switch to real
+# SMTP delivery via Resend -- sends from the shared onboarding@resend.dev
+# address until a real domain is verified with Resend.
+if config("EMAIL_HOST_PASSWORD", default=""):
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    EMAIL_HOST = config("EMAIL_HOST", default="smtp.resend.com")
+    EMAIL_PORT = config("EMAIL_PORT", default=587, cast=int)
+    EMAIL_HOST_USER = config("EMAIL_HOST_USER", default="resend")
+    EMAIL_HOST_PASSWORD = config("EMAIL_HOST_PASSWORD")
+    EMAIL_USE_TLS = True
+    DEFAULT_FROM_EMAIL = config("DEFAULT_FROM_EMAIL", default="onboarding@resend.dev")
+else:
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
 # Allauth settings
 ACCOUNT_ADAPTER = "accounts.adapter.AccountAdapter"
