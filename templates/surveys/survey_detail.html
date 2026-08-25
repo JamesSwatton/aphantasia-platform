@@ -99,13 +99,6 @@
       </div>
     {% endif %}
 
-    <!-- Existing responses notice (participants only) -->
-    {% if has_existing_responses and not is_preview %}
-      <div class="survey-banner survey-banner--info">
-        You've already submitted this survey. Submitting again will update your previous answers.
-      </div>
-    {% endif %}
-
     <!-- Test response table (shown after a researcher test submission) -->
     {% if test_responses %}
       <div class="card-surface test-result">
@@ -498,6 +491,7 @@
 <!-- ── Completion modal ──────────────────────────────────────────────────── -->
 <div class="modal-overlay{% if submitted %} is-open{% endif %}"
      data-completion-modal
+     data-redirect-url="{% url 'dashboard:participant_dashboard' %}"
      role="dialog"
      aria-modal="true"
      aria-labelledby="completion-title"
@@ -731,28 +725,15 @@
 (function () {
   /* =========================================================================
      Completion modal — opened server-side via .is-open on the overlay.
-     Handles Escape + backdrop click to dismiss.
+     There is nothing to return to on this page once submitted, so any way
+     of dismissing it (backdrop click, Escape) redirects to the dashboard,
+     same as the "Return to dashboard" button.
      ========================================================================= */
   var overlay = document.querySelector('[data-completion-modal]');
   if (!overlay) return;
 
-  var lastFocused = null;
-
-  function open() {
-    lastFocused = document.activeElement;
-    overlay.hidden = false;
-    void overlay.offsetWidth; // force reflow so transition runs
-    overlay.classList.add('is-open');
-    document.body.style.overflow = 'hidden';
-    var btn = overlay.querySelector('.btn');
-    if (btn) btn.focus();
-  }
-
-  function close() {
-    overlay.classList.remove('is-open');
-    document.body.style.overflow = '';
-    setTimeout(function () { overlay.hidden = true; }, 220);
-    if (lastFocused && lastFocused.focus) lastFocused.focus();
+  function goToDashboard() {
+    window.location.href = overlay.dataset.redirectUrl;
   }
 
   if (overlay.classList.contains('is-open')) {
@@ -761,9 +742,9 @@
     history.replaceState(null, '', window.location.pathname);
   }
 
-  overlay.addEventListener('click', function (e) { if (e.target === overlay) close(); });
+  overlay.addEventListener('click', function (e) { if (e.target === overlay) goToDashboard(); });
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape' && overlay.classList.contains('is-open')) close();
+    if (e.key === 'Escape' && overlay.classList.contains('is-open')) goToDashboard();
   });
 })();
 

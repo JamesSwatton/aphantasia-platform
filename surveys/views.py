@@ -444,12 +444,6 @@ def survey_take(request, pk):
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
 
-    # Check if user has already completed this survey
-    existing_responses = ParticipantResponse.objects.filter(
-        survey=survey,
-        participant=request.user
-    ).exists()
-
     if request.method == 'POST':
         # Validate that all required questions are answered
         errors = []
@@ -586,7 +580,6 @@ def survey_take(request, pk):
                 'questions': questions,
                 'grouped_questions': grouped_questions,
                 'is_preview': False,
-                'has_existing_responses': True,
                 'submitted': True,
             }
             return render(request, 'surveys/survey_detail.html', context)
@@ -596,7 +589,6 @@ def survey_take(request, pk):
         'questions': questions,
         'grouped_questions': grouped_questions,
         'is_preview': False,
-        'has_existing_responses': existing_responses,
     }
 
     return render(request, 'surveys/survey_detail.html', context)
