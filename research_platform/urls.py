@@ -5,7 +5,8 @@ URL configuration for research_platform project.
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+from django.views.static import serve
 
 # Customize admin site headers
 admin.site.site_header = "Phantasia Research Administration"
@@ -29,3 +30,14 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+else:
+    # No dedicated web server in front of gunicorn on Railway -- WhiteNoise only
+    # serves STATIC_URL (collected at build time), not user-uploaded MEDIA_ROOT
+    # content (e.g. unpacked lab.js tasks), so serve it directly via Django.
+    urlpatterns += [
+        re_path(
+            r"^%s(?P<path>.*)$" % settings.MEDIA_URL.lstrip("/"),
+            serve,
+            {"document_root": settings.MEDIA_ROOT},
+        ),
+    ]
