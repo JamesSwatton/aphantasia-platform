@@ -91,9 +91,19 @@ Work happens on the `railway` branch, cut from the `v1.0` tag.
 - **Railway Volume** created on the app service, mounted at `/data/media`; `MEDIA_ROOT` env var set to match. The Flanker Task zip was re-uploaded through the live admin and confirmed working end-to-end (upload → unpack → admin preview → participant task start).
 - Uploading surfaced two real bugs, unrelated to Railway/Railpack, that would have broken any `DEBUG=False` deploy: (1) the `STORAGES` setting only defined `"staticfiles"` and had silently dropped Django's `"default"` file storage entry, so any `FileField` save (`LabTask.zip_file`) raised `InvalidStorageError` — fixed by adding an explicit `"default": {"BACKEND": "django.core.files.storage.FileSystemStorage"}` entry; (2) `urls.py` only wired up `/media/...` serving when `DEBUG=True` (Django's dev-only `static()` helper) — WhiteNoise serves static files, not user-uploaded media, so on Railway media 404'd everywhere. Fixed by adding an `else` branch routing `MEDIA_URL` to `django.views.static.serve` when `DEBUG=False`. Both fixed, verified locally then on Railway.
 
+**Full smoke test — completed 2026-08-25.** Walked the entire participant + researcher flow against the live deployed instance using a disposable test account (`participant4@test.com`), confirmed all working:
+- Signup (consent text displayed/captured correctly)
+- Survey list → take a survey → submit → response data logged correctly, visible in admin
+- Lab task (Flanker Task) as a real participant: start → complete → `TaskSubmission` recorded
+- Account page
+- Participant feedback form submission
+- Exit survey / withdrawal: hard-delete confirmed (`User` row and their responses gone, re-login fails), `WithdrawalRecord` created correctly with no FK back to the deleted user
+- Admin side: survey responses visible, `WithdrawalRecord` visible, survey/task management screens working
+
+Railway deployment is considered **feature-complete and verified for interim/researcher use** as of 2026-08-25. Remaining items below are polish, not blockers for internal testing.
+
 **Still open:**
-- Smoke-test the broader participant + researcher flow (survey completion, exit survey/withdrawal, feedback form) against the deployed instance before pointing testers at it — only the lab task upload/serve path has been end-to-end verified so far.
-- **Real email delivery.** `EMAIL_BACKEND` is still `django.core.mail.backends.console.EmailBackend` — no email actually sends anywhere, it just logs to Railway's console. Needs a real SMTP provider (SendGrid, Mailgun, etc.) and credentials. Bundled with this: the `Sites` framework row `SITE_ID` points at (id=1) is still the Django default `example.com`/`webmaster@localhost` placeholder, so even console-logged emails currently show the wrong domain/sender — fix both together once a provider is chosen (update the Site row to the real Railway domain as part of the same pass).
+- **Real email delivery.** `EMAIL_BACKEND` is still `django.core.mail.backends.console.EmailBackend` — no email actually sends anywhere, it just logs to Railway's console (confirmed during the smoke test: the welcome email rendered correctly but only appeared in Railway's logs, never delivered). Needs a real SMTP provider (SendGrid, Mailgun, etc.) and credentials. Bundled with this: the `Sites` framework row `SITE_ID` points at (id=1) is still the Django default `example.com`/`webmaster@localhost` placeholder, so even console-logged emails currently show the wrong domain/sender — fix both together once a provider is chosen (update the Site row to the real Railway domain as part of the same pass).
 
 ## Responsive design vs. deployment
 
