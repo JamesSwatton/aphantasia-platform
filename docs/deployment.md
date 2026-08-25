@@ -93,6 +93,7 @@ Work happens on the `railway` branch, cut from the `v1.0` tag.
 
 **Still open:**
 - Smoke-test the broader participant + researcher flow (survey completion, exit survey/withdrawal, feedback form) against the deployed instance before pointing testers at it — only the lab task upload/serve path has been end-to-end verified so far.
+- **Real email delivery.** `EMAIL_BACKEND` is still `django.core.mail.backends.console.EmailBackend` — no email actually sends anywhere, it just logs to Railway's console. Needs a real SMTP provider (SendGrid, Mailgun, etc.) and credentials. Bundled with this: the `Sites` framework row `SITE_ID` points at (id=1) is still the Django default `example.com`/`webmaster@localhost` placeholder, so even console-logged emails currently show the wrong domain/sender — fix both together once a provider is chosen (update the Site row to the real Railway domain as part of the same pass).
 
 ## Responsive design vs. deployment
 
