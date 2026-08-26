@@ -26,6 +26,7 @@ db.sqlite3-journal
 !/static/js/
 !/static/images/
 !/static/LABJS_INTEGRATION.md
+!/static/SURVEY_QUESTION_GUIDE.md
 /staticfiles/
 
 # IDE
