@@ -2900,7 +2900,7 @@ ol {
   border-top: 1px solid var(--rule);
 }
 .info-block .section-label {
-  margin-bottom: 14px;
+  margin-bottom: var(--content-spacing);
 }
 .info-block li {
   position: relative;
