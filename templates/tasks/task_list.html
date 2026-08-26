@@ -60,8 +60,8 @@
     <!-- Domains panel -->
     <div class="sidebar-panel" data-panel="domains">
       <ul class="domain-list">
-        <li class="domain-list__item {% if not selected_domain %}domain-list__item--active{% endif %}">
-          <a class="domain-list__link" href="{% url 'tasks:task_list' %}">
+        <li class="domain-list__item {% if not selected_domain or selected_domain == "all" %}domain-list__item--active{% endif %}">
+          <a class="domain-list__link" href="?domain=all">
             <span class="domain-list__dot"></span>All Tasks
           </a>
         </li>
