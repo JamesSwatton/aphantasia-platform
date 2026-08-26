@@ -236,6 +236,10 @@ ol {
   align-items: center;
   justify-content: space-between;
   padding: 16px var(--page-padding-x);
+  /* Locks the topbar to its full height (16px padding + 40px .btn/.avatar
+     content) even when topbar_nav is empty (e.g. the exit survey page),
+     so the topbar never shrinks to just the brand wordmark's line-height. */
+  min-height: 72px;
   border-bottom: 1px solid var(--rule);
 
   /* Sticky on every page: stays pinned to the top while the document scrolls
@@ -543,44 +547,12 @@ ol {
 }
 
 /* -----------------------------------------------------------------------------
-   5.7  Crest (Edinburgh wordmark in the footer)
+   5.7  Crest (University of Edinburgh logo in the footer)
    ----------------------------------------------------------------------------- */
 
 .crest {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-display);
-  font-size: 13px;
-  line-height: 1.2;
-  letter-spacing: 0.04em;
-  color: var(--ink); /* Inherits the footer's locked dark theme */
-}
-
-.crest__mark {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 1.5px solid var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-}
-
-.crest__text {
-  text-transform: uppercase;
-  font-weight: 700;
-}
-.crest__text em {
-  display: block;
-  font-style: italic;
-  font-weight: 400;
-  text-transform: none;
-  font-size: 13px;
-  letter-spacing: 0.02em;
+  height: 36px;
+  width: auto;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1258,16 +1230,29 @@ ol {
   color: var(--ink-subtle);
 }
 
-/* Demographic gateway card */
-.task-card--gateway {
+/* Highlighted card — glowing blue border treatment. Originally just the
+   demographic gateway card, now reused anywhere a card should stand out
+   (e.g. the account page's feedback survey prompt via .card-surface--highlighted
+   below). */
+.task-card--highlighted {
   border: 2px solid var(--blue);
 }
-.task-card--gateway .task-card__indicator {
+.task-card--highlighted .task-card__indicator {
   background: var(--blue);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 20%, transparent);
 }
-.task-card--gateway-done {
+.task-card--highlighted-done {
   opacity: 0.6;
+}
+
+/* .card-surface equivalent of .task-card--highlighted's border, for
+   non-task-card panels that should stand out the same way (e.g. the
+   account page's feedback survey prompt). The glow halo on the dashboard
+   version only ever wraps its small indicator dot (.task-card__indicator),
+   not the card edge, so this intentionally matches with a border only —
+   no card-level box-shadow. */
+.card-surface--highlighted {
+  border: 2px solid var(--blue);
 }
 
 /* Locked state (before the gateway survey is completed) */
@@ -2900,7 +2885,7 @@ ol {
   border-top: 1px solid var(--rule);
 }
 .info-block .section-label {
-  margin-bottom: 14px;
+  margin-bottom: var(--content-spacing);
 }
 .info-block li {
   position: relative;

@@ -206,7 +206,7 @@
           {# Grouped questions — render as a single matrix card #}
           {% if group %}
             <section class="card-surface q-card">
-              <p class="q-num">Question {{ group.group_code }}</p>
+              <p class="q-num">Question {{ forloop.counter }}</p>
               {# Visible group title sits inside the card as q-title #}
               {% if group.show_title %}
                 <h2 class="q-title">{{ group.title }}</h2>
@@ -254,7 +254,7 @@
             {% for question in group_questions %}
               <section class="card-surface q-card" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.branch_questions %}data-gate data-trigger-value="{{ question.trigger_value }}" data-controls="branch-{{ question.id }}"{% endif %}>
 
-                <p class="q-num">Question {{ question.order }}</p>
+                <p class="q-num">Question {{ forloop.parentloop.counter }}</p>
 
                 {% if question.text %}
                   <h2 class="q-title">
@@ -482,10 +482,7 @@
 
 <!-- Footer -->
 <footer class="footer">
-  <div class="crest">
-    <div class="crest__mark">UoE</div>
-    <div class="crest__text">THE UNIVERSITY <em>of EDINBURGH</em></div>
-  </div>
+  <img class="crest" src="{% static 'images/edi_uni__logo__white.png' %}" alt="The University of Edinburgh">
 </footer>
 
 <!-- ── Completion modal ──────────────────────────────────────────────────── -->

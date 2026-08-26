@@ -26,13 +26,12 @@ def task_list(request):
 
     # Apply domain filter if provided
     domain_id = request.GET.get('domain')
-    if domain_id:
-        if domain_id == 'none':
-            # Filter for tasks with no domain
-            tasks = tasks.filter(domain__isnull=True)
-        else:
-            # Filter for specific domain
-            tasks = tasks.filter(domain_id=domain_id)
+    if domain_id == 'none':
+        # Filter for tasks with no domain
+        tasks = tasks.filter(domain__isnull=True)
+    elif domain_id and domain_id != 'all':
+        # Filter for specific domain
+        tasks = tasks.filter(domain_id=domain_id)
 
     # Get all domains for the filter dropdown
     from core.models import Domain

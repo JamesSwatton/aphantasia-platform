@@ -132,3 +132,18 @@ def get_all_results(participant):
         if result is not None:
             results.append(result)
     return results
+
+
+def get_completed_survey_count(participant):
+    """
+    Number of distinct non-feedback surveys the participant has answered at
+    least one question of (real responses only, not test/preview data).
+
+    Used to gate both the feedback survey prompt (Survey.show_after_n_surveys)
+    and any Message with a matching unlocks_with_survey.
+    """
+    return ParticipantResponse.objects.filter(
+        participant=participant,
+        survey__is_feedback=False,
+        is_test=False,
+    ).values('survey').distinct().count()

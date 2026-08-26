@@ -79,7 +79,11 @@ class Message(models.Model):
         help_text="Name of sender (e.g., 'Dr Bérengère Digard' or 'The Eye\'s Mind research team')"
     )
     body = models.TextField(
-        help_text="Message content. Supports basic HTML: <p>, <strong>, <em>, <a>, <h4>, <ul>, <li>"
+        help_text=(
+            "Message content, written in Markdown (same as survey descriptions/instructions "
+            "and the consent form) — e.g. **bold**, *italic*, [link](url), # headings, "
+            "- list items. Rendered as HTML for participants, not shown as raw Markdown."
+        )
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -89,6 +93,19 @@ class Message(models.Model):
     is_published = models.BooleanField(
         default=False,
         help_text="Only published messages are visible to participants"
+    )
+    unlocks_with_survey = models.ForeignKey(
+        'surveys.Survey',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        limit_choices_to={'is_feedback': True},
+        related_name='unlock_messages',
+        help_text=(
+            "Optional: only show this message once the participant has completed "
+            "as many surveys as this feedback survey's 'Show after N surveys' setting. "
+            "Leave blank to show the message to everyone as soon as it's published."
+        ),
     )
     read_by = models.ManyToManyField(
         settings.AUTH_USER_MODEL,

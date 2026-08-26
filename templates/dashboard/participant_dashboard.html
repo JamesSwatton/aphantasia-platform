@@ -3,7 +3,6 @@
 {% block title %}Dashboard — Phantasia Research Hub{% endblock %}
 {% block header %}{% endblock %}
 {% block flash_messages %}{% endblock %}
-{% block footer %}{% endblock %}
 {% block body %}
     <div class="page">
         <!-- Row 1: topbar (from base.html — re-declared here to sit in grid row 1) -->
@@ -107,7 +106,7 @@
             <div class="task-list">
                 <div class="task-list-items">
                     {% if demographic_survey and not demographic_complete %}
-                        <a class="task-card task-card--gateway"
+                        <a class="task-card task-card--highlighted"
                            href="{% url 'surveys:survey_take' demographic_survey.pk %}">
                             <div class="task-card__body">
                                 <div class="task-card__head">
@@ -221,15 +220,6 @@
             </div>
         </section>
     </div>
-    <footer class="footer">
-        <div class="crest">
-            <div class="crest__mark">UoE</div>
-            <div class="crest__text">
-                THE UNIVERSITY
-                <em>of EDINBURGH</em>
-            </div>
-        </div>
-    </footer>
 {% endblock %}
 {% block extra_js %}
     <script>

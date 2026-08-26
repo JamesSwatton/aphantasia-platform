@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load account_extras %}
+{% load static account_extras %}
 
 {% block title %}Task Management — Phantasia Research Hub{% endblock %}
 
@@ -60,8 +60,8 @@
     <!-- Domains panel -->
     <div class="sidebar-panel" data-panel="domains">
       <ul class="domain-list">
-        <li class="domain-list__item {% if not selected_domain %}domain-list__item--active{% endif %}">
-          <a class="domain-list__link" href="{% url 'tasks:task_list' %}">
+        <li class="domain-list__item {% if not selected_domain or selected_domain == "all" %}domain-list__item--active{% endif %}">
+          <a class="domain-list__link" href="?domain=all">
             <span class="domain-list__dot"></span>All Tasks
           </a>
         </li>
@@ -129,10 +129,7 @@
 </div>
 
 <footer class="footer">
-  <div class="crest">
-    <div class="crest__mark">UoE</div>
-    <div class="crest__text">THE UNIVERSITY <em>of EDINBURGH</em></div>
-  </div>
+  <img class="crest" src="{% static 'images/edi_uni__logo__white.png' %}" alt="The University of Edinburgh">
 </footer>
 {% endblock %}
 
