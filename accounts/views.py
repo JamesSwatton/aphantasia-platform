@@ -5,9 +5,9 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
 from django.conf import settings
-import markdown as md
+from core.templatetags.markdown_extras import markdown_to_html
 from .models import ConsentForm, WithdrawalText, WithdrawalRecord
-from surveys.utils import get_all_results
+from surveys.utils import get_all_results, get_completed_survey_count
 from surveys.models import Survey, ParticipantResponse
 
 
@@ -15,16 +15,10 @@ from surveys.models import Survey, ParticipantResponse
 def account(request):
     user = request.user
     consent_form = ConsentForm.objects.filter(is_active=True).first()
-    consent_form_html = md.markdown(
-        consent_form.content,
-        extensions=['sane_lists', 'nl2br'],
-    ) if consent_form else None
+    consent_form_html = markdown_to_html(consent_form.content) if consent_form else None
 
     withdrawal_text_obj = WithdrawalText.objects.filter(is_active=True).first()
-    withdrawal_text_html = md.markdown(
-        withdrawal_text_obj.content,
-        extensions=['sane_lists', 'nl2br'],
-    ) if withdrawal_text_obj else None
+    withdrawal_text_html = markdown_to_html(withdrawal_text_obj.content) if withdrawal_text_obj else None
     participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
     results = get_all_results(user)
 
@@ -36,11 +30,7 @@ def account(request):
 
     active_feedback = Survey.objects.filter(is_feedback=True, is_active=True).first()
     if active_feedback:
-        completed_count = ParticipantResponse.objects.filter(
-            participant=user,
-            survey__is_feedback=False,
-            is_test=False,
-        ).values('survey').distinct().count()
+        completed_count = get_completed_survey_count(user)
 
         already_responded = ParticipantResponse.objects.filter(
             participant=user,

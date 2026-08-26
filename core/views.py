@@ -4,15 +4,36 @@ from django.shortcuts import render
 from django.views.decorators.http import require_POST
 
 from .models import Message
+from surveys.utils import get_completed_survey_count
 
 
 def home(request):
     return render(request, 'home.html')
 
 
+def _visible_messages(user):
+    """
+    Published messages the given user is currently allowed to see: an
+    unlocks_with_survey message is held back until the user has completed
+    at least that survey's show_after_n_surveys count.
+    """
+    published = Message.objects.filter(is_published=True).select_related('unlocks_with_survey')
+    completed_count = None
+
+    visible = []
+    for msg in published:
+        if msg.unlocks_with_survey_id is not None:
+            if completed_count is None:
+                completed_count = get_completed_survey_count(user)
+            if completed_count < msg.unlocks_with_survey.show_after_n_surveys:
+                continue
+        visible.append(msg)
+    return visible
+
+
 @login_required
 def messages_view(request):
-    published = Message.objects.filter(is_published=True)
+    published = _visible_messages(request.user)
     read_ids = set(request.user.read_messages.values_list('id', flat=True))
 
     annotated = []
@@ -35,19 +56,20 @@ def messages_view(request):
 @login_required
 @require_POST
 def mark_read(request, message_id):
-    try:
-        message = Message.objects.get(id=message_id, is_published=True)
-    except Message.DoesNotExist:
+    visible = _visible_messages(request.user)
+    visible_ids = {msg.id for msg in visible}
+    if message_id not in visible_ids:
         return JsonResponse({'error': 'Not found'}, status=404)
+    message = Message.objects.get(id=message_id)
     message.read_by.add(request.user)
-    unread_count = Message.objects.filter(is_published=True).exclude(read_by=request.user).count()
+    read_ids = set(request.user.read_messages.values_list('id', flat=True))
+    unread_count = sum(1 for msg in visible if msg.id not in read_ids)
     return JsonResponse({'unread_count': unread_count})
 
 
 @login_required
 @require_POST
 def mark_all_read(request):
-    published = Message.objects.filter(is_published=True)
-    for message in published:
+    for message in _visible_messages(request.user):
         message.read_by.add(request.user)
     return JsonResponse({'unread_count': 0})

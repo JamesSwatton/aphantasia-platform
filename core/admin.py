@@ -322,7 +322,7 @@ class DataDownloadLogAdmin(admin.ModelAdmin):
 
 @admin.register(Message)
 class MessageAdmin(admin.ModelAdmin):
-    list_display = ['subject', 'sender_name', 'is_published', 'created_by', 'created_at']
+    list_display = ['subject', 'sender_name', 'is_published', 'unlocks_with_survey', 'created_by', 'created_at']
     list_filter = ['is_published', 'created_at']
     search_fields = ['subject', 'sender_name', 'body']
     readonly_fields = ['created_by', 'created_at', 'updated_at']
@@ -332,8 +332,13 @@ class MessageAdmin(admin.ModelAdmin):
             'fields': ['subject', 'sender_name', 'body']
         }),
         ('Publishing', {
-            'fields': ['is_published'],
-            'description': 'Only published messages are visible to participants.'
+            'fields': ['is_published', 'unlocks_with_survey'],
+            'description': (
+                'Only published messages are visible to participants. '
+                'Optionally tie this message to a Feedback Survey so it only appears once a '
+                'participant has completed that survey\'s "Show after N surveys" threshold — '
+                'useful for telegraphing that a feedback survey has become available.'
+            ),
         }),
         ('Metadata', {
             'fields': ['created_by', 'created_at', 'updated_at'],

@@ -47,7 +47,7 @@ research_platform/
 ### core
 - **Domain**: Research domains/categories
 - **DataDownloadLog**: Audit log for data downloads
-- **Message**: Researcher-to-participant messaging system
+- **Message**: Researcher-to-participant messaging system. Optional `unlocks_with_survey` FK ties a message's visibility to a feedback survey's completed-survey threshold (see "Messaging System" below).
 
 ### surveys
 - **Survey**: Survey definitions with configurable Likert scale settings (`min_value`, `max_value`, `scale_labels`), optional question randomization, and result-display metadata (`result_min`/`result_max`/`result_aggregation`/`result_description`) for participant-facing scoring. `FeedbackSurvey`, `ExitSurvey`, and `DemographicSurvey` are proxy models built on `Survey` for the mid-study feedback form, the withdrawal exit survey, and the dashboard-gating demographic survey respectively.
@@ -292,6 +292,28 @@ A question can control the next N questions via `controls_next_n_questions` + `t
 
 #### Results & Scoring
 Surveys with `result_min`/`result_max` configured (survey-level, or per-`QuestionGroup` for subscale surveys) get participant-facing scoring: a spectrum chart for single-score surveys, or a radar/spider chart across subscales for surveys with multiple scored `QuestionGroup`s. See `surveys/utils.py` (`get_survey_result()`, `get_all_results()`) and the Results tab on `/accounts/account/`.
+
+## Messaging System
+
+Researchers send one-way messages to participants through `Message` records in the admin. Participants read them at `/messages/` (per-user read/unread state via `read_by`), with an unread-count badge shown site-wide in the topbar.
+
+### Sending a Message
+
+1. Navigate to **Messages → Add Message** in the admin
+2. Fill in **Subject**, **Sender Name** (e.g. "Dr Bérengère Digard" or "The Eye's Mind research team"), and **Body**
+   - Body is written in **Markdown** — the same rendering used for survey descriptions/instructions and the consent form (`markdown_to_html()` / the `render_markdown` filter in `core/templatetags/markdown_extras.py`, `sane_lists` + `nl2br` extensions). Use `**bold**`, `*italic*`, `[link](url)`, `#`/`##` headings, and `-` list items; it's rendered as HTML for participants, never shown as raw Markdown
+3. Check **Is Published** — unpublished messages are never visible to participants, so a message can be drafted and saved ahead of time and published later
+4. Save. `created_by` is set automatically to the logged-in researcher on creation and cannot be edited afterward
+
+### Conditional Visibility (tying a message to a feedback survey)
+
+A message can optionally be held back until a participant has completed enough surveys to unlock a specific feedback survey — useful for telegraphing that a feedback survey has just become available, without needing a fixed send date:
+
+- Set **Unlocks With Survey** to a `FeedbackSurvey` (the dropdown only lists surveys with `is_feedback=True`)
+- The message stays hidden from a participant until their completed-survey count reaches that survey's **Show after N surveys** setting — the same threshold and the same completed-survey count (`get_completed_survey_count()` in `surveys/utils.py`) used to reveal the feedback form itself on the account page
+- Leave **Unlocks With Survey** blank for a normal message that's visible to everyone as soon as it's published (the default, unchanged behavior)
+- The unread badge and `/messages/` list both respect this — a locked message doesn't count toward the badge and doesn't appear in the list until unlocked, and can't be marked read via the API before then
+- This is evaluated live on each request (nothing is precomputed/stored), so a message unlocks automatically the moment a participant crosses the threshold — no researcher action needed once it's published
 
 ## Lab.js Task Integration
 

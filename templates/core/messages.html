@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% load static %}
+{% load static markdown_extras %}
 
 {% block title %}Messages — Phantasia Research Hub{% endblock %}
 {% block viewport %}width=1200{% endblock %}
@@ -44,7 +44,7 @@
               <span class="message-date">{{ item.message.created_at|date:"j M" }}</span>
             </summary>
             <div class="message-body">
-              {{ item.message.body|safe }}
+              {{ item.message.body|render_markdown }}
             </div>
           </details>
         </li>
