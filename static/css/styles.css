@@ -1262,16 +1262,29 @@ ol {
   color: var(--ink-subtle);
 }
 
-/* Demographic gateway card */
-.task-card--gateway {
+/* Highlighted card — glowing blue border treatment. Originally just the
+   demographic gateway card, now reused anywhere a card should stand out
+   (e.g. the account page's feedback survey prompt via .card-surface--highlighted
+   below). */
+.task-card--highlighted {
   border: 2px solid var(--blue);
 }
-.task-card--gateway .task-card__indicator {
+.task-card--highlighted .task-card__indicator {
   background: var(--blue);
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--blue) 20%, transparent);
 }
-.task-card--gateway-done {
+.task-card--highlighted-done {
   opacity: 0.6;
+}
+
+/* .card-surface equivalent of .task-card--highlighted's border, for
+   non-task-card panels that should stand out the same way (e.g. the
+   account page's feedback survey prompt). The glow halo on the dashboard
+   version only ever wraps its small indicator dot (.task-card__indicator),
+   not the card edge, so this intentionally matches with a border only —
+   no card-level box-shadow. */
+.card-surface--highlighted {
+  border: 2px solid var(--blue);
 }
 
 /* Locked state (before the gateway survey is completed) */
