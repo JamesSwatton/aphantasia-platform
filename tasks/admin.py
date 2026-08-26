@@ -49,7 +49,8 @@ class LabTaskAdmin(admin.ModelAdmin):
                 <a href="/static/LABJS_INTEGRATION.md" target="_blank" style="color: #3498db; font-weight: bold;">
                     📖 View Full Integration Guide
                 </a> |
-                <a href="https://github.com/your-repo/blob/main/LABJS_INTEGRATION.md" target="_blank" style="color: #3498db;">
+                <!-- NOTE: hardcoded repo URL — update if this repo is ever forked to a university-specific repo -->
+                <a href="https://github.com/JamesSwatton/aphantasia-platform/blob/main/docs/LABJS_INTEGRATION.md" target="_blank" style="color: #3498db;">
                     View on GitHub
                 </a>
             '''

@@ -110,7 +110,18 @@ class SurveyAdmin(admin.ModelAdmin):
     fieldsets = [
         (
             "Survey Information",
-            {"fields": ["title", "description", "instructions", "researcher", "domain", "is_active", "is_priority", "randomize_questions", "preview_link_field"]},
+            {
+                "fields": ["title", "description", "instructions", "researcher", "domain", "is_active", "is_priority", "randomize_questions", "preview_link_field"],
+                "description": '''
+                    <a href="/static/SURVEY_QUESTION_GUIDE.md" target="_blank" style="color: #3498db; font-weight: bold;">
+                        📖 View Survey Question Guide
+                    </a> |
+                    <!-- NOTE: hardcoded repo URL — update if this repo is ever forked to a university-specific repo -->
+                    <a href="https://github.com/JamesSwatton/aphantasia-platform/blob/main/docs/SURVEY_QUESTION_GUIDE.md" target="_blank" style="color: #3498db;">
+                        View on GitHub
+                    </a>
+                ''',
+            },
         ),
         (
             "Default Likert Scale",
