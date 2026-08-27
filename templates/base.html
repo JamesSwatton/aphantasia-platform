@@ -16,27 +16,7 @@
     <header class="topbar {% block topbar_class %}{% endblock %}">
       <a href="{% if user.is_authenticated %}{% url 'dashboard:participant_dashboard' %}{% else %}{% url 'core:home' %}{% endif %}" class="topbar__brand">Phantasia Research Hub</a>
       <nav class="topbar__actions">
-        {% block topbar_nav %}
-          {% if user.is_authenticated %}
-            {% if not user.is_staff and not user.is_researcher %}
-              <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">
-                Messages
-                {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
-              </a>
-            {% endif %}
-            <a href="{% if user.is_staff or user.is_researcher %}{% url 'admin:index' %}{% else %}{% url 'accounts:account' %}{% endif %}"
-               class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
-              {{ user.get_full_name|default:user.email|initials }}
-            </a>
-            <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
-              {% csrf_token %}
-              <button type="submit" class="btn btn--outline">Log out</button>
-            </form>
-          {% else %}
-            <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
-            <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
-          {% endif %}
-        {% endblock %}
+        {% block topbar_nav %}{% include "partials/_topbar_nav.html" %}{% endblock %}
       </nav>
     </header>
     {% endblock %}
@@ -45,11 +25,7 @@
 
     {% block body %}{% block content %}{% endblock %}{% endblock %}
 
-    {% block footer %}
-    <footer class="footer">
-      <img class="crest" src="{% static 'images/edi_uni__logo__white.png' %}" alt="The University of Edinburgh">
-    </footer>
-    {% endblock %}
+    {% block footer %}{% include "partials/_footer.html" %}{% endblock %}
 
     <script>
       (function () {

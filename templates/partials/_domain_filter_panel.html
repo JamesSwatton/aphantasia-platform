@@ -1,0 +1,21 @@
+<ul class="domain-list">
+  <li class="domain-list__item {% if not selected_domain or selected_domain == "all" %}domain-list__item--active{% endif %}">
+    <a class="domain-list__link" href="?domain=all">
+      <span class="domain-list__dot"></span>All{% if all_label %} {{ all_label }}{% endif %}
+    </a>
+  </li>
+  {% for domain in domains %}
+  <li class="domain-list__item {% if selected_domain == domain.id|stringformat:"s" %}domain-list__item--active{% endif %}">
+    <a class="domain-list__link" href="?domain={{ domain.id }}">
+      <span class="domain-list__dot"></span>{{ domain.name }}
+    </a>
+  </li>
+  {% endfor %}
+  {% if include_uncategorized %}
+  <li class="domain-list__item {% if selected_domain == "none" %}domain-list__item--active{% endif %}">
+    <a class="domain-list__link" href="?domain=none">
+      <span class="domain-list__dot"></span>Uncategorized
+    </a>
+  </li>
+  {% endif %}
+</ul>

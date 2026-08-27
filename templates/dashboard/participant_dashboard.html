@@ -3,6 +3,7 @@
 {% block title %}Dashboard — Phantasia Research Hub{% endblock %}
 {% block header %}{% endblock %}
 {% block flash_messages %}{% endblock %}
+{% block footer %}{% endblock %}
 {% block body %}
     <div class="page">
         <!-- Row 1: topbar (from base.html — re-declared here to sit in grid row 1) -->
@@ -10,32 +11,11 @@
             <a href="{% url 'dashboard:participant_dashboard' %}"
                class="topbar__brand">Phantasia Research Hub</a>
             <nav class="topbar__actions">
-                <a href="{% url 'core:messages' %}"
-                   class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages
-                    {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
-                </a>
-                <a href="{% url 'accounts:account' %}"
-                   class="avatar"
-                   aria-label="{{ user.get_full_name|default:user.email }}">
-                    {{ user.get_full_name|default:user.email|initials }}
-                </a>
-                <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn--outline">Log out</button>
-                </form>
+                {% include "partials/_topbar_nav.html" %}
             </nav>
         </header>
         <!-- Row 2: view switcher (sidebar column) -->
-        <nav class="view-switch" aria-label="Sidebar view">
-            <ul>
-                <li>
-                    <a href="#" aria-current="true">INFO</a>
-                </li>
-                <li>
-                    <a href="#">DOMAINS</a>
-                </li>
-            </ul>
-        </nav>
+        {% include "partials/_view_switch_nav.html" %}
         <!-- Row 2: section header (main column) -->
         <div class="page__tasks-header">
             <h2 class="section-label">QUESTIONNAIRES &amp; TASKS</h2>
@@ -44,7 +24,7 @@
         <!-- Row 4: sidebar -->
         <aside class="page__sidebar">
             <!-- Info panel -->
-            <div class="sidebar-panel is-active" data-panel="info">
+            <div class="sidebar-panel {% if not selected_domain %}is-active{% endif %}" data-panel="info">
                 <div class="info-content">
                     {% if demographic_locked %}
                         <h3>Before you begin</h3>
@@ -84,21 +64,8 @@
                 </div>
             </div>
             <!-- Domains panel -->
-            <div class="sidebar-panel" data-panel="domains">
-                <ul class="domain-list">
-                    <li class="domain-list__item {% if not selected_domain or selected_domain == 'all' %}domain-list__item--active{% endif %}">
-                        <a class="domain-list__link" href="?domain=all">
-                            <span class="domain-list__dot"></span>All
-                        </a>
-                    </li>
-                    {% for domain in domains %}
-                        <li class="domain-list__item {% if selected_domain == domain.id|stringformat:'s' %}domain-list__item--active{% endif %}">
-                            <a class="domain-list__link" href="?domain={{ domain.id }}">
-                                <span class="domain-list__dot"></span>{{ domain.name }}
-                            </a>
-                        </li>
-                    {% endfor %}
-                </ul>
+            <div class="sidebar-panel {% if selected_domain %}is-active{% endif %}" data-panel="domains">
+                {% include "partials/_domain_filter_panel.html" %}
             </div>
         </aside>
         <!-- Row 4: main task/survey list -->
@@ -220,41 +187,8 @@
             </div>
         </section>
     </div>
+    {% include "partials/_footer.html" %}
 {% endblock %}
 {% block extra_js %}
-    <script>
-  (function () {
-    const panels = document.querySelectorAll(".sidebar-panel");
-    const navLinks = document.querySelectorAll(".view-switch a");
-
-    {% if selected_domain %}
-    panels.forEach(function (p) {
-      p.classList.toggle("is-active", p.dataset.panel === "domains");
-    });
-    navLinks.forEach(function (a) {
-      const isDomains = a.textContent.trim().toLowerCase() === "domains";
-      if (isDomains) a.setAttribute("aria-current", "true");
-      else a.removeAttribute("aria-current");
-    });
-    {% endif %}
-
-    navLinks.forEach(function (link) {
-      link.addEventListener("click", function (e) {
-        e.preventDefault();
-        const target = link.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
-        panels.forEach(function (panel) {
-          panel.classList.toggle("is-active", panel.dataset.panel === target);
-        });
-        navLinks.forEach(function (a) {
-          const aTarget = a.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
-          if (aTarget === target) {
-            a.setAttribute("aria-current", "true");
-          } else {
-            a.removeAttribute("aria-current");
-          }
-        });
-      });
-    });
-  })();
-    </script>
+<script src="{% static 'js/sidebar-panel-toggle.js' %}"></script>
 {% endblock %}
