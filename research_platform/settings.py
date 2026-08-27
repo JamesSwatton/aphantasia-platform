@@ -31,6 +31,12 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 # ALLOWED_HOSTS = ["192.168.1.189", "localhost", "127.0.0.1"]
 
+# Site-wide HTTP Basic Auth gate (core.middleware.SiteBasicAuthMiddleware) for
+# locking down a testing-only deployment from public access. No-op unless
+# both are set — leave unset for local dev and once the site is public.
+SITE_BASIC_AUTH_USER = config("SITE_BASIC_AUTH_USER", default="")
+SITE_BASIC_AUTH_PASSWORD = config("SITE_BASIC_AUTH_PASSWORD", default="")
+
 # CSRF_TRUSTED_ORIGINS needs a scheme (https://example.com), not just a hostname.
 _csrf_trusted_origins = config("CSRF_TRUSTED_ORIGINS", default="")
 CSRF_TRUSTED_ORIGINS = [o for o in _csrf_trusted_origins.split(",") if o]
@@ -71,6 +77,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
+    "core.middleware.SiteBasicAuthMiddleware",
     "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
