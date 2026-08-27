@@ -11,19 +11,7 @@
             <a href="{% url 'dashboard:participant_dashboard' %}"
                class="topbar__brand">Phantasia Research Hub</a>
             <nav class="topbar__actions">
-                <a href="{% url 'core:messages' %}"
-                   class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% block messages_active %}{% endblock %}">Messages
-                    {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
-                </a>
-                <a href="{% url 'accounts:account' %}"
-                   class="avatar"
-                   aria-label="{{ user.get_full_name|default:user.email }}">
-                    {{ user.get_full_name|default:user.email|initials }}
-                </a>
-                <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn--outline">Log out</button>
-                </form>
+                {% include "partials/_topbar_nav.html" %}
             </nav>
         </header>
         <!-- Row 2: view switcher (sidebar column) -->
@@ -221,9 +209,7 @@
             </div>
         </section>
     </div>
-    <footer class="footer">
-        <img class="crest" src="{% static 'images/edi_uni__logo__white.png' %}" alt="The University of Edinburgh">
-    </footer>
+    {% include "partials/_footer.html" %}
 {% endblock %}
 {% block extra_js %}
     <script>

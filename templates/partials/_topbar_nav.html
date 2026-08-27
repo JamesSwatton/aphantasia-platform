@@ -1,0 +1,20 @@
+{% load account_extras %}
+{% if request.user.is_authenticated %}
+  {% if not request.user.is_staff and not request.user.is_researcher %}
+    <a href="{% url 'core:messages' %}" class="btn btn--outline {% if unread_message_count %}btn--has-badge{% endif %} {% if request.resolver_match.url_name == 'messages' %}is-active{% endif %}">
+      Messages
+      {% if unread_message_count %}<span class="badge" id="topbar-unread-badge">{{ unread_message_count }}</span>{% endif %}
+    </a>
+  {% endif %}
+  <a href="{% if request.user.is_staff or request.user.is_researcher %}{% url 'admin:index' %}{% else %}{% url 'accounts:account' %}{% endif %}"
+     class="avatar" aria-label="{{ request.user.get_full_name|default:request.user.email }}">
+    {{ request.user.get_full_name|default:request.user.email|initials }}
+  </a>
+  <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn--outline">Log out</button>
+  </form>
+{% else %}
+  <a href="{% url 'account_login' %}" class="btn btn--outline">Login</a>
+  <a href="{% url 'account_signup' %}" class="btn btn--primary">Sign up</a>
+{% endif %}

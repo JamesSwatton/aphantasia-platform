@@ -14,13 +14,7 @@
   <header class="topbar">
     <a href="{% url 'dashboard:participant_dashboard' %}" class="topbar__brand">Phantasia Research Hub</a>
     <nav class="topbar__actions">
-      <a href="{% url 'admin:index' %}" class="avatar" aria-label="{{ user.get_full_name|default:user.email }}">
-        {{ user.get_full_name|default:user.email|initials }}
-      </a>
-      <form method="post" action="{% url 'account_logout' %}" style="margin:0;">
-        {% csrf_token %}
-        <button type="submit" class="btn btn--outline">Log out</button>
-      </form>
+      {% include "partials/_topbar_nav.html" %}
     </nav>
   </header>
 
@@ -129,9 +123,7 @@
 
 </div>
 
-<footer class="footer">
-  <img class="crest" src="{% static 'images/edi_uni__logo__white.png' %}" alt="The University of Edinburgh">
-</footer>
+{% include "partials/_footer.html" %}
 {% endblock %}
 
 {% block extra_js %}
