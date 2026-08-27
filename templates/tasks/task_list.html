@@ -19,12 +19,7 @@
   </header>
 
   <!-- Row 2: view switcher (sidebar) -->
-  <nav class="view-switch" aria-label="Sidebar view">
-    <ul>
-      <li><a href="#" aria-current="true">INFO</a></li>
-      <li><a href="#">DOMAINS</a></li>
-    </ul>
-  </nav>
+  {% include "partials/_view_switch_nav.html" %}
 
   <!-- Row 2: section header (main) -->
   <div class="page__tasks-header">
@@ -36,7 +31,7 @@
   <aside class="page__sidebar">
 
     <!-- Info panel -->
-    <div class="sidebar-panel is-active" data-panel="info">
+    <div class="sidebar-panel {% if not selected_domain %}is-active{% endif %}" data-panel="info">
       <div class="info-content">
         <p>
           Tasks are listed here in priority order. Use the Domains panel
@@ -52,26 +47,8 @@
     </div>
 
     <!-- Domains panel -->
-    <div class="sidebar-panel" data-panel="domains">
-      <ul class="domain-list">
-        <li class="domain-list__item {% if not selected_domain or selected_domain == "all" %}domain-list__item--active{% endif %}">
-          <a class="domain-list__link" href="?domain=all">
-            <span class="domain-list__dot"></span>All Tasks
-          </a>
-        </li>
-        {% for domain in domains %}
-        <li class="domain-list__item {% if selected_domain == domain.id|stringformat:"s" %}domain-list__item--active{% endif %}">
-          <a class="domain-list__link" href="?domain={{ domain.id }}">
-            <span class="domain-list__dot"></span>{{ domain.name }}
-          </a>
-        </li>
-        {% endfor %}
-        <li class="domain-list__item {% if selected_domain == "none" %}domain-list__item--active{% endif %}">
-          <a class="domain-list__link" href="?domain=none">
-            <span class="domain-list__dot"></span>Uncategorized
-          </a>
-        </li>
-      </ul>
+    <div class="sidebar-panel {% if selected_domain %}is-active{% endif %}" data-panel="domains">
+      {% include "partials/_domain_filter_panel.html" with all_label="Tasks" include_uncategorized=True %}
     </div>
 
   </aside>
@@ -126,36 +103,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-  (function () {
-    const panels = document.querySelectorAll(".sidebar-panel");
-    const navLinks = document.querySelectorAll(".view-switch a");
-
-    {% if selected_domain %}
-    panels.forEach(function (p) {
-      p.classList.toggle("is-active", p.dataset.panel === "domains");
-    });
-    navLinks.forEach(function (a) {
-      const isDomains = a.textContent.trim().toLowerCase() === "domains";
-      if (isDomains) a.setAttribute("aria-current", "true");
-      else a.removeAttribute("aria-current");
-    });
-    {% endif %}
-
-    navLinks.forEach(function (link) {
-      link.addEventListener("click", function (e) {
-        e.preventDefault();
-        const target = link.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
-        panels.forEach(function (panel) {
-          panel.classList.toggle("is-active", panel.dataset.panel === target);
-        });
-        navLinks.forEach(function (a) {
-          const aTarget = a.textContent.trim().toLowerCase() === "info" ? "info" : "domains";
-          if (aTarget === target) a.setAttribute("aria-current", "true");
-          else a.removeAttribute("aria-current");
-        });
-      });
-    });
-  })();
-</script>
+<script src="{% static 'js/sidebar-panel-toggle.js' %}"></script>
 {% endblock %}
