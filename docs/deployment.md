@@ -108,7 +108,13 @@ Hit one Railway-specific gotcha along the way: **Railway blocks outbound traffic
 
 Confirmed working live: signup welcome email and withdrawal confirmation email both received in a real inbox.
 
-**Still open:** none — Railway deployment (data, media, full participant/researcher flow, real email) is complete and verified as of 2026-08-25.
+**Site-wide Basic Auth gate — added 2026-08-27.** The Railway deployment is publicly reachable with no gate — anyone who finds the URL can self-register or explore a platform that isn't ready for real participants. Added `core.middleware.SiteBasicAuthMiddleware`: a single shared HTTP Basic Auth credential in front of the entire site, ahead of Django's own login. Placed first in `MIDDLEWARE` (right after `SecurityMiddleware`) so an unauthorized request never reaches static-file serving, sessions, or CSRF.
+
+Controlled by two env vars, `SITE_BASIC_AUTH_USER` / `SITE_BASIC_AUTH_PASSWORD`, following the existing `decouple.config()` pattern used for `SECRET_KEY`/`DEBUG`/`ALLOWED_HOSTS`. Fully a no-op when either is unset — safe for local dev, and the intended way to turn the gate back off once the site is ready to go public: unset both vars on Railway, no code change needed.
+
+**To turn the gate on**, set both `SITE_BASIC_AUTH_USER` and `SITE_BASIC_AUTH_PASSWORD` in the Railway dashboard's Variables tab for the app service and let it redeploy. Verified locally first (unit-tested the middleware directly, then confirmed end-to-end against the dev server with temporary local credentials) before merging to `railway` — as of this deploy the env vars are **not yet set on Railway**, so the live site is still fully open; this is a deliberate two-step rollout (ship the capability, then flip it on separately) rather than a bug.
+
+**Still open:** none code-side — Railway deployment (data, media, full participant/researcher flow, real email, Basic Auth capability) is complete and verified as of 2026-08-27. Whether the Basic Auth gate is actually *enabled* on the live site depends on whether the env vars have been set in the Railway dashboard since this was written — check there for current status, not this doc.
 
 ## Responsive design vs. deployment
 
