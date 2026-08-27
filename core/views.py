@@ -6,6 +6,8 @@ from django.views.decorators.http import require_POST
 from .models import Message
 from surveys.utils import get_completed_survey_count
 
+MAX_VISIBLE_MESSAGES = 8
+
 
 def home(request):
     return render(request, 'home.html')
@@ -15,7 +17,8 @@ def _visible_messages(user):
     """
     Published messages the given user is currently allowed to see: an
     unlocks_with_survey message is held back until the user has completed
-    at least that survey's show_after_n_surveys count.
+    at least that survey's show_after_n_surveys count. Capped to the
+    MAX_VISIBLE_MESSAGES most recent, so the list doesn't grow unbounded.
     """
     published = Message.objects.filter(is_published=True).select_related('unlocks_with_survey')
     completed_count = None
@@ -28,6 +31,8 @@ def _visible_messages(user):
             if completed_count < msg.unlocks_with_survey.show_after_n_surveys:
                 continue
         visible.append(msg)
+        if len(visible) == MAX_VISIBLE_MESSAGES:
+            break
     return visible
 
 
