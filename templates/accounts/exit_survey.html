@@ -46,9 +46,9 @@
                                 value="skip"
                                 class="btn btn--outline"
                                 formnovalidate>Skip and delete my account</button>
-                        <a href="{% url 'accounts:account' %}" class="btn btn--ghost">Cancel — keep my account</a>
                     </div>
                 </form>
+                <p class="back-link"><a href="{% url 'accounts:account' %}">← Cancel — keep my account</a></p>
             </div>
         {% else %}
             <div class="confirm-card">
@@ -59,9 +59,9 @@
                     {% csrf_token %}
                     <div class="exit-actions">
                         <button type="submit" name="action" value="skip" class="btn btn--warn">Delete my account</button>
-                        <a href="{% url 'accounts:account' %}" class="btn btn--outline">Cancel — keep my account</a>
                     </div>
                 </form>
+                <p class="back-link"><a href="{% url 'accounts:account' %}">← Cancel — keep my account</a></p>
             </div>
         {% endif %}
     </div>
