@@ -112,9 +112,9 @@ Confirmed working live: signup welcome email and withdrawal confirmation email b
 
 Controlled by two env vars, `SITE_BASIC_AUTH_USER` / `SITE_BASIC_AUTH_PASSWORD`, following the existing `decouple.config()` pattern used for `SECRET_KEY`/`DEBUG`/`ALLOWED_HOSTS`. Fully a no-op when either is unset — safe for local dev, and the intended way to turn the gate back off once the site is ready to go public: unset both vars on Railway, no code change needed.
 
-**To turn the gate on**, set both `SITE_BASIC_AUTH_USER` and `SITE_BASIC_AUTH_PASSWORD` in the Railway dashboard's Variables tab for the app service and let it redeploy. Verified locally first (unit-tested the middleware directly, then confirmed end-to-end against the dev server with temporary local credentials) before merging to `railway` — as of this deploy the env vars are **not yet set on Railway**, so the live site is still fully open; this is a deliberate two-step rollout (ship the capability, then flip it on separately) rather than a bug.
+**Enabled and verified live, 2026-08-27.** `SITE_BASIC_AUTH_USER`/`SITE_BASIC_AUTH_PASSWORD` are now set in the Railway dashboard's Variables tab for the app service — the deployed site currently prompts for credentials on every page, confirmed working. To turn it back off later (e.g. for the university-hosting production cutover), unset both vars on Railway; no code change needed.
 
-**Still open:** none code-side — Railway deployment (data, media, full participant/researcher flow, real email, Basic Auth capability) is complete and verified as of 2026-08-27. Whether the Basic Auth gate is actually *enabled* on the live site depends on whether the env vars have been set in the Railway dashboard since this was written — check there for current status, not this doc.
+**Still open:** none — Railway deployment (data, media, full participant/researcher flow, real email, Basic Auth gate) is complete, deployed, and verified as of 2026-08-27.
 
 ## Responsive design vs. deployment
 
