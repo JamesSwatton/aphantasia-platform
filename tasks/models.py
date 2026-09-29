@@ -37,7 +37,9 @@ class LabTask(models.Model):
     description = models.TextField()
     researcher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='lab_tasks'
     )
     domain = models.ForeignKey(
