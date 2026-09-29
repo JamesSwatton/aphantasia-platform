@@ -26,8 +26,14 @@ class DataDownloadLog(models.Model):
     """
     researcher = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='download_logs'
+    )
+    researcher_email = models.EmailField(
+        blank=True,
+        help_text="Snapshot of the researcher's email at the time of download, preserved even if the account is later deleted."
     )
     download_type = models.CharField(
         max_length=50,
@@ -61,8 +67,13 @@ class DataDownloadLog(models.Model):
         verbose_name = 'Data Download Log'
         verbose_name_plural = 'Data Download Logs'
 
+    def save(self, *args, **kwargs):
+        if not self.pk and self.researcher_id:
+            self.researcher_email = self.researcher.email
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        return f"{self.researcher.email} - {self.download_type} ({self.downloaded_at.strftime('%Y-%m-%d %H:%M')})"
+        return f"{self.researcher_email} - {self.download_type} ({self.downloaded_at.strftime('%Y-%m-%d %H:%M')})"
 
 
 class Message(models.Model):
@@ -87,8 +98,14 @@ class Message(models.Model):
     )
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
-        on_delete=models.CASCADE,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
         related_name='created_messages'
+    )
+    created_by_email = models.EmailField(
+        blank=True,
+        help_text="Snapshot of the sender's email at the time this message was created, preserved even if the account is later deleted."
     )
     is_published = models.BooleanField(
         default=False,
@@ -120,6 +137,11 @@ class Message(models.Model):
         ordering = ['-created_at']
         verbose_name = 'Message'
         verbose_name_plural = 'Messages'
+
+    def save(self, *args, **kwargs):
+        if not self.pk and self.created_by_id:
+            self.created_by_email = self.created_by.email
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.subject} (by {self.sender_name})"
