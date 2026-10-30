@@ -3453,6 +3453,17 @@ ol {
   border-bottom: 1.5px solid var(--bg-card);
   transform: rotate(-45deg) translate(1px, -1px);
 }
+.choice input[type="radio"] ~ .choice__box {
+  border-radius: 50%;
+}
+.choice input[type="radio"]:checked ~ .choice__box::after {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-card);
+  transform: none;
+}
 .choice input:focus-visible ~ .choice__box {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
