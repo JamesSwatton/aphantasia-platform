@@ -3389,7 +3389,6 @@ ol {
   text-align: left;
   font-size: 14px;
   color: var(--ink);
-  padding-right: 16px;
 }
 /* Strip fieldset chrome used for semantic grouping */
 .matrix-stem {
