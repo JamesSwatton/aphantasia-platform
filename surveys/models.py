@@ -403,7 +403,7 @@ class Question(models.Model):
     )
     text = models.TextField(
         blank=True,
-        help_text="Question text/label. Can be left blank for self-explanatory question types like dropdowns."
+        help_text="Question text/label. Supports Markdown: leave a blank line between paragraphs, use **bold** for prompts. Can be left blank for self-explanatory question types like dropdowns."
     )
     required = models.BooleanField(default=True)
     reverse_coded = models.BooleanField(

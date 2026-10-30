@@ -109,6 +109,23 @@ behavior of each.
 The question text/label shown to participants. Can be left blank for
 self-explanatory types like dropdowns.
 
+Supports Markdown, so a longer question can be split up: leave a blank line
+between paragraphs and use `**bold**` for prompts. The last paragraph is always
+shown in the large question style, and everything before it is grouped in a
+shaded box as normal body text, so put the question itself last:
+
+```
+**Starting position:** Sit upright with both feet on the floor.
+
+**Action:** Slowly raise your right arm.
+
+How clearly can you imagine this movement?
+```
+
+Markdown is rendered on standalone questions and branch questions only. In
+grouped matrix rows, exit surveys and feedback surveys the text is shown exactly
+as typed, so symbols like `**` will appear literally there.
+
 ### Order
 
 - **0 means "add to the end"** — auto-assigned the next available position.
