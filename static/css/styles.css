@@ -1155,6 +1155,20 @@ ol {
   padding: 0 var(--page-padding-x) 80px;
 }
 
+.domain-description {
+  max-width: 680px;
+  margin-bottom: 32px;
+}
+.domain-description p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.domain-description p:last-child {
+  margin-bottom: 0;
+}
+
 .task-list-items {
   display: flex;
   flex-direction: column;

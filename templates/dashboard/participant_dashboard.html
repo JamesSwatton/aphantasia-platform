@@ -71,6 +71,11 @@
         <!-- Row 4: main task/survey list -->
         <section class="page__main">
             <div class="task-list">
+                {% for domain in domains %}
+                    {% if selected_domain == domain.id|stringformat:"s" and domain.description %}
+                        <div class="domain-description">{{ domain.description|linebreaks }}</div>
+                    {% endif %}
+                {% endfor %}
                 <div class="task-list-items">
                     {% if demographic_survey and not demographic_complete %}
                         <a class="task-card task-card--highlighted"
