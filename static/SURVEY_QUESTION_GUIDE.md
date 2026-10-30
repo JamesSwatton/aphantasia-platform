@@ -122,6 +122,12 @@ shaded box as normal body text, so put the question itself last:
 How clearly can you imagine this movement?
 ```
 
+To add a footnote, start its paragraph with a backslash, an asterisk and a space
+(`\* 1 standard drink is about one small glass of wine`). It is shown in small
+text under the question, with the asterisk kept and the backslash removed, and
+doesn't count as the last paragraph. Without the backslash, a line starting
+`* ` becomes a bullet point.
+
 Markdown is rendered on standalone questions and branch questions only. In
 grouped matrix rows, exit surveys and feedback surveys the text is shown exactly
 as typed, so symbols like `**` will appear literally there.

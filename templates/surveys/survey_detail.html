@@ -243,8 +243,9 @@
 
                 {% if question.text %}
                   <div class="q-title{% if question.required %} q-title--required{% endif %}" role="heading" aria-level="2">
-                    {{ question.text|render_markdown }}
+                    {{ question.text|question_body }}
                   </div>
+                  {{ question.text|question_notes }}
                 {% endif %}
 
                 {% if question.question_type == 'multiple_choice_single' %}
@@ -362,7 +363,8 @@
                     {% for bq in question.branch_questions %}
                       <div data-question-id="{{ bq.id }}" data-question-order="{{ bq.order }}" data-conditional style="margin-top: 20px;">
                         {% if bq.text %}
-                          <div class="q-title{% if bq.required %} q-title--required{% endif %}" style="font-size:17px;margin-bottom:6px">{{ bq.text|render_markdown }}</div>
+                          <div class="q-title{% if bq.required %} q-title--required{% endif %}" style="font-size:17px;margin-bottom:6px">{{ bq.text|question_body }}</div>
+                          {{ bq.text|question_notes }}
                         {% endif %}
 
                         {% if bq.question_type == 'likert' %}
