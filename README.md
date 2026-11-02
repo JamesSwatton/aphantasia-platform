@@ -8,6 +8,11 @@ For project history, see [CHANGELOG.md](CHANGELOG.md). For the CSS refactor and 
 
 - **Window size warning banner styling** — the minimum-window-size gate on `templates/tasks/task_start.html` is functional but the warning banner is currently a bare `.alert--warning` strip; needs proper design treatment.
 - Responsive design has not yet been started — see `docs/css-refactor-plan.md` for the working pattern the responsive-design branch is expected to reuse.
+- **Survey scoring review** — inspect each part of how results are calculated in `surveys/utils.py` against what researchers expect: subscale mode switches on when any group has a `result_label` (unlabelled groups are then ignored, with no overall score); `result_aggregation` is survey-wide; `result_min`/`result_max` are a display range only, with no rescaling, despite the admin help text saying scores are "mapped". Known problems found so far:
+  - The radar chart uses the first subscale's min/max for every axis (`templates/accounts/account.html`, `templates/surveys/survey_detail.html`), so per-group overrides only change the "score / max" text.
+  - `_numeric_responses` scores anything that parses as a number, so a numeric free-text answer (e.g. "42") is counted.
+  - Hidden branch questions are auto-filled with the minimum Likert value (see Conditional Branching below), and those values are scored as if answered.
+  - A subscale mixing scales (e.g. 0–2 and 0–4 items) averages raw values, so smaller-scale items weigh less unless `scale_factor` is used. Needs at least researcher guidance in `docs/SURVEY_QUESTION_GUIDE.md`.
 - **University hosting requirements** — none started yet: WCAG accessibility audit, accessibility statement, privacy statement, DPIA, and EqIA are all required before the university-servers production deploy can go live. See [docs/deployment.md](docs/deployment.md#university-hosting-requirements).
 
 ## Tech Stack
