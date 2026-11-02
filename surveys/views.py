@@ -67,8 +67,26 @@ def organize_questions_by_group(questions, groups):
     result = OrderedDict()
     for sort_key, group_obj, qs in items_to_sort:
         result[(sort_key, group_obj)] = qs
+        if group_obj:
+            group_obj.scale_runs = split_into_scale_runs(qs)
 
     return result
+
+
+def split_into_scale_runs(questions):
+    """
+    Split a group's questions into consecutive runs that share the same
+    scale options, so the template can render each run as its own matrix
+    table with the right header. A group on a single scale stays one run.
+    """
+    runs = []
+    for q in questions:
+        options = getattr(q, 'scale_options', None)
+        if runs and runs[-1]['scale_options'] == options:
+            runs[-1]['questions'].append(q)
+        else:
+            runs.append({'scale_options': options, 'questions': [q]})
+    return runs
 
 
 @login_required

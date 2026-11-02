@@ -188,7 +188,7 @@
       {% for group_info, group_questions in grouped_questions.items %}
         {% with group=group_info.1 %}
 
-          {# Grouped questions — render as a single matrix card #}
+          {# Grouped questions — one card, one matrix table per run of questions sharing a scale #}
           {% if group %}
             <section class="card-surface q-card">
               <p class="q-num">Question {{ forloop.counter }}</p>
@@ -196,17 +196,18 @@
               {% if group.show_title %}
                 <h2 class="q-title">{{ group.title }}</h2>
               {% endif %}
+              {% for run in group.scale_runs %}
               <table class="matrix">
                 <thead>
                   <tr>
                     <th><span class="sr-only">Question</span></th>
-                    {% for value, label in group_questions.0.scale_options %}
+                    {% for value, label in run.scale_options %}
                       <th>{{ label }}</th>
                     {% endfor %}
                   </tr>
                 </thead>
                 <tbody>
-                  {% for question in group_questions %}
+                  {% for question in run.questions %}
                     <tr class="q-matrix-row" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
                       <td>
                         <fieldset class="matrix-stem">
@@ -232,6 +233,7 @@
                   {% endfor %}
                 </tbody>
               </table>
+              {% endfor %}
             </section>
 
           {% else %}
