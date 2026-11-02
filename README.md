@@ -13,6 +13,7 @@ For project history, see [CHANGELOG.md](CHANGELOG.md). For the CSS refactor and 
   - `_numeric_responses` scores anything that parses as a number, so a numeric free-text answer (e.g. "42") is counted.
   - Hidden branch questions are auto-filled with the minimum Likert value (see Conditional Branching below), and those values are scored as if answered.
   - A subscale mixing scales (e.g. 0–2 and 0–4 items) averages raw values, so smaller-scale items weigh less unless `scale_factor` is used. Needs at least researcher guidance in `docs/SURVEY_QUESTION_GUIDE.md`.
+- **Trigger questions inside a visible question group** — a conditional trigger works when it has no group, is in a hidden (`show_title=False`) group, or controls questions from a visible group, but a trigger that is itself a row in a visible group's matrix still can't act as a gate: its controlled questions always show. Supporting it would mean rendering the trigger as the group card's gate and the rest of the group as a matrix inside the branch (see `organize_questions_by_group` in `surveys/views.py`). Deferred until a real survey needs it.
 - **University hosting requirements** — none started yet: WCAG accessibility audit, accessibility statement, privacy statement, DPIA, and EqIA are all required before the university-servers production deploy can go live. See [docs/deployment.md](docs/deployment.md#university-hosting-requirements).
 
 ## Tech Stack
