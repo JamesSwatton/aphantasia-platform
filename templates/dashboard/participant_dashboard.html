@@ -121,7 +121,7 @@
                                         {% if item.total_questions %}
                                             <span>{{ item.total_questions }} question{{ item.total_questions|pluralize }}</span>
                                         {% endif %}
-                                        {% if item.survey.domain %}<span>{{ item.survey.domain.name }}</span>{% endif %}
+                                        {% if item.survey.domain %}<span class="meta-domain" title="{{ item.survey.domain.name }}">{{ item.survey.domain.name }}</span>{% endif %}
                                     </div>
                                 </a>
                             {% endfor %}
@@ -139,7 +139,7 @@
                                     </div>
                                     <div class="task-card__meta">
                                         {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}
-                                        {% if item.task.domain %}<span>{{ item.task.domain.name }}</span>{% endif %}
+                                        {% if item.task.domain %}<span class="meta-domain" title="{{ item.task.domain.name }}">{{ item.task.domain.name }}</span>{% endif %}
                                         <span>Lab task</span>
                                     </div>
                                 </a>
@@ -163,7 +163,7 @@
                                     {% if item.total_questions %}
                                         <span>{{ item.total_questions }} question{{ item.total_questions|pluralize }}</span>
                                     {% endif %}
-                                    {% if item.survey.domain %}<span>{{ item.survey.domain.name }}</span>{% endif %}
+                                    {% if item.survey.domain %}<span class="meta-domain" title="{{ item.survey.domain.name }}">{{ item.survey.domain.name }}</span>{% endif %}
                                     <span>Completed</span>
                                 </div>
                             </div>
@@ -179,7 +179,7 @@
                                 </div>
                                 <div class="task-card__meta">
                                     {% if item.task.time_limit_minutes %}<span>~{{ item.task.time_limit_minutes }} mins</span>{% endif %}
-                                    {% if item.task.domain %}<span>{{ item.task.domain.name }}</span>{% endif %}
+                                    {% if item.task.domain %}<span class="meta-domain" title="{{ item.task.domain.name }}">{{ item.task.domain.name }}</span>{% endif %}
                                     <span>Completed</span>
                                 </div>
                             </div>

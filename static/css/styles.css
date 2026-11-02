@@ -1259,12 +1259,24 @@ ol {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   padding-left: 32px;
   border-left: 1px solid var(--rule-soft);
   font-size: 13px;
   color: var(--ink-muted);
-  min-width: 120px;
+  width: 180px;
+  min-width: 0;
+}
+/* Domain name in a card's meta column (.task-card__meta and
+   .list-card__meta). The column has a fixed width so cards in a list
+   line up; long domain names truncate instead of widening it. */
+.meta-domain {
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Phase 3 resolution (2026-08-21) of the 3-way .empty-state drift flagged
@@ -1400,7 +1412,8 @@ ol {
   border-left: 1px solid var(--rule-soft);
   font-size: 13px;
   color: var(--ink-muted);
-  min-width: 120px;
+  width: 180px;
+  min-width: 0;
 }
 
 /* -----------------------------------------------------------------------------
