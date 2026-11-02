@@ -196,44 +196,7 @@
               {% if group.show_title %}
                 <h2 class="q-title">{{ group.title }}</h2>
               {% endif %}
-              {% for run in group.scale_runs %}
-              <table class="matrix">
-                <thead>
-                  <tr>
-                    <th><span class="sr-only">Question</span></th>
-                    {% for value, label in run.scale_options %}
-                      <th>{{ label }}</th>
-                    {% endfor %}
-                  </tr>
-                </thead>
-                <tbody>
-                  {% for question in run.questions %}
-                    <tr class="q-matrix-row" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
-                      <td>
-                        <fieldset class="matrix-stem">
-                          <legend>
-                            {{ question.text }}
-                            {% if question.required %}<span class="sr-only">(required)</span>{% endif %}
-                          </legend>
-                        </fieldset>
-                      </td>
-                      {% for value, label in question.scale_options %}
-                        <td>
-                          <span class="radio">
-                            <input type="radio"
-                                   name="question_{{ question.id }}"
-                                   id="q{{ question.id }}_{{ value }}"
-                                   value="{{ value }}"
-                                   {% if question.required %}required{% endif %}>
-                            <label for="q{{ question.id }}_{{ value }}" aria-label="{{ label }}"></label>
-                          </span>
-                        </td>
-                      {% endfor %}
-                    </tr>
-                  {% endfor %}
-                </tbody>
-              </table>
-              {% endfor %}
+              {% include "partials/_question_matrix.html" with runs=group.scale_runs %}
             </section>
 
           {% else %}
@@ -362,7 +325,15 @@
                 {# ── Conditional branch — rendered inside the trigger card ── #}
                 {% if question.branch_questions %}
                   <div class="branch" id="branch-{{ question.id }}" data-branch aria-hidden="true">
-                    {% for bq in question.branch_questions %}
+                    {% for item in question.branch_items %}
+                      {% if item.group %}
+                      {# Controlled questions from a visible group render as that group's matrix #}
+                      <div style="margin-top: 20px;">
+                        <div class="q-title" style="font-size:17px;margin-bottom:6px">{{ item.group.title }}</div>
+                        {% include "partials/_question_matrix.html" with runs=item.scale_runs conditional=True %}
+                      </div>
+                      {% else %}
+                      {% with bq=item.question %}
                       <div data-question-id="{{ bq.id }}" data-question-order="{{ bq.order }}" data-conditional style="margin-top: 20px;">
                         {% if bq.text %}
                           <div class="q-title{% if bq.required %} q-title--required{% endif %}" style="font-size:17px;margin-bottom:6px">{{ bq.text|question_body }}</div>
@@ -438,6 +409,8 @@
 
                         {% endif %}
                       </div>
+                      {% endwith %}
+                      {% endif %}
                     {% endfor %}
                   </div>
                 {% endif %}

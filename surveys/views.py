@@ -20,31 +20,51 @@ def organize_questions_by_group(questions, groups):
     Trigger questions (controls_next_n_questions > 0) have their controlled
     questions attached as q.branch_questions and removed from the top-level
     list so the template can render them nested inside the trigger's card.
+    q.branch_items holds the same questions for rendering: single questions
+    as {'question': q}, and consecutive questions from a visible group as
+    {'group': g, 'questions': [...], 'scale_runs': [...]} so they render as
+    that group's matrix inside the branch.
     """
-    # Attach branch_questions to each trigger and collect IDs to suppress
+    # Groups with show_title=False are subscale-only; render their questions individually
+    group_lookup = {g.id: g for g in groups}
+
+    def visible_group(q):
+        group = group_lookup.get(q.group_id) if q.group_id else None
+        return group if group and group.show_title else None
+
+    # Attach branch_questions to each trigger and collect IDs to suppress.
+    # A trigger inside a visible group's matrix can't act as a gate.
     branch_question_ids = set()
     sorted_questions = sorted(questions, key=lambda q: q.order)
 
     for q in sorted_questions:
         q.branch_questions = []
-        if q.controls_next_n_questions > 0 and not q.group_id:
+        q.branch_items = []
+        if q.controls_next_n_questions > 0 and not visible_group(q):
             for candidate in sorted_questions:
                 if (candidate.order > q.order and
-                        candidate.order <= q.order + q.controls_next_n_questions and
-                        not candidate.group_id):
+                        candidate.order <= q.order + q.controls_next_n_questions):
                     q.branch_questions.append(candidate)
                     branch_question_ids.add(candidate.id)
+                    group = visible_group(candidate)
+                    if group and q.branch_items and q.branch_items[-1].get('group') == group:
+                        q.branch_items[-1]['questions'].append(candidate)
+                    elif group:
+                        q.branch_items.append({'group': group, 'questions': [candidate]})
+                    else:
+                        q.branch_items.append({'question': candidate})
+            for item in q.branch_items:
+                if 'group' in item:
+                    item['scale_runs'] = split_into_scale_runs(item['questions'])
 
     # Separate grouped and ungrouped questions, excluding branch children
-    # Groups with show_title=False are subscale-only; render their questions individually
-    group_lookup = {g.id: g for g in groups}
     grouped_questions = {}  # {group_id: [questions]}
     ungrouped_questions = []
 
     for q in questions:
         if q.id in branch_question_ids:
             continue  # rendered inside the trigger card, not as a top-level card
-        if q.group_id and group_lookup.get(q.group_id, None) and group_lookup[q.group_id].show_title:
+        if visible_group(q):
             if q.group_id not in grouped_questions:
                 grouped_questions[q.group_id] = []
             grouped_questions[q.group_id].append(q)
