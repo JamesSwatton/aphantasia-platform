@@ -3428,6 +3428,20 @@ ol {
 .matrix-item .q-select {
   margin-top: 12px;
 }
+/* A change of scale (or answer type) within a group: dashed break before the run */
+.matrix + .matrix,
+.matrix + .matrix-item,
+.matrix-item + .matrix,
+.matrix-item + .matrix-item {
+  margin-top: 32px;
+  border-top: 1px dashed var(--rule);
+}
+.matrix + .matrix th,
+.matrix-item + .matrix th,
+.matrix + .matrix-item,
+.matrix-item + .matrix-item {
+  padding-top: 20px;
+}
 
 /* Multiple choice — checkbox list */
 .choice-list {
