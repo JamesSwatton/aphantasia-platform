@@ -3414,6 +3414,20 @@ ol {
   color: var(--ink);
   padding: 0;
 }
+/* Non-Likert question inside a group, styled as a matrix row */
+.matrix-item {
+  padding: 14px 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.matrix-item__stem {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.matrix-item .q-textarea,
+.matrix-item .q-select {
+  margin-top: 12px;
+}
 
 /* Multiple choice — checkbox list */
 .choice-list {

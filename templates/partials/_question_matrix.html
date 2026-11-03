@@ -1,10 +1,14 @@
 {% comment %}
   Matrix tables for a question group, one per run of questions sharing a scale.
+  Non-Likert questions arrive as their own run and render standalone.
   Expects `runs` (from split_into_scale_runs). Set `conditional` when the
   matrix sits inside a gate's branch, so progress and random fill treat each
   row as a branch question.
 {% endcomment %}
 {% for run in runs %}
+{% if run.question %}
+{% include "partials/_question_single.html" with question=run.question in_group=True %}
+{% else %}
 <table class="matrix">
   <thead>
     <tr>
@@ -41,4 +45,5 @@
     {% endfor %}
   </tbody>
 </table>
+{% endif %}
 {% endfor %}

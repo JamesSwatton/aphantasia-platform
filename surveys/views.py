@@ -98,11 +98,16 @@ def split_into_scale_runs(questions):
     Split a group's questions into consecutive runs that share the same
     scale options, so the template can render each run as its own matrix
     table with the right header. A group on a single scale stays one run.
+    Non-Likert questions can't sit in a matrix, so each becomes its own run
+    as {'question': q} and renders as a standalone question.
     """
     runs = []
     for q in questions:
+        if q.question_type != 'likert':
+            runs.append({'question': q})
+            continue
         options = getattr(q, 'scale_options', None)
-        if runs and runs[-1]['scale_options'] == options:
+        if runs and runs[-1].get('scale_options') == options:
             runs[-1]['questions'].append(q)
         else:
             runs.append({'scale_options': options, 'questions': [q]})
