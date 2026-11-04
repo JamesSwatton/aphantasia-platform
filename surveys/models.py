@@ -351,6 +351,18 @@ class QuestionGroup(models.Model):
         # group_code may have changed, so refresh the identifiers of this group's questions
         self.renumber_questions()
 
+    def delete(self, *args, **kwargs):
+        question_pks = list(self.questions.values_list('pk', flat=True))
+        result = super().delete(*args, **kwargs)
+        # SET_NULL ungroups the questions without calling save(), so give them
+        # the ungrouped identifier (their order) here
+        for question in Question.objects.filter(pk__in=question_pks):
+            Question.objects.filter(pk=question.pk).update(
+                question_number='',
+                question_id=str(question.order),
+            )
+        return result
+
     def renumber_questions(self):
         """
         Re-letter every question in this group (a, b, c...) by order, and
