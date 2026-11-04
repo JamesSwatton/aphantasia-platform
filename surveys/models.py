@@ -348,6 +348,34 @@ class QuestionGroup(models.Model):
 
         super().save(*args, **kwargs)
 
+        # group_code may have changed, so refresh the identifiers of this group's questions
+        self.renumber_questions()
+
+    def renumber_questions(self):
+        """
+        Re-letter every question in this group (a, b, c...) by order, and
+        rebuild their question_id from the current group_code.
+        """
+        questions = Question.objects.filter(group=self).order_by('order', 'id')
+        for position, question in enumerate(questions):
+            question_number = _position_to_letters(position)
+            question_id = f"{self.group_code}_{question_number}"
+            if (question.question_number, question.question_id) != (question_number, question_id):
+                # update() rather than save() so this doesn't re-trigger renumbering
+                Question.objects.filter(pk=question.pk).update(
+                    question_number=question_number,
+                    question_id=question_id,
+                )
+
+
+def _position_to_letters(position):
+    """Convert a 0-indexed position to a letter code: 0=a ... 25=z, 26=aa, 27=ab..."""
+    if position < 26:
+        return chr(ord('a') + position)
+    first_letter = chr(ord('a') + (position // 26) - 1)
+    second_letter = chr(ord('a') + (position % 26))
+    return f"{first_letter}{second_letter}"
+
 
 class Question(models.Model):
     """
@@ -670,37 +698,37 @@ class Question(models.Model):
 
             self.order = (max_order or 0) + 1
 
-        # Auto-generate question_number as letter (a-z) if question is in a group
-        if self.group:
-            # Get all questions in this group, ordered by order field
-            # This gives us all existing questions in the group
-            group_questions = list(Question.objects.filter(
-                survey=self.survey,
-                group=self.group
-            ).exclude(
-                pk=self.pk if self.pk else None
-            ).order_by('order', 'id'))
+        # Remember the previous group so it can be re-lettered if this question leaves it
+        old_group_id = None
+        if self.pk:
+            old_group_id = Question.objects.filter(pk=self.pk).values_list('group_id', flat=True).first()
 
-            # Find position of this question within the group (0-indexed)
-            # We simply count how many questions in the group come before this one
-            position = len([q for q in group_questions if q.order < self.order or (q.order == self.order and self.pk and q.id < self.pk)])
-
-            # Convert position to letter (0=a, 1=b, etc.)
-            if position < 26:
-                self.question_number = chr(ord('a') + position)
-            else:
-                # Handle more than 26 questions: aa, ab, ac, etc.
-                first_letter = chr(ord('a') + (position // 26) - 1)
-                second_letter = chr(ord('a') + (position % 26))
-                self.question_number = f"{first_letter}{second_letter}"
-
-            # Generate question_id for grouped questions
-            self.question_id = f"{self.group.group_code}_{self.question_number}"
-        else:
+        if not self.group:
             # For ungrouped questions, use order as the identifier
+            self.question_number = ''
             self.question_id = str(self.order)
 
         super().save(*args, **kwargs)
+
+        # Moving a question or changing its order shifts the letters of the other
+        # questions in its group (and in the group it left), so re-letter them all
+        if self.group:
+            self.group.renumber_questions()
+            self.question_number, self.question_id = Question.objects.filter(
+                pk=self.pk
+            ).values_list('question_number', 'question_id').get()
+        if old_group_id and old_group_id != self.group_id:
+            old_group = QuestionGroup.objects.filter(pk=old_group_id).first()
+            if old_group:
+                old_group.renumber_questions()
+
+    def delete(self, *args, **kwargs):
+        group = self.group
+        result = super().delete(*args, **kwargs)
+        # Close the gap this question leaves in its group's lettering
+        if group:
+            group.renumber_questions()
+        return result
 
 
 class ParticipantResponse(models.Model):
