@@ -220,6 +220,26 @@ Multiple-choice-only. JSON mapping option keys to labels:
   selection is allowed. Selecting more than one option on a "select one" question is
   rejected.
 
+### Other Option
+
+Multiple-choice-only. For the common "Other (please specify)" pattern, enter the
+**key** of the option that should reveal a text box, e.g. `4` for
+`{"1": "Yes", "2": "No", "3": "Unsure", "4": "Other"}`. Leave it blank if the
+question has no such option.
+
+- When a participant chooses that option, a "Please describe" text box appears
+  beneath it. Choosing something else hides it again.
+- **The text box must be filled in whenever the option is chosen**, even if the
+  question itself isn't required.
+- It works the same for select one and select multiple questions.
+- The key must be one of the question's selectable options. A key that doesn't
+  exist, or belongs to a disabled option, is rejected when you save.
+- The option's label can be anything ("Other", "Something else", ...). It's the
+  key that matters, not the wording.
+- The answer is still stored as the selected keys (e.g. `["4"]`). The typed text is
+  stored separately and appears in the `other_text` column of the CSV export (see
+  [Exporting data](#exporting-data)).
+
 ### Controls Next N Questions / Trigger Value
 
 Together these set up conditional branching — see
@@ -239,8 +259,8 @@ Together these set up conditional branching — see
 **Likert Scale** — see Likert Scale/Reverse Coded/Scale Factor fields above; those
 are the only settings that apply.
 
-**Multiple Choice (Select One / Select Multiple)** — see the Options field above.
-Answers are stored as a JSON-encoded list even for single-select.
+**Multiple Choice (Select One / Select Multiple)** — see the Options and Other Option
+fields above. Answers are stored as a JSON-encoded list even for single-select.
 
 **Free Text** — no type-specific settings beyond Required. The full text is stored
 exactly as submitted; any truncation you might see in a preview/summary table is
@@ -309,4 +329,5 @@ The **Participant Responses** admin includes an "Export responses as CSV (with f
 question metadata)" action. Each row already includes question type, group, required
 flag, reverse-coding/scale-factor settings, and effective min/max/scale name, so you
 generally don't need to cross-reference the survey structure separately when
-analyzing exports. Every export is logged for research-integrity auditing.
+analyzing exports. The `other_text` column holds what a participant typed after
+choosing a multiple choice question's "Other" option, and is empty otherwise. Every export is logged for research-integrity auditing.

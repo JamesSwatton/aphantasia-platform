@@ -61,8 +61,8 @@ research_platform/
 - **Survey**: Survey definitions with configurable Likert scale settings (`min_value`, `max_value`, `scale_labels`), optional question randomization, and result-display metadata (`result_min`/`result_max`/`result_aggregation`/`result_description`) for participant-facing scoring. `FeedbackSurvey`, `ExitSurvey`, and `DemographicSurvey` are proxy models built on `Survey` for the mid-study feedback form, the withdrawal exit survey, and the dashboard-gating demographic survey respectively.
 - **QuestionGroup**: Groups questions into a visible section (shown to participants) or a hidden subscale (grouped only for scoring, no visual hint to participants).
 - **LikertScale**: Named, reusable Likert scales definable per survey.
-- **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, and conditional branching (`controls_next_n_questions` / `trigger_value`).
-- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order).
+- **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, an optional "Other" option that reveals a text box (`other_option`), and conditional branching (`controls_next_n_questions` / `trigger_value`).
+- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option.
 
 ### tasks
 - **LabTask**: Lab.js task uploads. Includes optional `trial_sender_filter` field (comma-separated sender names) to narrow trial data filtering beyond the default `ended_on='response'` filter, and an optional minimum-window-size gate (`requires_min_window_size`/`min_window_width`/`min_window_height`).
