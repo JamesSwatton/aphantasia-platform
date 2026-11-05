@@ -263,19 +263,7 @@
 
                 {# ── Multiple choice ── #}
                 {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
-                  <fieldset class="choice-list">
-                    <legend class="sr-only">{{ question.text|render_markdown|striptags }}</legend>
-                    {% for value, label, is_disabled in question.multiple_choice_options %}
-                      <label class="choice{% if is_disabled %} choice--disabled{% endif %}">
-                        <input type="{% if question.question_type == 'multiple_choice_single' %}radio{% else %}checkbox{% endif %}"
-                               name="question_{{ question.id }}"
-                               value="{{ value }}"
-                               {% if is_disabled %}disabled{% endif %}>
-                        <span class="choice__box"></span>
-                        {{ label }}
-                      </label>
-                    {% endfor %}
-                  </fieldset>
+                  {% include "partials/_choice_list.html" %}
 
                 {# ── Free text ── #}
                 {% elif question.question_type == 'free_text' %}
@@ -532,6 +520,33 @@
 
 (function () {
   /* =========================================================================
+     "Other" option — choosing it reveals its text box, which must then be
+     filled in. Hidden boxes are disabled so they're neither required nor
+     submitted, but keep what was typed in case the choice is made again.
+     Also re-syncs on survey:refresh, since closing a branch unchecks inputs
+     without firing change events.
+     ========================================================================= */
+  var choices = document.querySelectorAll('input[data-other-option]');
+  if (!choices.length) return;
+
+  function sync() {
+    choices.forEach(function (choice) {
+      var wrap = document.querySelector('[data-other-text="' + choice.name + '"]');
+      var box = wrap.querySelector('textarea');
+      var open = choice.checked;
+      wrap.hidden = !open;
+      box.disabled = !open;
+      box.required = open;
+    });
+  }
+
+  document.addEventListener('change', sync);
+  document.addEventListener('survey:refresh', sync);
+  sync();
+})();
+
+(function () {
+  /* =========================================================================
      Test result chart (preview mode only)
      ========================================================================= */
   var spectrumCard = document.querySelector('[data-chart="spectrum"]');
@@ -664,6 +679,7 @@
       var shuffled = opts.slice().sort(function () { return Math.random() - 0.5; });
       shuffled.slice(0, Math.max(1, Math.floor(Math.random() * 2) + 1)).forEach(function (c) {
         c.checked = true;
+        c.dispatchEvent(new Event('change', { bubbles: true }));
       });
     });
   }

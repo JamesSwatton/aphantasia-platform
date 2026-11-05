@@ -58,6 +58,7 @@ class QuestionInlineForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'trigger_value': forms.TextInput(attrs={'size': 4}),
+            'other_option': forms.TextInput(attrs={'size': 4}),
         }
 
 
@@ -65,7 +66,7 @@ class QuestionInline(admin.TabularInline):
     model = Question
     form = QuestionInlineForm
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "controls_next_n_questions", "trigger_value"]
+    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "other_option", "controls_next_n_questions", "trigger_value"]
     readonly_fields = ["question_id"]
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'rows': 5})},
@@ -248,6 +249,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
 
             # Response data
             'answer',
+            'other_text',
             'is_test',
             'created_at',
             'updated_at',
@@ -297,6 +299,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 'max_value': max_val,
                 'likert_scale_name': scale_name,
                 'answer': response_obj.answer,
+                'other_text': response_obj.other_text,
                 'is_test': response_obj.is_test,
                 'created_at': response_obj.created_at.isoformat(),
                 'updated_at': response_obj.updated_at.isoformat(),

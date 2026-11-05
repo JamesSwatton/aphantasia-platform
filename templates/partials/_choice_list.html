@@ -1,0 +1,31 @@
+{% load markdown_extras %}
+{% comment %}
+  The options of a multiple choice question as radios (select one) or
+  checkboxes (select multiple). Expects `question` with
+  `multiple_choice_options` attached. The question's "Other" option, if set,
+  is followed by a text box that the survey JS reveals while it's chosen.
+{% endcomment %}
+<fieldset class="choice-list">
+  <legend class="sr-only">{{ question.text|render_markdown|striptags }}</legend>
+  {% for value, label, is_disabled in question.multiple_choice_options %}
+    <label class="choice{% if is_disabled %} choice--disabled{% endif %}">
+      <input type="{% if question.question_type == 'multiple_choice_single' %}radio{% else %}checkbox{% endif %}"
+             name="question_{{ question.id }}"
+             value="{{ value }}"
+             {% if is_disabled %}disabled{% endif %}
+             {% if value|stringformat:"s" == question.other_option %}data-other-option{% endif %}>
+      <span class="choice__box"></span>
+      {{ label }}
+    </label>
+    {% if value|stringformat:"s" == question.other_option %}
+      <div class="choice-other" data-other-text="question_{{ question.id }}" hidden>
+        <textarea class="q-textarea"
+                  name="question_{{ question.id }}_other"
+                  rows="2"
+                  aria-label="Please describe"
+                  placeholder="Please describe"
+                  disabled></textarea>
+      </div>
+    {% endif %}
+  {% endfor %}
+</fieldset>

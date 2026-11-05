@@ -158,6 +158,7 @@ def survey_preview(request, pk):
         # Process preview submission - save to database with is_test=True
         errors = []
         responses = {}  # Store as {question: answer_value}
+        other_texts = {}  # {question: text typed for its "Other" option}
         display_responses = []  # For showing the summary table
 
         # Build a map of which questions are disabled based on trigger logic
@@ -276,17 +277,23 @@ def survey_preview(request, pk):
                 filtered_values = [v for v in selected_values if str(v) in enabled_keys]
 
                 is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
+                other_text = request.POST.get(f'{field_name}_other', '').strip() if q.other_option in filtered_values else ''
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
+                elif q.other_option in filtered_values and not other_text:
+                    errors.append(f"Question {index}: Please describe your \"Other\" answer.")
                 elif filtered_values:
                     import json
                     responses[q] = json.dumps(filtered_values)
+                    other_texts[q] = other_text
                     # Build display data - extract labels properly
                     labels = []
                     for v in filtered_values:
                         option_value = q.options.get(str(v), str(v))
                         # If it's a list (disabled option), take first element; otherwise use as-is
                         label = option_value[0] if isinstance(option_value, list) else option_value
+                        if v == q.other_option:
+                            label = f"{label.strip()}: {other_text}"
                         labels.append(label)
 
                     display_responses.append({
@@ -408,7 +415,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'is_test': True}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True}
                         )
 
             messages.success(
@@ -491,6 +498,7 @@ def survey_take(request, pk):
         # Validate that all required questions are answered
         errors = []
         responses = {}  # Store as {question: answer_value}
+        other_texts = {}  # {question: text typed for its "Other" option}
 
         # Build a map of which questions are disabled based on trigger logic
         disabled_questions = set()
@@ -553,12 +561,16 @@ def survey_take(request, pk):
 
                 # Validate using the model method
                 is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
+                other_text = request.POST.get(f'{field_name}_other', '').strip() if q.other_option in filtered_values else ''
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
+                elif q.other_option in filtered_values and not other_text:
+                    errors.append(f"Question {index}: Please describe your \"Other\" answer.")
                 elif filtered_values:
                     # Store as JSON array
                     import json
                     responses[q] = json.dumps(filtered_values)
+                    other_texts[q] = other_text
                 else:
                     # Optional question left blank - record as NULL
                     if not q.required:
@@ -615,7 +627,7 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, '')}
                         )
 
             context = {

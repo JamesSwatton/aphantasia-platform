@@ -45,16 +45,7 @@
 
   {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
     {% if question.question_type == 'multiple_choice_single' %}<p class="q-instruction">Select one.</p>{% else %}<p class="q-instruction">Select all that apply.</p>{% endif %}
-    <fieldset class="choice-list">
-      <legend class="sr-only">{{ question.text|render_markdown|striptags }}</legend>
-      {% for value, label, is_disabled in question.multiple_choice_options %}
-        <label class="choice{% if is_disabled %} choice--disabled{% endif %}">
-          <input type="{% if question.question_type == 'multiple_choice_single' %}radio{% else %}checkbox{% endif %}" name="question_{{ question.id }}" value="{{ value }}" {% if is_disabled %}disabled{% endif %}>
-          <span class="choice__box"></span>
-          {{ label }}
-        </label>
-      {% endfor %}
-    </fieldset>
+    {% include "partials/_choice_list.html" %}
 
   {% elif question.question_type == 'free_text' %}
     <textarea class="q-textarea" name="question_{{ question.id }}" id="bq{{ question.id }}" rows="4" {% if question.required %}required{% endif %}></textarea>

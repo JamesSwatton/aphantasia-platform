@@ -193,7 +193,7 @@ class DemographicQuestionGroupInline(admin.TabularInline):
 class DemographicQuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "options"]
+    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "options", "other_option"]
     readonly_fields = ["question_id"]
 
     def get_queryset(self, request):

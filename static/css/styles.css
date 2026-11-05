@@ -3447,6 +3447,7 @@ ol {
 .choice-list {
   margin-top: 20px;
   border: 0;
+  border-bottom: 1px solid var(--rule-soft);
   padding: 0;
 }
 .choice {
@@ -3459,9 +3460,6 @@ ol {
   font-size: 15px;
   color: var(--ink);
   position: relative;
-}
-.choice:last-child {
-  border-bottom: 1px solid var(--rule-soft);
 }
 /* Invisible native input covers the whole row for click area */
 .choice input {
@@ -3515,6 +3513,14 @@ ol {
 }
 .choice--disabled input {
   pointer-events: none;
+}
+/* "Other" text box — indented to line up with the option labels */
+.choice-other {
+  padding: 0 0 14px 32px;
+}
+.choice-other .q-textarea {
+  margin-top: 0;
+  min-height: 0;
 }
 
 /* Free text */

@@ -1,6 +1,7 @@
 import json
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
 from core.models import Domain
 
@@ -460,6 +461,11 @@ class Question(models.Model):
         blank=True,
         help_text='(Multiple choice only) Options for multiple choice questions. Format: {"1": "Option A", "2": "Option B", "3": "Option C"}. To disable an option (visible but not selectable), use an array: {"1": "Option A", "2": ["Option B (disabled)"], "3": "Option C"}'
     )
+    other_option = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text='(Multiple choice only) The key of an "Other" option, e.g. "4". Choosing it reveals a text box the participant must fill in. Leave blank if there is no "Other" option.'
+    )
     order = models.PositiveIntegerField(
         default=0,
         help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number will replace any question at that position.'
@@ -616,6 +622,14 @@ class Question(models.Model):
 
         return True, None
 
+    def clean(self):
+        super().clean()
+        if self.other_option:
+            if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi']:
+                raise ValidationError({'other_option': 'Only multiple choice questions can have an "Other" option.'})
+            if self.other_option not in self.get_enabled_option_keys():
+                raise ValidationError({'other_option': f'"{self.other_option}" is not one of this question\'s selectable option keys.'})
+
     def get_year_options(self):
         """
         Returns list of (value, label) tuples for year dropdown.
@@ -763,6 +777,10 @@ class ParticipantResponse(models.Model):
         related_name='survey_responses'
     )
     answer = models.TextField()
+    other_text = models.TextField(
+        blank=True,
+        help_text='What the participant typed after choosing the question\'s "Other" option'
+    )
     is_test = models.BooleanField(
         default=False,
         help_text="Marks this as test data submitted by researchers/staff"
