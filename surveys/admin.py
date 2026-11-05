@@ -96,7 +96,10 @@ class QuestionInline(admin.TabularInline):
                 kwargs["queryset"] = QuestionGroup.objects.filter(survey=request._survey_obj)
             else:
                 kwargs["queryset"] = QuestionGroup.objects.none()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "group":
+            field.label_from_instance = lambda group: group.choice_label
+        return field
 
 
 @admin.register(Survey)

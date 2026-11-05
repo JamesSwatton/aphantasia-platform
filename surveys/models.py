@@ -3,6 +3,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.utils.text import Truncator
 from core.models import Domain
 
 
@@ -326,6 +327,11 @@ class QuestionGroup(models.Model):
 
     def __str__(self):
         return f"{self.survey.title} - [{self.group_code}] {self.title}"
+
+    @property
+    def choice_label(self):
+        """Short label for the group dropdown on question rows; group titles can be very long."""
+        return f"[{self.group_code}] {Truncator(self.title).chars(40)}"
 
     def save(self, *args, **kwargs):
         """
