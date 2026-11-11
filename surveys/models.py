@@ -89,7 +89,7 @@ class Survey(models.Model):
     result_max = models.FloatField(
         null=True,
         blank=True,
-        help_text="Maximum of the display range for results (e.g. 100)."
+        help_text="Maximum of the display range for results (e.g. 60)."
     )
     result_description = models.TextField(
         blank=True,
