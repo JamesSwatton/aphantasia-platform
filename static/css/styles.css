@@ -2646,7 +2646,8 @@ ol {
   margin-top: 20px;
   max-width: 72ch;
 }
-.account-page .result-description {
+/* Shared with the Preview & Test computed result in survey_detail.html */
+.result-description {
   margin-top: 16px;
   font-size: 14px;
   color: var(--ink-muted);

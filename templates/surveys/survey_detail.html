@@ -152,6 +152,9 @@
               </ul>
             </div>
           </div>
+          {% if survey.result_description %}
+            <p class="result-description">{{ survey.result_description }}</p>
+          {% endif %}
         </div>
       {% else %}
         <div class="card-surface test-chart" id="test-chart" data-chart="spectrum" data-chart-json="{{ test_result.chart_json }}">
@@ -170,6 +173,9 @@
             <span>{{ test_result.min }}</span>
             <span>{{ test_result.max }}</span>
           </div>
+          {% if survey.result_description %}
+            <p class="result-description">{{ survey.result_description }}</p>
+          {% endif %}
         </div>
       {% endif %}
     {% endif %}
