@@ -180,43 +180,19 @@ def survey_preview(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Auto-fill disabled questions with default values
+            # Store disabled (hidden branch) questions as "NULL" so they aren't scored
             if q.id in disabled_questions:
-                if q.question_type == 'likert':
-                    # Use minimum value of the scale
-                    auto_value = q.effective_min()
-                    responses[q] = auto_value
-                    # Build display data for auto-filled response
-                    stored_value = q.apply_reverse_coding(auto_value) if q.reverse_coded else auto_value
-                    stored_value = q.apply_scale_factor(stored_value)
-                    if q.likert_scale:
-                        answer_label = q.likert_scale.get_label_for_value(auto_value)
-                    else:
-                        answer_label = survey.get_label_for_value(auto_value)
-                    display_responses.append({
-                        'question_id': q.get_question_identifier(),
-                        'question_text': q.text,
-                        'question_type': 'likert',
-                        'answer_value': auto_value,
-                        'answer_label': answer_label,
-                        'stored_value': stored_value,
-                        'reverse_coded': q.reverse_coded,
-                        'scale_factor': q.scale_factor,
-                        'is_auto_filled': True
-                    })
-                else:
-                    # For non-Likert questions, store "NULL"
-                    responses[q] = "NULL"
-                    display_responses.append({
-                        'question_id': q.get_question_identifier(),
-                        'question_text': q.text,
-                        'question_type': q.question_type,
-                        'answer_value': "NULL",
-                        'answer_label': '-',
-                        'stored_value': "NULL",
-                        'reverse_coded': False,
-                        'is_auto_filled': True
-                    })
+                responses[q] = "NULL"
+                display_responses.append({
+                    'question_id': q.get_question_identifier(),
+                    'question_text': q.text,
+                    'question_type': q.question_type,
+                    'answer_value': "NULL",
+                    'answer_label': '-',
+                    'stored_value': "NULL",
+                    'reverse_coded': False,
+                    'is_auto_filled': True
+                })
                 continue
 
             if q.question_type == 'likert':
@@ -519,14 +495,9 @@ def survey_take(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Auto-fill disabled questions with default values
+            # Store disabled (hidden branch) questions as "NULL" so they aren't scored
             if q.id in disabled_questions:
-                if q.question_type == 'likert':
-                    # Use minimum value of the scale
-                    responses[q] = q.effective_min()
-                else:
-                    # For non-Likert questions, store "NULL"
-                    responses[q] = "NULL"
+                responses[q] = "NULL"
                 continue
 
             if q.question_type == 'likert':

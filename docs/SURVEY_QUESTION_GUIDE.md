@@ -294,14 +294,12 @@ Important constraints:
   change which questions end up controlled.
 - **If a participant's answer doesn't match the Trigger Value**, the controlled
   questions aren't simply left blank — they're automatically disabled and filled in
-  on submission:
-  - Likert questions are auto-filled with the scale's **minimum** value.
-  - Every other type is auto-filled with the literal string `"NULL"`.
+  on submission with the literal string `"NULL"`, whatever the question type.
 
   This guarantees a response row exists for every question regardless of which branch
-  a participant took, but it means **these auto-filled rows need to be filtered or
-  accounted for in analysis** — a Likert "1" or a literal `"NULL"` string may mean
-  "skipped by branch logic," not a genuine answer.
+  a participant took. These questions are **left out of the participant's score**. In
+  analysis, a `"NULL"` means "skipped by branch logic" or an optional question left
+  blank, not a genuine answer.
 
 This is unrelated to the **demographic gateway** described below, which is a
 survey-level setting, not a per-question one.
