@@ -141,10 +141,6 @@ class SurveyAdmin(admin.ModelAdmin):
             "Results Display Information",
             {
                 "fields": ["result_aggregation", "result_min", "result_max", "result_description"],
-                "description": (
-                    "The range to which participant scores are mapped for display in charts. "
-                    "Individual question groups can override this range. Leave blank if no mapping is needed."
-                ),
             },
         ),
     ]

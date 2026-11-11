@@ -84,7 +84,7 @@ class Survey(models.Model):
     result_min = models.FloatField(
         null=True,
         blank=True,
-        help_text="Minimum of the display range for results (e.g. 0). Leave blank if no mapping is needed."
+        help_text="Minimum of the display range for results (e.g. 0)."
     )
     result_max = models.FloatField(
         null=True,

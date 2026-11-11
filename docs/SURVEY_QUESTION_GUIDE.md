@@ -34,9 +34,10 @@ survey-level values are ignored for that question.
 
 - **Result Aggregation** — Mean or Sum. How question scores are combined into a
   group/survey result.
-- **Result Min / Result Max** — the display range participant scores are mapped to
-  for charts (e.g. 0–100). Leave blank if you don't need a mapped/scored result at
-  all.
+- **Result Min / Result Max** — the two ends of the chart participants see. Scores
+  aren't rescaled to this range, so set it to the lowest and highest scores the
+  survey can actually produce (e.g. 12–60 for 12 questions on a 1–5 scale with Sum).
+  Leave blank if you don't need a scored result at all.
 - **Result Description** — short explanatory text shown to participants alongside
   their result (e.g. "Higher scores indicate greater vividness of mental imagery").
 
