@@ -76,11 +76,13 @@ section or a hidden subscale.
   its questions together as a named subscale. Use unchecked groups when you want a
   composite score for a set of questions without exposing the grouping in the survey
   itself.
-- **Result Label** — the label used for this group in charts/results. Leave blank to
-  fall back to the Title. A group only counts as a scored subscale if this is
-  non-blank. For a short chart-axis label paired with a longer legend string, enter a
-  JSON array of two strings: `["V", "Visual"]` — "V" appears on the axis, "Visual" in
-  the legend.
+- **Result Label** — fill this in to score the group as its own subscale, shown under
+  this label in participants' results. Leave it blank if the group isn't a subscale.
+  Once any group in the survey has a Result Label, the survey is scored by subscale:
+  only labelled groups are scored, and unlabelled groups, ungrouped questions and an
+  overall score are left out. For a short chart-axis label paired with a longer legend
+  string, enter a JSON array of two strings: `["V", "Visual"]` — "V" appears on the
+  axis, "Visual" in the legend.
 - **Result Min / Result Max** — override the survey-level result range just for this
   subscale's display. Leave blank to inherit the survey's range.
 - **Order** — display order of the group. Leave at 0 to auto-append to the end.

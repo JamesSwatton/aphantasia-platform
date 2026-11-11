@@ -230,7 +230,7 @@ class QuestionGroup(models.Model):
 
     'title' is the participant-facing prompt shown during the survey (e.g. "Think of a relative or friend").
     'show_title' controls whether that prompt is rendered as a heading in the survey form.
-    'result_label' is the short label used on charts/results (e.g. "Scene 1"). Falls back to title if blank.
+    'result_label' makes the group a scored subscale and labels it on charts/results (e.g. "Scene 1"). Blank means not a subscale.
 
     Questions in groups get composite identifiers like "1_a", "1_b", "2_a", "2_b", etc.
     """
@@ -255,10 +255,12 @@ class QuestionGroup(models.Model):
         max_length=100,
         blank=True,
         help_text=(
-            "Short label for this group in charts/results (e.g. 'Scene 1'). "
-            "Falls back to group title if blank. To show a short chart-axis "
-            "label with a longer legend description, enter a JSON array of "
-            "two strings, e.g. [\"V\", \"Visual\"]."
+            "Fill in to score this group as its own subscale, shown under this "
+            "label in participants' results (e.g. 'Scene 1'). Leave blank if the "
+            "group isn't a subscale. Once any group has a label, only labelled "
+            "groups are scored and there is no overall score. To show a short "
+            "chart-axis label with a longer legend description, enter a JSON "
+            "array of two strings, e.g. [\"V\", \"Visual\"]."
         )
     )
     result_min = models.FloatField(
