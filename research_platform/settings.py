@@ -30,6 +30,10 @@ DEBUG = config("DEBUG", default=False, cast=bool)
 ALLOWED_HOSTS = config("ALLOWED_HOSTS", default="localhost,127.0.0.1").split(",")
 # ALLOWED_HOSTS = ["192.168.1.189", "localhost", "127.0.0.1"]
 
+# The survey admin posts every question inline in one request (~15 fields per
+# question), so long surveys exceed Django's default limit of 1000 and get a 400.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 # Application definition
 
 INSTALLED_APPS = [
