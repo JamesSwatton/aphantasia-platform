@@ -257,8 +257,8 @@ Surveys are created and managed through the Django admin panel by researchers:
 Questions can be ordered manually or automatically:
 
 1. **Auto-increment**: Leave the order field at `0` and it will automatically be set to the next available number
-2. **Manual ordering**: Set a specific order number to position questions
-3. **Normalize order**: Use the admin action "Normalize question order" to renumber all questions sequentially (1, 2, 3...), removing gaps and duplicates
+2. **Manual ordering**: Set a specific order number to move a question there; the other questions shift along
+3. **Renumbering**: Saving a survey renumbers all its questions sequentially (1, 2, 3...), closing gaps left by deleted questions. The admin action "Normalize question order" does the same for several surveys at once
 4. **Display vs. Storage**: Questions display their position in the rendered list (which may be randomized), not their database order number
 
 #### Question Randomization

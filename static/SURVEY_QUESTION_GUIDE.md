@@ -138,15 +138,18 @@ as typed, so symbols like `**` will appear literally there.
 ### Order
 
 - **0 means "add to the end"** — auto-assigned the next available position.
-- Setting a specific number does **not** shift other questions out of the way, so
-  duplicate or out-of-sequence order values are possible and won't error.
-- Randomizing (via the survey's Randomize Questions checkbox) shuffles the
-  participant-facing order but doesn't change the stored Order values.
-- Use the **"Normalize question order"** action on the Surveys list (select the
-  survey, choose the action from the dropdown) to renumber everything sequentially
-  and clean up gaps/duplicates. Safe to run any time — responses are linked to
+- **Setting a specific number moves the question there** and shifts the others
+  along. Moving question 6 to 1 makes the old 1–5 become 2–6; moving question 1
+  to 4 makes the old 2–4 become 1–3. A new question given a number goes before
+  the question already at that number.
+- Every time you save the survey, all its questions are renumbered 1, 2, 3...,
+  so deleting a question closes the gap it leaves. Responses are linked to
   questions by ID, not by order, so this doesn't affect already-recorded data. It
   will, however, change the `question_id` of any ungrouped questions (see below).
+- Randomizing (via the survey's Randomize Questions checkbox) shuffles the
+  participant-facing order but doesn't change the stored Order values.
+- The **"Normalize question order"** action on the Surveys list does the same
+  renumbering for several surveys at once, without opening each one.
 
 ### Group
 
@@ -164,8 +167,8 @@ Auto-generated, shown for reference only — you can't edit it directly.
   question's position within the group. This is recalculated on every save, so
   reordering questions within a group changes their letters.
 - **Ungrouped questions** just use their Order number as the ID (e.g. `"5"`). This
-  means an ungrouped question's ID **changes if you reorder the survey or run
-  Normalize Question Order.** If you need stable identifiers for a question across
+  means an ungrouped question's ID **changes whenever its position changes** —
+  when it's moved, or a question above it is added, moved or deleted. If you need stable identifiers for a question across
   data exports over time, put it in a group — group membership changes far less
   often than raw order does.
 
