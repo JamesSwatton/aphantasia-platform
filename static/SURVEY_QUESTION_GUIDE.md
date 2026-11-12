@@ -98,6 +98,41 @@ Notes:
   is completely normal — questions just render top to bottom without any grouping or
   subscale scoring.
 
+## Guidelines (inline)
+
+A **Guideline** is guidance text shown to participants between question cards,
+for example instructions that apply to the next few questions. It sits outside any
+card, in the same serif type as the questions, so it reads as guidance rather than
+a question. Use it instead of a question group when all you need is to show some
+text: a group puts its questions into a matrix.
+
+- **Text** — what participants see. Markdown works here as it does in question
+  text: `**bold**`, a blank line for a new paragraph, `- ` for a bullet list.
+- **Before Question** — the Order number of the question this guideline appears
+  above.
+
+Notes:
+
+- **It appears above the card that contains that question.** For an ungrouped
+  question that's directly above it. For a question in a visible group, it's above
+  the group's card, even if the question isn't the group's first. For a question
+  inside a conditional branch, it's above the trigger question's card, so the
+  guideline is always visible.
+- **A number past the last question puts it at the end**, after the last question
+  and before the submit button.
+- **The number doesn't follow the question.** Adding, moving or deleting a question
+  above it renumbers the questions (see [Order](#order)) but not the guideline, so
+  check its Before Question after reordering.
+- **On a randomised survey every guideline appears at the top**, in Before Question
+  order, since there's no fixed position to put them in.
+- Several guidelines with the same number appear one after another, in the order
+  they were added.
+- Guidelines aren't questions: they have no number, don't count towards progress,
+  aren't filled by "Fill with random answers", and never appear in responses,
+  exports or scoring.
+- Guidelines show on regular and demographic surveys. Feedback and exit surveys
+  don't have this section.
+
 ## Questions (inline)
 
 Each row is one question. Fields, in the order they appear:
