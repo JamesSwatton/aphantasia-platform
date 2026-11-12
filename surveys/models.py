@@ -119,19 +119,36 @@ class Survey(models.Model):
             return self.scale_labels[str(value)]
         return str(value)
 
-    def normalize_question_order(self):
+    def normalize_question_order(self, moved=None):
         """
         Renumber all questions sequentially (1, 2, 3...) based on current order.
-        Uses ID as tiebreaker for questions with duplicate order numbers.
 
-        This is useful after manual reordering creates gaps or duplicates.
-        Does not affect participant responses (they're linked by question ID).
+        moved maps the pk of a question whose order was just changed to the
+        direction it moved (-1 up, 1 down). Where it shares an order number
+        with another question, a question moved up goes before it and one
+        moved down goes after it, so moving 6 to 1 gives 6, 1, 2, 3, 4, 5.
+        Other duplicates fall back to ID.
+
+        Ungrouped question IDs (their order) and group letters are rebuilt
+        to match. Does not affect participant responses (they're linked by
+        question pk).
         """
-        questions = self.questions.all().order_by('order', 'id')
+        moved = moved or {}
+        questions = sorted(
+            self.questions.all(),
+            key=lambda q: (q.order, moved.get(q.pk, 0), q.pk),
+        )
         for index, question in enumerate(questions, start=1):
+            updates = {}
             if question.order != index:
-                question.order = index
-                question.save()
+                updates['order'] = index
+            if not question.group_id and question.question_id != str(index):
+                updates['question_id'] = str(index)
+            if updates:
+                # update() rather than save() so each question doesn't re-letter its group
+                Question.objects.filter(pk=question.pk).update(**updates)
+        for group in self.question_groups.all():
+            group.renumber_questions()
 
 
 class FeedbackSurvey(Survey):
@@ -476,7 +493,7 @@ class Question(models.Model):
     )
     order = models.PositiveIntegerField(
         default=0,
-        help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number will replace any question at that position.'
+        help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number moves the question there and shifts the others along.'
     )
     controls_next_n_questions = models.PositiveIntegerField(
         default=0,
@@ -716,8 +733,10 @@ class Question(models.Model):
         Override save to auto-increment order if not specified (order=0).
         Also auto-generates question_number (as letter) and question_id.
 
-        Note: Order is purely for display/rendering. Duplicate order numbers
-        are allowed - use Survey.normalize_question_order() to clean up.
+        Note: Order is purely for display/rendering. Saving one question can
+        leave a duplicate order number; the survey admins renumber the whole
+        survey with Survey.normalize_question_order() after the question
+        inline saves.
         """
         # Auto-increment order if not specified
         if self.order == 0:

@@ -102,8 +102,32 @@ class QuestionInline(admin.TabularInline):
         return field
 
 
+class QuestionOrderAdminMixin:
+    """
+    After the question inline saves, renumber the survey's questions 1, 2, 3...
+    so a question moved to a taken order number shifts the others along
+    instead of sharing it.
+    """
+
+    def save_formset(self, request, form, formset, change):
+        super().save_formset(request, form, formset, change)
+        if formset.model is not Question:
+            return
+        moved = {}
+        for question_form in formset.forms:
+            if question_form in formset.deleted_forms or 'order' not in question_form.changed_data:
+                continue
+            old_order = question_form.initial.get('order') or 0
+            new_order = question_form.cleaned_data.get('order') or 0
+            if new_order == 0:
+                continue  # added to the end, so it can't clash
+            # A new question typed in at a number goes before the one already there
+            moved[question_form.instance.pk] = -1 if old_order == 0 or new_order < old_order else 1
+        form.instance.normalize_question_order(moved)
+
+
 @admin.register(Survey)
-class SurveyAdmin(admin.ModelAdmin):
+class SurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = SurveyAdminForm
     list_display = ["title", "researcher", "domain", "is_active", "is_priority", "preview_link_display", "created_at"]
     list_filter = ["is_active", "is_priority", "domain", "created_at"]

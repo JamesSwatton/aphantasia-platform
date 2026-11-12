@@ -3,6 +3,7 @@ from django.contrib.admin import SimpleListFilter
 from django import forms
 from .models import Domain, DataDownloadLog, Message
 from accounts.models import User
+from surveys.admin import QuestionOrderAdminMixin
 from surveys.models import FeedbackSurvey, ExitSurvey, DemographicSurvey, Question, QuestionGroup, LikertScale
 
 
@@ -53,7 +54,7 @@ class FeedbackSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(FeedbackSurvey)
-class FeedbackSurveyAdmin(admin.ModelAdmin):
+class FeedbackSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = FeedbackSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "show_after_n_surveys", "created_at"]
     list_filter = ["is_active"]
@@ -139,7 +140,7 @@ class ExitSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(ExitSurvey)
-class ExitSurveyAdmin(admin.ModelAdmin):
+class ExitSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = ExitSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "created_at"]
     list_filter = ["is_active"]
@@ -227,7 +228,7 @@ class DemographicSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(DemographicSurvey)
-class DemographicSurveyAdmin(admin.ModelAdmin):
+class DemographicSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = DemographicSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "created_at"]
     list_filter = ["is_active"]
