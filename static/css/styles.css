@@ -2521,10 +2521,6 @@ ol {
   gap: 48px;
   align-items: start;
 }
-.account-page .results-layout__domains {
-  position: sticky;
-  top: 24px;
-}
 .account-page .card h3 {
   font-family: var(--font-body);
   font-size: 13px;
