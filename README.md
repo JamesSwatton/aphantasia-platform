@@ -296,7 +296,7 @@ Beyond Likert scales, a question can be: multiple choice (select one or select m
 A question can control the next N questions via `controls_next_n_questions` + `trigger_value`: when the trigger question's answer matches `trigger_value`, the controlled questions reveal (`.branch` UI, slides open); otherwise they stay collapsed and are auto-filled with `NULL` (all question types) so every participant has a complete response row regardless of branch. `NULL` isn't numeric, so these rows are left out of scoring.
 
 #### Results & Scoring
-Surveys with `result_min`/`result_max` configured (survey-level, or per-`QuestionGroup` for subscale surveys) get participant-facing scoring: a spectrum chart for single-score surveys, or a radar/spider chart across subscales for surveys with multiple scored `QuestionGroup`s. See `surveys/utils.py` (`get_survey_result()`, `get_all_results()`) and the Results tab on `/accounts/account/`.
+Surveys with `result_min`/`result_max` configured (survey-level, or per-`QuestionGroup` for subscale surveys) get participant-facing scoring: a spectrum chart for single-score surveys, or a radar/spider chart across subscales for surveys with multiple scored `QuestionGroup`s. See `surveys/utils.py` (`get_survey_result()`, `get_all_results()`) and the Results tab on `/accounts/account/`. The Results tab has the dashboard's domain list beside the result cards (`partials/_domain_filter_panel.html`), listing only domains the participant has a result in, plus Uncategorized if any result has no domain. Picking one (`?domain=`) shows that domain's description and results and opens the page on the Results tab.
 
 ## Messaging System
 

@@ -947,3 +947,9 @@ Researchers had been using visible question groups just to show guidance text, w
 - Not a question: no `data-question-id`, so guidelines are never numbered, counted in progress, random-filled, submitted, exported or scored
 - The number doesn't follow its question when questions are reordered (accepted; documented in the guide)
 - Documented in a new "Guidelines (inline)" section of the survey question guide and in the README; removed from Known Open Items
+
+### Results tab filtered by domain
+With 40+ results the account page's Results tab was one long list. It now has the dashboard's domain list beside the result cards:
+- **`accounts/views.py`** reads `?domain=`, lists only the domains the participant has a result in (plus Uncategorized if any result has no domain) and filters the results to match
+- **`templates/accounts/account.html`** reuses `partials/_domain_filter_panel.html` in a left column and shows the selected domain's description above its results. When a domain is selected the page opens on the Results tab, since the filter links reload the page. A participant with no results still sees just the "No results yet" card
+- **`static/css/styles.css`**: a sticky 240px domain column (`.results-layout`); the content column widens only while the Results tab is open, so the cards keep their 860px width and the Profile and Consent tabs are unchanged
