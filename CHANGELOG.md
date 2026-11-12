@@ -879,7 +879,53 @@ Visual tasks need enough screen space to produce usable data, so researchers can
 
 ---
 
-## Session 34: Question Ordering Fixes & Guidelines (November 2026)
+## Session 34: Researcher Bug Fixes & Scoring Review (October–November 2026)
+
+**Branch**: `researcher-bug-fixes`
+
+Fixes for bugs the researcher found while adding real surveys on Railway, followed by a review of survey scoring with the researcher.
+
+### Question rendering
+- **Question text as Markdown** — standalone and branch questions render their text as Markdown, so a long question can be split into prompts, instructions and the question itself. Blocks before the last sit in a shaded `--bg-prompt` box; the last keeps the `.q-title` style. The required `*` is drawn with CSS `::after` so the last-block rule holds. Help-text-only migration `surveys.0031`
+- **Footnotes** — paragraphs starting `\* ` render as small `.q-note` text under the question, outside `.q-title`
+- **Radio buttons for single-choice questions** — `multiple_choice_single` rendered as checkboxes, so participants could tick several options and only be rejected on submit
+- **Mixed scales in a question group** — a grouped matrix took its header from its first question, so a group mixing Likert scales showed the wrong labels. `split_into_scale_runs` (`surveys/views.py`) splits a group into consecutive runs sharing the same scale options, each rendered as its own table with its own header, with a dashed break and extra space before each run after the first
+- **Non-Likert questions in a group** — a free-text (or other non-Likert) question in a visible group rendered as a matrix row with no input. Each now gets its own run, rendered with the single-question markup in the new `templates/partials/_question_single.html` and styled as a matrix row (`.matrix-item`)
+- **Matrix stem padding** — right padding removed from matrix stem cells so they align with the scale labels
+
+### Conditional questions and groups
+Branching was only built when the trigger and its controlled questions had no group, so any grouping silently disabled the gate:
+- A trigger in a hidden (`show_title=False`) group now gates like an ungrouped question
+- A trigger controlling questions from a visible group reveals them as that group's matrix inside the branch. Matrix markup moved to `templates/partials/_question_matrix.html` so the group card and the branch share it
+- A trigger that is itself a row in a visible group's matrix still can't gate; tracked in README Known Open Items
+
+### Question IDs
+- **Whole group re-lettered** — saving, moving, reordering or deleting a question now re-letters every question in the groups it left and joined (`QuestionGroup.renumber_questions`), instead of only the saved question. Saving a group rebuilds its questions' IDs. Data migration `surveys.0032` repairs stale stored IDs
+- **Deleted group's questions** — `SET_NULL` ungroups them without calling `save()`, so they kept IDs like `1_a`; they now take their order number like other ungrouped questions
+- Group codes not closing gaps after a group is deleted is tracked in README Known Open Items
+
+### "Other (please specify)"
+`Question.other_option` names the option key that reveals a required "Please describe" text box, for both single and multiple choice. The text is saved in `ParticipantResponse.other_text` and exported as an `other_text` CSV column; the answer stays the list of selected keys. Choice markup moved to `templates/partials/_choice_list.html`. Migration `surveys.0033`; documented in the survey question guide and README.
+
+### Admin and dashboard
+- **Large surveys can be saved** — `DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000`. The question inline posts about 15 fields per question, so one of the researcher's longest surveys hit Django's default limit of 1000 and returned a bare 400
+- **Shorter group dropdown** — the question row's group dropdown shows `[code] title` cut to 40 characters (`QuestionGroup.choice_label`) instead of the full name with the survey title, in the survey and demographic admins
+- **Domain description on the dashboard** — the selected domain's description shows above the participant dashboard list
+- **Card meta column** — fixed at 180px on `.task-card` and `.list-card`, with long domain names truncated (full name in a tooltip), centred and bolded on the dashboard
+
+### Scoring review
+Reviewed with the researcher. Fixed:
+- **Hidden branch questions saved as `NULL`** — hidden Likert follow-ups were filled with the scale minimum (or maximum once reverse-coded) and counted in the score; they now get `NULL` like every other question type, which scoring skips
+- **Only Likert answers scored** — `_numeric_responses` (`surveys/utils.py`) ignores other question types, so a number typed into a free-text answer no longer counts
+- **Result range wording** — "mapped" wording removed from the Results Display admin section, help text and guide: result min/max set the ends of the chart and scores aren't rescaled. Help-text-only migrations `surveys.0034` and `surveys.0035` (result max example changed from 100 to 60)
+- **Result label help text** — a blank label doesn't fall back to the title; it means the group isn't a scored subscale, and one labelled group switches the whole survey to subscale scoring. Help-text-only migration `surveys.0036`
+- **Result description on Preview & Test** — shown under the computed result; `.result-description` is no longer scoped to `.account-page`
+
+Everything else reviewed (one radar range per survey, groups never mixing scales for scoring, subscale all-or-nothing, one aggregation per survey, Sum with skipped optional questions, no multiple choice scoring) was confirmed as intended. The review was removed from README Known Open Items.
+
+---
+
+## Session 35: Question Ordering Fixes & Guidelines (November 2026)
 
 **Branch**: `researcher-bug-fixes`
 
