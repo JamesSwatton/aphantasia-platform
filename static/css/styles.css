@@ -309,10 +309,21 @@ ol {
   margin-top: auto;
 
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 16px var(--page-padding-x);
   background: var(--bg-page);
   color: var(--ink);
+}
+.footer__contact {
+  font-size: 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.footer__contact:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
 }
 
 /* -----------------------------------------------------------------------------
@@ -2512,7 +2523,8 @@ ol {
 /* Results tab: domain filter list beside the result cards. The content
    column widens while this tab is open so the cards keep their usual
    width next to the list. */
-.account-page .content:has(.panel[data-panel="results"].is-active .results-layout) {
+.account-page
+  .content:has(.panel[data-panel="results"].is-active .results-layout) {
   max-width: calc(860px + 240px + 48px);
 }
 .account-page .results-layout {
