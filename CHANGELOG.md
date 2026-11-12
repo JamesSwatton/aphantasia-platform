@@ -876,3 +876,28 @@ Visual tasks need enough screen space to produce usable data, so researchers can
 
 **Branch**: `bug-fixes-and-misc`
 
+
+---
+
+## Session 34: Question Ordering Fixes & Guidelines (November 2026)
+
+**Branch**: `researcher-bug-fixes`
+
+### Bug fix: changing a question's order didn't shift the others
+Setting a question's Order to a number already in use (e.g. moving question 6 to 1) left two questions sharing that number instead of moving the rest along.
+- **`QuestionOrderAdminMixin`** (`surveys/admin.py`), used by the survey, feedback, exit and demographic survey admins, renumbers every question 1, 2, 3... after the question inline saves. A question moved up goes before the one already at its new number, and one moved down goes after it, so 6→1 gives 6, 1, 2, 3, 4, 5
+- **`Survey.normalize_question_order(moved=None)`** does the renumbering in one pass with `update()`, rebuilding ungrouped question IDs (their order) and re-lettering every group. The "Normalize question order" admin action still uses it
+- Every survey save now closes gaps left by deleted questions, so ungrouped questions after a deleted one get new `question_id`s in exports
+- `order` help text updated (help-text-only migration `surveys.0037`); README and survey question guide updated to match
+
+### Bug fix: questions sharing an order number dropped off the page
+`organize_questions_by_group` (`surveys/views.py`) keyed each page item on `(sort_key, group)`, so two ungrouped questions with the same order produced the same key and one overwrote the other. The hidden question was still required, so the survey couldn't be submitted. Keys now include the item's position, so every question renders even if orders clash.
+
+### Guidelines
+Researchers had been using visible question groups just to show guidance text, which forced the following questions into a matrix. A **`Guideline`** (`surveys/models.py`, migration `surveys.0038`) is guidance text shown between question cards instead:
+- **Fields**: `text` (Markdown) and `before_question`, the Order number of the question it appears above. Edited in a Guidelines inline on the survey and demographic survey admins, between Question Groups and Questions; starts with one blank row like the other inlines
+- **Placement** (`attach_guidelines` in `surveys/views.py`): above the card containing that question, so a guideline aimed at a grouped or branch question appears above that group's or trigger's card and never inside a matrix or branch. A number past the last question puts it at the end; on randomised surveys every guideline goes at the top
+- **Rendering**: `templates/partials/_guidelines.html`, outside any card, in the question serif at regular weight with a left rule (`.guideline` in `static/css/styles.css`)
+- Not a question: no `data-question-id`, so guidelines are never numbered, counted in progress, random-filled, submitted, exported or scored
+- The number doesn't follow its question when questions are reordered (accepted; documented in the guide)
+- Documented in a new "Guidelines (inline)" section of the survey question guide and in the README; removed from Known Open Items
