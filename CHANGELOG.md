@@ -953,3 +953,6 @@ With 40+ results the account page's Results tab was one long list. It now has th
 - **`accounts/views.py`** reads `?domain=`, lists only the domains the participant has a result in (plus Uncategorized if any result has no domain) and filters the results to match
 - **`templates/accounts/account.html`** reuses `partials/_domain_filter_panel.html` in a left column and shows the selected domain's description above its results. When a domain is selected the page opens on the Results tab, since the filter links reload the page. A participant with no results still sees just the "No results yet" card
 - **`static/css/styles.css`**: a 240px domain column (`.results-layout`); the content column widens only while the Results tab is open, so the cards keep their 860px width and the Profile and Consent tabs are unchanged
+
+### Contact email in the footer
+`templates/partials/_footer.html` now has a `mailto:eyesmind@ed.ac.uk` link on the left, opposite the university crest, on every page. `.footer` was already a flex row, so it switched from `justify-content: flex-end` to `space-between` with `align-items: center`; the link (`.footer__contact`) is white, 14px, and underlines on hover.
