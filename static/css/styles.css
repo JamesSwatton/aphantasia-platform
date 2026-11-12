@@ -3162,6 +3162,27 @@ ol {
   margin-bottom: 16px;
 }
 
+/* Guidelines — researcher guidance between question cards. Sits on the page
+   background with no card, so it can't be mistaken for a question. */
+.guideline {
+  margin: 40px 0 28px;
+  padding: 12px 0 12px 28px;
+  border-left: 3px solid var(--ink);
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.guideline > * + * {
+  margin-top: 14px;
+}
+.guideline ul,
+.guideline ol {
+  list-style: revert;
+  padding-left: 1.5em;
+}
+
 .q-num {
   font-family: var(--font-display);
   font-size: 13px;

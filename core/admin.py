@@ -3,7 +3,7 @@ from django.contrib.admin import SimpleListFilter
 from django import forms
 from .models import Domain, DataDownloadLog, Message
 from accounts.models import User
-from surveys.admin import QuestionOrderAdminMixin
+from surveys.admin import GuidelineInline, QuestionOrderAdminMixin
 from surveys.models import FeedbackSurvey, ExitSurvey, DemographicSurvey, Question, QuestionGroup, LikertScale
 
 
@@ -233,7 +233,7 @@ class DemographicSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     list_display = ["title", "researcher", "is_active", "created_at"]
     list_filter = ["is_active"]
     search_fields = ["title", "description"]
-    inlines = [DemographicLikertScaleInline, DemographicQuestionGroupInline, DemographicQuestionInline]
+    inlines = [DemographicLikertScaleInline, DemographicQuestionGroupInline, GuidelineInline, DemographicQuestionInline]
     fieldsets = [
         (
             "Demographic Survey",

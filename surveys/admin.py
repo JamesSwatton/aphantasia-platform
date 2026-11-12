@@ -7,7 +7,7 @@ from django.http import HttpResponse
 import csv
 from datetime import date
 
-from .models import LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
+from .models import Guideline, LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
 from accounts.models import User
 from core.models import DataDownloadLog
 
@@ -50,6 +50,15 @@ class QuestionGroupInline(admin.TabularInline):
         """
         qs = super().get_queryset(request)
         return qs.order_by("order")
+
+
+class GuidelineInline(admin.TabularInline):
+    model = Guideline
+    extra = 1
+    fields = ["text", "before_question"]
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(attrs={'rows': 4, 'cols': 80})},
+    }
 
 
 class QuestionInlineForm(forms.ModelForm):
@@ -133,7 +142,7 @@ class SurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     list_filter = ["is_active", "is_priority", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
     readonly_fields = ["preview_link_field"]
-    inlines = [LikertScaleInline, QuestionGroupInline, QuestionInline]
+    inlines = [LikertScaleInline, QuestionGroupInline, GuidelineInline, QuestionInline]
     actions = ["normalize_question_order"]
     fieldsets = [
         (

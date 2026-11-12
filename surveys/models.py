@@ -784,6 +784,38 @@ class Question(models.Model):
         return result
 
 
+class Guideline(models.Model):
+    """
+    Guidance text shown to participants between question cards, outside any
+    card. Not a question: it isn't numbered, answered, saved, exported or scored.
+    """
+    survey = models.ForeignKey(
+        Survey,
+        on_delete=models.CASCADE,
+        related_name='guidelines'
+    )
+    text = models.TextField(
+        help_text='Shown to participants as written, with Markdown formatting (e.g. **bold**, blank line for a new paragraph).'
+    )
+    before_question = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        help_text=(
+            "Order number of the question this appears above. If that question is in a group "
+            "or a conditional branch, it appears above that group's or trigger's card. A number "
+            "past the last question puts it at the end. On a randomised survey, all guidelines "
+            "appear at the top."
+        )
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['survey', 'before_question', 'id']
+
+    def __str__(self):
+        return f"{self.survey.title} - before question {self.before_question}"
+
+
 class ParticipantResponse(models.Model):
     """
     Stores individual participant responses to survey questions.

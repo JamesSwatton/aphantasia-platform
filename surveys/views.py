@@ -96,6 +96,42 @@ def organize_questions_by_group(questions, groups):
     return result
 
 
+def attach_guidelines(grouped_questions, guidelines, randomized):
+    """
+    Attach each guideline to the card it appears above, as guidelines_before
+    on the card's first question, and return the ones that belong after the
+    last card.
+
+    A guideline sits above the card containing the question whose order is
+    its before_question, so one aimed at a grouped or branch question appears
+    above that group's or trigger's card. If no question has that order, the
+    next question after it is used. On a randomised survey the positions mean
+    nothing, so every guideline goes above the first card.
+    """
+    cards = list(grouped_questions.values())
+    for card in cards:
+        card[0].guidelines_before = []
+    if not cards:
+        return []
+    if randomized:
+        cards[0][0].guidelines_before = list(guidelines)
+        return []
+
+    card_for_order = {}
+    for card in cards:
+        for q in card:
+            for contained in [q] + q.branch_questions:
+                card_for_order.setdefault(contained.order, card)
+
+    guidelines_end = []
+    for guideline in guidelines:
+        later_orders = [order for order in card_for_order if order >= guideline.before_question]
+        if later_orders:
+            card_for_order[min(later_orders)][0].guidelines_before.append(guideline)
+        else:
+            guidelines_end.append(guideline)
+    return guidelines_end
+
 def split_into_scale_runs(questions):
     """
     Split a group's questions into consecutive runs that share the same
@@ -153,6 +189,7 @@ def survey_preview(request, pk):
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
 
     test_responses = None
     test_result = None
@@ -408,6 +445,7 @@ def survey_preview(request, pk):
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
+        'guidelines_end': guidelines_end,
         'is_preview': True,
         'test_responses': test_responses,
         'test_result': test_result,
@@ -472,6 +510,7 @@ def survey_take(request, pk):
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
 
     if request.method == 'POST':
         # Validate that all required questions are answered
@@ -608,6 +647,7 @@ def survey_take(request, pk):
                 'survey': survey,
                 'questions': questions,
                 'grouped_questions': grouped_questions,
+                'guidelines_end': guidelines_end,
                 'is_preview': False,
                 'submitted': True,
             }
@@ -617,6 +657,7 @@ def survey_take(request, pk):
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
+        'guidelines_end': guidelines_end,
         'is_preview': False,
     }
 

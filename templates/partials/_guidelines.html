@@ -1,0 +1,7 @@
+{% load markdown_extras %}
+{# Guidance text between question cards. Deliberately not a card and has no data-question-id, so it isn't numbered, counted in progress or submitted. #}
+{% for guideline in guidelines %}
+  <div class="guideline">
+    {{ guideline.text|render_markdown }}
+  </div>
+{% endfor %}
