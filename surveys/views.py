@@ -14,8 +14,11 @@ def organize_questions_by_group(questions, groups):
     """
     Organize questions into groups for display.
     Returns an OrderedDict where:
-    - Keys are (sort_key, group_obj or None)
+    - Keys are (sort_key, group_obj or None, position)
     - Values are lists of questions
+
+    position keeps keys unique, so questions that share an order number
+    don't overwrite each other.
 
     Trigger questions (controls_next_n_questions > 0) have their controlled
     questions attached as q.branch_questions and removed from the top-level
@@ -85,8 +88,8 @@ def organize_questions_by_group(questions, groups):
     items_to_sort.sort(key=lambda x: x[0])
 
     result = OrderedDict()
-    for sort_key, group_obj, qs in items_to_sort:
-        result[(sort_key, group_obj)] = qs
+    for position, (sort_key, group_obj, qs) in enumerate(items_to_sort):
+        result[(sort_key, group_obj, position)] = qs
         if group_obj:
             group_obj.scale_runs = split_into_scale_runs(qs)
 
