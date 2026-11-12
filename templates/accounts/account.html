@@ -10,13 +10,13 @@
     <nav class="view-switch" aria-label="Account view">
         <ul>
             <li>
-                <a href="#" data-panel="profile" aria-current="true">Profile</a>
+                <a href="#" data-panel="profile" {% if not selected_domain %}aria-current="true"{% endif %}>Profile</a>
             </li>
             <li>
                 <a href="#" data-panel="consent">Consent</a>
             </li>
             <li>
-                <a href="#" data-panel="results">Results</a>
+                <a href="#" data-panel="results" {% if selected_domain %}aria-current="true"{% endif %}>Results</a>
             </li>
         </ul>
     </nav>
@@ -24,7 +24,8 @@
         <h1 class="page-title">{{ user.get_full_name|default:user.email }}</h1>
         <p class="page-subtitle">Participant since {{ user.date_joined|date:"F Y" }}</p>
         <!-- Profile panel -->
-        <section class="panel is-active" data-panel="profile">
+        {# A domain filter link reloads the page, so open on the Results tab when one is selected #}
+        <section class="panel{% if not selected_domain %} is-active{% endif %}" data-panel="profile">
             <div class="card-surface card">
                 <h3>Account details</h3>
                 <dl class="field-grid">
@@ -168,7 +169,17 @@
             </div>
         </section>
         <!-- Results panel -->
-        <section class="panel" data-panel="results">
+        <section class="panel{% if selected_domain %} is-active{% endif %}" data-panel="results">
+            {% if domains or include_uncategorized %}
+            <div class="results-layout">
+                <nav class="results-layout__domains" aria-label="Filter results by domain">
+                    {% include "partials/_domain_filter_panel.html" %}
+                </nav>
+                <div class="results-layout__list">
+                {% if selected_domain_obj.description %}
+                    <div class="domain-description">{{ selected_domain_obj.description|linebreaks }}</div>
+                {% endif %}
+            {% endif %}
             {% if results %}
                 {% for result in results %}
                     {% if result.has_subscales %}
@@ -230,6 +241,10 @@
                 <div class="card-surface card">
                     <p style="font-size: 15px; color: var(--ink-muted);">No results yet. Complete a survey to see your scores here.</p>
                 </div>
+            {% endif %}
+            {% if domains or include_uncategorized %}
+                </div>
+            </div>
             {% endif %}
         </section>
     </main>

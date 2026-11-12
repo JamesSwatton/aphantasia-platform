@@ -9,6 +9,7 @@ from core.templatetags.markdown_extras import markdown_to_html
 from .models import ConsentForm, WithdrawalText, WithdrawalRecord
 from surveys.utils import get_all_results, get_completed_survey_count
 from surveys.models import Survey, ParticipantResponse
+from core.models import Domain
 
 
 @login_required
@@ -21,6 +22,17 @@ def account(request):
     withdrawal_text_html = markdown_to_html(withdrawal_text_obj.content) if withdrawal_text_obj else None
     participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
     results = get_all_results(user)
+
+    # Domain filter for the Results tab. Only domains the participant has a result in are listed.
+    selected_domain = request.GET.get('domain')
+    domains = Domain.objects.filter(pk__in={r['survey'].domain_id for r in results})
+    include_uncategorized = any(r['survey'].domain_id is None for r in results)
+    selected_domain_obj = None
+    if selected_domain == 'none':
+        results = [r for r in results if r['survey'].domain_id is None]
+    elif selected_domain and selected_domain != 'all':
+        selected_domain_obj = domains.filter(pk=selected_domain).first() if selected_domain.isdigit() else None
+        results = [r for r in results if str(r['survey'].domain_id) == selected_domain]
 
     # Feedback survey logic
     feedback_survey = None
@@ -49,6 +61,10 @@ def account(request):
         'consent_form': consent_form,
         'consent_form_html': consent_form_html,
         'results': results,
+        'domains': domains,
+        'selected_domain': selected_domain,
+        'selected_domain_obj': selected_domain_obj,
+        'include_uncategorized': include_uncategorized,
         'feedback_survey': feedback_survey,
         'feedback_questions': feedback_questions,
         'feedback_submitted': feedback_submitted,

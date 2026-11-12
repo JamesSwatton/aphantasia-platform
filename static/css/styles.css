@@ -2508,6 +2508,23 @@ ol {
 .account-page .card + .card {
   margin-top: 16px;
 }
+
+/* Results tab: domain filter list beside the result cards. The content
+   column widens while this tab is open so the cards keep their usual
+   width next to the list. */
+.account-page .content:has(.panel[data-panel="results"].is-active .results-layout) {
+  max-width: calc(860px + 240px + 48px);
+}
+.account-page .results-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
+.account-page .results-layout__domains {
+  position: sticky;
+  top: 24px;
+}
 .account-page .card h3 {
   font-family: var(--font-body);
   font-size: 13px;
