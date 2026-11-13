@@ -1,7 +1,9 @@
 import json
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.core.validators import MinValueValidator
+from django.utils.text import Truncator
 from core.models import Domain
 
 
@@ -82,12 +84,12 @@ class Survey(models.Model):
     result_min = models.FloatField(
         null=True,
         blank=True,
-        help_text="Minimum of the display range for results (e.g. 0). Leave blank if no mapping is needed."
+        help_text="Minimum of the display range for results (e.g. 0)."
     )
     result_max = models.FloatField(
         null=True,
         blank=True,
-        help_text="Maximum of the display range for results (e.g. 100)."
+        help_text="Maximum of the display range for results (e.g. 60)."
     )
     result_description = models.TextField(
         blank=True,
@@ -117,19 +119,36 @@ class Survey(models.Model):
             return self.scale_labels[str(value)]
         return str(value)
 
-    def normalize_question_order(self):
+    def normalize_question_order(self, moved=None):
         """
         Renumber all questions sequentially (1, 2, 3...) based on current order.
-        Uses ID as tiebreaker for questions with duplicate order numbers.
 
-        This is useful after manual reordering creates gaps or duplicates.
-        Does not affect participant responses (they're linked by question ID).
+        moved maps the pk of a question whose order was just changed to the
+        direction it moved (-1 up, 1 down). Where it shares an order number
+        with another question, a question moved up goes before it and one
+        moved down goes after it, so moving 6 to 1 gives 6, 1, 2, 3, 4, 5.
+        Other duplicates fall back to ID.
+
+        Ungrouped question IDs (their order) and group letters are rebuilt
+        to match. Does not affect participant responses (they're linked by
+        question pk).
         """
-        questions = self.questions.all().order_by('order', 'id')
+        moved = moved or {}
+        questions = sorted(
+            self.questions.all(),
+            key=lambda q: (q.order, moved.get(q.pk, 0), q.pk),
+        )
         for index, question in enumerate(questions, start=1):
+            updates = {}
             if question.order != index:
-                question.order = index
-                question.save()
+                updates['order'] = index
+            if not question.group_id and question.question_id != str(index):
+                updates['question_id'] = str(index)
+            if updates:
+                # update() rather than save() so each question doesn't re-letter its group
+                Question.objects.filter(pk=question.pk).update(**updates)
+        for group in self.question_groups.all():
+            group.renumber_questions()
 
 
 class FeedbackSurvey(Survey):
@@ -228,7 +247,7 @@ class QuestionGroup(models.Model):
 
     'title' is the participant-facing prompt shown during the survey (e.g. "Think of a relative or friend").
     'show_title' controls whether that prompt is rendered as a heading in the survey form.
-    'result_label' is the short label used on charts/results (e.g. "Scene 1"). Falls back to title if blank.
+    'result_label' makes the group a scored subscale and labels it on charts/results (e.g. "Scene 1"). Blank means not a subscale.
 
     Questions in groups get composite identifiers like "1_a", "1_b", "2_a", "2_b", etc.
     """
@@ -253,10 +272,12 @@ class QuestionGroup(models.Model):
         max_length=100,
         blank=True,
         help_text=(
-            "Short label for this group in charts/results (e.g. 'Scene 1'). "
-            "Falls back to group title if blank. To show a short chart-axis "
-            "label with a longer legend description, enter a JSON array of "
-            "two strings, e.g. [\"V\", \"Visual\"]."
+            "Fill in to score this group as its own subscale, shown under this "
+            "label in participants' results (e.g. 'Scene 1'). Leave blank if the "
+            "group isn't a subscale. Once any group has a label, only labelled "
+            "groups are scored and there is no overall score. To show a short "
+            "chart-axis label with a longer legend description, enter a JSON "
+            "array of two strings, e.g. [\"V\", \"Visual\"]."
         )
     )
     result_min = models.FloatField(
@@ -326,6 +347,11 @@ class QuestionGroup(models.Model):
     def __str__(self):
         return f"{self.survey.title} - [{self.group_code}] {self.title}"
 
+    @property
+    def choice_label(self):
+        """Short label for the group dropdown on question rows; group titles can be very long."""
+        return f"[{self.group_code}] {Truncator(self.title).chars(40)}"
+
     def save(self, *args, **kwargs):
         """
         Override save to auto-increment order if not specified (order=0).
@@ -347,6 +373,46 @@ class QuestionGroup(models.Model):
         self.group_code = str(self.order)
 
         super().save(*args, **kwargs)
+
+        # group_code may have changed, so refresh the identifiers of this group's questions
+        self.renumber_questions()
+
+    def delete(self, *args, **kwargs):
+        question_pks = list(self.questions.values_list('pk', flat=True))
+        result = super().delete(*args, **kwargs)
+        # SET_NULL ungroups the questions without calling save(), so give them
+        # the ungrouped identifier (their order) here
+        for question in Question.objects.filter(pk__in=question_pks):
+            Question.objects.filter(pk=question.pk).update(
+                question_number='',
+                question_id=str(question.order),
+            )
+        return result
+
+    def renumber_questions(self):
+        """
+        Re-letter every question in this group (a, b, c...) by order, and
+        rebuild their question_id from the current group_code.
+        """
+        questions = Question.objects.filter(group=self).order_by('order', 'id')
+        for position, question in enumerate(questions):
+            question_number = _position_to_letters(position)
+            question_id = f"{self.group_code}_{question_number}"
+            if (question.question_number, question.question_id) != (question_number, question_id):
+                # update() rather than save() so this doesn't re-trigger renumbering
+                Question.objects.filter(pk=question.pk).update(
+                    question_number=question_number,
+                    question_id=question_id,
+                )
+
+
+def _position_to_letters(position):
+    """Convert a 0-indexed position to a letter code: 0=a ... 25=z, 26=aa, 27=ab..."""
+    if position < 26:
+        return chr(ord('a') + position)
+    first_letter = chr(ord('a') + (position // 26) - 1)
+    second_letter = chr(ord('a') + (position % 26))
+    return f"{first_letter}{second_letter}"
 
 
 class Question(models.Model):
@@ -403,7 +469,7 @@ class Question(models.Model):
     )
     text = models.TextField(
         blank=True,
-        help_text="Question text/label. Can be left blank for self-explanatory question types like dropdowns."
+        help_text="Question text/label. Supports Markdown: leave a blank line between paragraphs, use **bold** for prompts. Can be left blank for self-explanatory question types like dropdowns."
     )
     required = models.BooleanField(default=True)
     reverse_coded = models.BooleanField(
@@ -420,9 +486,14 @@ class Question(models.Model):
         blank=True,
         help_text='(Multiple choice only) Options for multiple choice questions. Format: {"1": "Option A", "2": "Option B", "3": "Option C"}. To disable an option (visible but not selectable), use an array: {"1": "Option A", "2": ["Option B (disabled)"], "3": "Option C"}'
     )
+    other_option = models.CharField(
+        max_length=10,
+        blank=True,
+        help_text='(Multiple choice only) The key of an "Other" option, e.g. "4". Choosing it reveals a text box the participant must fill in. Leave blank if there is no "Other" option.'
+    )
     order = models.PositiveIntegerField(
         default=0,
-        help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number will replace any question at that position.'
+        help_text='Set to 0 to automatically add to the end of the survey. Changing to a specific number moves the question there and shifts the others along.'
     )
     controls_next_n_questions = models.PositiveIntegerField(
         default=0,
@@ -576,6 +647,14 @@ class Question(models.Model):
 
         return True, None
 
+    def clean(self):
+        super().clean()
+        if self.other_option:
+            if self.question_type not in ['multiple_choice_single', 'multiple_choice_multi']:
+                raise ValidationError({'other_option': 'Only multiple choice questions can have an "Other" option.'})
+            if self.other_option not in self.get_enabled_option_keys():
+                raise ValidationError({'other_option': f'"{self.other_option}" is not one of this question\'s selectable option keys.'})
+
     def get_year_options(self):
         """
         Returns list of (value, label) tuples for year dropdown.
@@ -654,8 +733,10 @@ class Question(models.Model):
         Override save to auto-increment order if not specified (order=0).
         Also auto-generates question_number (as letter) and question_id.
 
-        Note: Order is purely for display/rendering. Duplicate order numbers
-        are allowed - use Survey.normalize_question_order() to clean up.
+        Note: Order is purely for display/rendering. Saving one question can
+        leave a duplicate order number; the survey admins renumber the whole
+        survey with Survey.normalize_question_order() after the question
+        inline saves.
         """
         # Auto-increment order if not specified
         if self.order == 0:
@@ -670,37 +751,69 @@ class Question(models.Model):
 
             self.order = (max_order or 0) + 1
 
-        # Auto-generate question_number as letter (a-z) if question is in a group
-        if self.group:
-            # Get all questions in this group, ordered by order field
-            # This gives us all existing questions in the group
-            group_questions = list(Question.objects.filter(
-                survey=self.survey,
-                group=self.group
-            ).exclude(
-                pk=self.pk if self.pk else None
-            ).order_by('order', 'id'))
+        # Remember the previous group so it can be re-lettered if this question leaves it
+        old_group_id = None
+        if self.pk:
+            old_group_id = Question.objects.filter(pk=self.pk).values_list('group_id', flat=True).first()
 
-            # Find position of this question within the group (0-indexed)
-            # We simply count how many questions in the group come before this one
-            position = len([q for q in group_questions if q.order < self.order or (q.order == self.order and self.pk and q.id < self.pk)])
-
-            # Convert position to letter (0=a, 1=b, etc.)
-            if position < 26:
-                self.question_number = chr(ord('a') + position)
-            else:
-                # Handle more than 26 questions: aa, ab, ac, etc.
-                first_letter = chr(ord('a') + (position // 26) - 1)
-                second_letter = chr(ord('a') + (position % 26))
-                self.question_number = f"{first_letter}{second_letter}"
-
-            # Generate question_id for grouped questions
-            self.question_id = f"{self.group.group_code}_{self.question_number}"
-        else:
+        if not self.group:
             # For ungrouped questions, use order as the identifier
+            self.question_number = ''
             self.question_id = str(self.order)
 
         super().save(*args, **kwargs)
+
+        # Moving a question or changing its order shifts the letters of the other
+        # questions in its group (and in the group it left), so re-letter them all
+        if self.group:
+            self.group.renumber_questions()
+            self.question_number, self.question_id = Question.objects.filter(
+                pk=self.pk
+            ).values_list('question_number', 'question_id').get()
+        if old_group_id and old_group_id != self.group_id:
+            old_group = QuestionGroup.objects.filter(pk=old_group_id).first()
+            if old_group:
+                old_group.renumber_questions()
+
+    def delete(self, *args, **kwargs):
+        group = self.group
+        result = super().delete(*args, **kwargs)
+        # Close the gap this question leaves in its group's lettering
+        if group:
+            group.renumber_questions()
+        return result
+
+
+class Guideline(models.Model):
+    """
+    Guidance text shown to participants between question cards, outside any
+    card. Not a question: it isn't numbered, answered, saved, exported or scored.
+    """
+    survey = models.ForeignKey(
+        Survey,
+        on_delete=models.CASCADE,
+        related_name='guidelines'
+    )
+    text = models.TextField(
+        help_text='Shown to participants as written, with Markdown formatting (e.g. **bold**, blank line for a new paragraph).'
+    )
+    before_question = models.PositiveIntegerField(
+        validators=[MinValueValidator(1)],
+        help_text=(
+            "Order number of the question this appears above. If that question is in a group "
+            "or a conditional branch, it appears above that group's or trigger's card. A number "
+            "past the last question puts it at the end. On a randomised survey, all guidelines "
+            "appear at the top."
+        )
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ['survey', 'before_question', 'id']
+
+    def __str__(self):
+        return f"{self.survey.title} - before question {self.before_question}"
 
 
 class ParticipantResponse(models.Model):
@@ -723,6 +836,10 @@ class ParticipantResponse(models.Model):
         related_name='survey_responses'
     )
     answer = models.TextField()
+    other_text = models.TextField(
+        blank=True,
+        help_text='What the participant typed after choosing the question\'s "Other" option'
+    )
     is_test = models.BooleanField(
         default=False,
         help_text="Marks this as test data submitted by researchers/staff"

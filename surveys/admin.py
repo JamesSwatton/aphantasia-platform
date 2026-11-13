@@ -7,7 +7,7 @@ from django.http import HttpResponse
 import csv
 from datetime import date
 
-from .models import LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
+from .models import Guideline, LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
 from accounts.models import User
 from core.models import DataDownloadLog
 
@@ -52,12 +52,22 @@ class QuestionGroupInline(admin.TabularInline):
         return qs.order_by("order")
 
 
+class GuidelineInline(admin.TabularInline):
+    model = Guideline
+    extra = 1
+    fields = ["text", "before_question"]
+    formfield_overrides = {
+        models.TextField: {'widget': forms.Textarea(attrs={'rows': 4, 'cols': 80})},
+    }
+
+
 class QuestionInlineForm(forms.ModelForm):
     class Meta:
         model = Question
         fields = '__all__'
         widgets = {
             'trigger_value': forms.TextInput(attrs={'size': 4}),
+            'other_option': forms.TextInput(attrs={'size': 4}),
         }
 
 
@@ -65,7 +75,7 @@ class QuestionInline(admin.TabularInline):
     model = Question
     form = QuestionInlineForm
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "controls_next_n_questions", "trigger_value"]
+    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "reverse_coded", "scale_factor", "options", "other_option", "controls_next_n_questions", "trigger_value"]
     readonly_fields = ["question_id"]
     formfield_overrides = {
         models.TextField: {'widget': forms.Textarea(attrs={'rows': 5})},
@@ -95,17 +105,44 @@ class QuestionInline(admin.TabularInline):
                 kwargs["queryset"] = QuestionGroup.objects.filter(survey=request._survey_obj)
             else:
                 kwargs["queryset"] = QuestionGroup.objects.none()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "group":
+            field.label_from_instance = lambda group: group.choice_label
+        return field
+
+
+class QuestionOrderAdminMixin:
+    """
+    After the question inline saves, renumber the survey's questions 1, 2, 3...
+    so a question moved to a taken order number shifts the others along
+    instead of sharing it.
+    """
+
+    def save_formset(self, request, form, formset, change):
+        super().save_formset(request, form, formset, change)
+        if formset.model is not Question:
+            return
+        moved = {}
+        for question_form in formset.forms:
+            if question_form in formset.deleted_forms or 'order' not in question_form.changed_data:
+                continue
+            old_order = question_form.initial.get('order') or 0
+            new_order = question_form.cleaned_data.get('order') or 0
+            if new_order == 0:
+                continue  # added to the end, so it can't clash
+            # A new question typed in at a number goes before the one already there
+            moved[question_form.instance.pk] = -1 if old_order == 0 or new_order < old_order else 1
+        form.instance.normalize_question_order(moved)
 
 
 @admin.register(Survey)
-class SurveyAdmin(admin.ModelAdmin):
+class SurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = SurveyAdminForm
     list_display = ["title", "researcher", "domain", "is_active", "is_priority", "preview_link_display", "created_at"]
     list_filter = ["is_active", "is_priority", "domain", "created_at"]
     search_fields = ["title", "description", "researcher__email"]
     readonly_fields = ["preview_link_field"]
-    inlines = [LikertScaleInline, QuestionGroupInline, QuestionInline]
+    inlines = [LikertScaleInline, QuestionGroupInline, GuidelineInline, QuestionInline]
     actions = ["normalize_question_order"]
     fieldsets = [
         (
@@ -137,10 +174,6 @@ class SurveyAdmin(admin.ModelAdmin):
             "Results Display Information",
             {
                 "fields": ["result_aggregation", "result_min", "result_max", "result_description"],
-                "description": (
-                    "The range to which participant scores are mapped for display in charts. "
-                    "Individual question groups can override this range. Leave blank if no mapping is needed."
-                ),
             },
         ),
     ]
@@ -248,6 +281,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
 
             # Response data
             'answer',
+            'other_text',
             'is_test',
             'created_at',
             'updated_at',
@@ -297,6 +331,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 'max_value': max_val,
                 'likert_scale_name': scale_name,
                 'answer': response_obj.answer,
+                'other_text': response_obj.other_text,
                 'is_test': response_obj.is_test,
                 'created_at': response_obj.created_at.isoformat(),
                 'updated_at': response_obj.updated_at.isoformat(),

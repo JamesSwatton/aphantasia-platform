@@ -8,6 +8,8 @@ For project history, see [CHANGELOG.md](CHANGELOG.md). For the CSS refactor and 
 
 - **Window size warning banner styling** — the minimum-window-size gate on `templates/tasks/task_start.html` is functional but the warning banner is currently a bare `.alert--warning` strip; needs proper design treatment.
 - Responsive design has not yet been started — see `docs/css-refactor-plan.md` for the working pattern the responsive-design branch is expected to reuse.
+- **Trigger questions inside a visible question group** — a conditional trigger works when it has no group, is in a hidden (`show_title=False`) group, or controls questions from a visible group, but a trigger that is itself a row in a visible group's matrix still can't act as a gate: its controlled questions always show. Supporting it would mean rendering the trigger as the group card's gate and the rest of the group as a matrix inside the branch (see `organize_questions_by_group` in `surveys/views.py`). Deferred until a real survey needs it.
+- **Group codes don't close gaps after a group is deleted** — a group's `group_code` is its `order`, so deleting group 1 leaves the rest as 2, 3... and their questions keep IDs like `2_a`. Decide whether deleting (or reordering) a group should renumber the remaining groups to 1, 2, 3... (`QuestionGroup.save`/`delete` in `surveys/models.py`). Doing so re-labels every question in the later groups, which changes the `question_id` column in response exports for existing data.
 - **University hosting requirements** — none started yet: WCAG accessibility audit, accessibility statement, privacy statement, DPIA, and EqIA are all required before the university-servers production deploy can go live. See [docs/deployment.md](docs/deployment.md#university-hosting-requirements).
 
 ## Tech Stack
@@ -53,8 +55,8 @@ research_platform/
 - **Survey**: Survey definitions with configurable Likert scale settings (`min_value`, `max_value`, `scale_labels`), optional question randomization, and result-display metadata (`result_min`/`result_max`/`result_aggregation`/`result_description`) for participant-facing scoring. `FeedbackSurvey`, `ExitSurvey`, and `DemographicSurvey` are proxy models built on `Survey` for the mid-study feedback form, the withdrawal exit survey, and the dashboard-gating demographic survey respectively.
 - **QuestionGroup**: Groups questions into a visible section (shown to participants) or a hidden subscale (grouped only for scoring, no visual hint to participants).
 - **LikertScale**: Named, reusable Likert scales definable per survey.
-- **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, and conditional branching (`controls_next_n_questions` / `trigger_value`).
-- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order).
+- **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, an optional "Other" option that reveals a text box (`other_option`), and conditional branching (`controls_next_n_questions` / `trigger_value`).
+- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option.
 
 ### tasks
 - **LabTask**: Lab.js task uploads. Includes optional `trial_sender_filter` field (comma-separated sender names) to narrow trial data filtering beyond the default `ended_on='response'` filter, and an optional minimum-window-size gate (`requires_min_window_size`/`min_window_width`/`min_window_height`).
@@ -254,8 +256,8 @@ Surveys are created and managed through the Django admin panel by researchers:
 Questions can be ordered manually or automatically:
 
 1. **Auto-increment**: Leave the order field at `0` and it will automatically be set to the next available number
-2. **Manual ordering**: Set a specific order number to position questions
-3. **Normalize order**: Use the admin action "Normalize question order" to renumber all questions sequentially (1, 2, 3...), removing gaps and duplicates
+2. **Manual ordering**: Set a specific order number to move a question there; the other questions shift along
+3. **Renumbering**: Saving a survey renumbers all its questions sequentially (1, 2, 3...), closing gaps left by deleted questions. The admin action "Normalize question order" does the same for several surveys at once
 4. **Display vs. Storage**: Questions display their position in the rendered list (which may be randomized), not their database order number
 
 #### Question Randomization
@@ -287,11 +289,14 @@ Beyond Likert scales, a question can be: multiple choice (select one or select m
 #### Question Groups & Subscales
 `QuestionGroup` groups questions either as a **visible section** (`show_title=True` — shown to participants as a titled matrix card, e.g. "Think of a relative or friend") or a **hidden subscale** (`show_title=False` — grouped only for scoring; questions render individually, interleaved with the rest of the survey by `order`, with no visual hint to participants that they belong together). Grouped questions get composite IDs like `1_a`, `1_b`.
 
+#### Guidelines
+`Guideline` is guidance text (Markdown) that renders between question cards, outside any card. `before_question` is the order number of the question it appears above; `attach_guidelines` in `surveys/views.py` places it above the card containing that question (a group's or trigger's card for grouped or branch questions), at the end if the number is past the last question, or at the top on randomised surveys. Guidelines have no `data-question-id`, so they're never numbered, counted, submitted, exported or scored.
+
 #### Conditional Branching
-A question can control the next N questions via `controls_next_n_questions` + `trigger_value`: when the trigger question's answer matches `trigger_value`, the controlled questions reveal (`.branch` UI, slides open); otherwise they stay collapsed and are auto-filled (minimum scale value for Likert, `NULL` otherwise) so every participant has a complete response row regardless of branch.
+A question can control the next N questions via `controls_next_n_questions` + `trigger_value`: when the trigger question's answer matches `trigger_value`, the controlled questions reveal (`.branch` UI, slides open); otherwise they stay collapsed and are auto-filled with `NULL` (all question types) so every participant has a complete response row regardless of branch. `NULL` isn't numeric, so these rows are left out of scoring.
 
 #### Results & Scoring
-Surveys with `result_min`/`result_max` configured (survey-level, or per-`QuestionGroup` for subscale surveys) get participant-facing scoring: a spectrum chart for single-score surveys, or a radar/spider chart across subscales for surveys with multiple scored `QuestionGroup`s. See `surveys/utils.py` (`get_survey_result()`, `get_all_results()`) and the Results tab on `/accounts/account/`.
+Surveys with `result_min`/`result_max` configured (survey-level, or per-`QuestionGroup` for subscale surveys) get participant-facing scoring: a spectrum chart for single-score surveys, or a radar/spider chart across subscales for surveys with multiple scored `QuestionGroup`s. See `surveys/utils.py` (`get_survey_result()`, `get_all_results()`) and the Results tab on `/accounts/account/`. The Results tab has the dashboard's domain list beside the result cards (`partials/_domain_filter_panel.html`), listing only domains the participant has a result in, plus Uncategorized if any result has no domain. Picking one (`?domain=`) shows that domain's description and results and opens the page on the Results tab.
 
 ## Messaging System
 

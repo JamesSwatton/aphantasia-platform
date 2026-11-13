@@ -54,6 +54,10 @@ if not DEBUG:
     # internally, signalling the original scheme via this header.
     SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
+# The survey admin posts every question inline in one request (~15 fields per
+# question), so long surveys exceed Django's default limit of 1000 and get a 400.
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000
+
 # Application definition
 
 INSTALLED_APPS = [

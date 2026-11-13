@@ -78,7 +78,7 @@
             {% if task.is_priority %}
               <span class="pill pill--priority">Priority</span>
             {% endif %}
-            {% if task.domain %}<span>{{ task.domain.name }}</span>{% endif %}
+            {% if task.domain %}<span class="meta-domain" title="{{ task.domain.name }}">{{ task.domain.name }}</span>{% endif %}
             {% if task.time_limit_minutes %}<span>{{ task.time_limit_minutes }} min</span>{% endif %}
             <span>{{ task.created_at|date:"d M Y" }}</span>
           </div>

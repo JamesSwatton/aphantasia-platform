@@ -1,0 +1,78 @@
+{% load markdown_extras %}
+{% comment %}
+  A single question rendered as a block inside another card: a branch
+  question, or a non-Likert question within a question group. Expects
+  `question`. Set `conditional` when it sits inside a gate's branch, and
+  `in_group` to style it as a row of the group's matrix.
+{% endcomment %}
+<div data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if conditional %}data-conditional{% endif %} {% if in_group %}class="matrix-item"{% else %}style="margin-top: 20px;"{% endif %}>
+  {% if in_group %}
+    <p class="matrix-item__stem">
+      {{ question.text }}
+      {% if question.required %}<span class="sr-only">(required)</span>{% endif %}
+    </p>
+  {% elif question.text %}
+    <div class="q-title{% if question.required %} q-title--required{% endif %}" style="font-size:17px;margin-bottom:6px">{{ question.text|question_body }}</div>
+    {{ question.text|question_notes }}
+  {% endif %}
+
+  {% if question.question_type == 'likert' %}
+    <table class="matrix matrix--standalone">
+      <thead>
+        <tr>
+          {% for value, label in question.scale_options %}
+            <th>{% if label != value|stringformat:"s" %}{{ label }}{% else %}{{ value }}{% endif %}</th>
+          {% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          {% for value, label in question.scale_options %}
+            <td>
+              <span class="radio">
+                <input type="radio"
+                       name="question_{{ question.id }}"
+                       id="bq{{ question.id }}_{{ value }}"
+                       value="{{ value }}"
+                       {% if question.required %}required{% endif %}>
+                <label for="bq{{ question.id }}_{{ value }}" aria-label="{{ label }}"></label>
+              </span>
+            </td>
+          {% endfor %}
+        </tr>
+      </tbody>
+    </table>
+
+  {% elif question.question_type == 'multiple_choice_single' or question.question_type == 'multiple_choice_multi' %}
+    {% if question.question_type == 'multiple_choice_single' %}<p class="q-instruction">Select one.</p>{% else %}<p class="q-instruction">Select all that apply.</p>{% endif %}
+    {% include "partials/_choice_list.html" %}
+
+  {% elif question.question_type == 'free_text' %}
+    <textarea class="q-textarea" name="question_{{ question.id }}" id="bq{{ question.id }}" rows="4" {% if question.required %}required{% endif %}></textarea>
+
+  {% elif question.question_type == 'dropdown_year_month' %}
+    <div class="q-year-month">
+      <select class="q-select" name="question_{{ question.id }}_month" id="bq{{ question.id }}_month" {% if question.required %}required{% endif %}>
+        <option value="">— Month —</option>
+        {% for value, label in question.month_options %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+      <select class="q-select" name="question_{{ question.id }}_year" id="bq{{ question.id }}_year" {% if question.required %}required{% endif %}>
+        <option value="">— Year —</option>
+        {% for value, label in question.year_options %}
+          <option value="{{ value }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+  {% elif question.question_type == 'dropdown_country' %}
+    <select class="q-select" name="question_{{ question.id }}" id="bq{{ question.id }}" {% if question.required %}required{% endif %}>
+      <option value="">— Select country —</option>
+      {% for value, label in question.country_options %}
+        <option value="{{ value }}">{{ label }}</option>
+      {% endfor %}
+    </select>
+
+  {% endif %}
+</div>

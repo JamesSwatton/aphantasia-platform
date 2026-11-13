@@ -57,8 +57,11 @@ def _aggregate(values, method):
 
 
 def _numeric_responses(responses):
+    # Only Likert answers are scored; a free-text answer that happens to be a number is not
     values = []
     for r in responses:
+        if r.question.question_type != 'likert':
+            continue
         try:
             values.append(float(r.answer))
         except (ValueError, TypeError):

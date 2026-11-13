@@ -3,6 +3,7 @@ from django.contrib.admin import SimpleListFilter
 from django import forms
 from .models import Domain, DataDownloadLog, Message
 from accounts.models import User
+from surveys.admin import GuidelineInline, QuestionOrderAdminMixin
 from surveys.models import FeedbackSurvey, ExitSurvey, DemographicSurvey, Question, QuestionGroup, LikertScale
 
 
@@ -53,7 +54,7 @@ class FeedbackSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(FeedbackSurvey)
-class FeedbackSurveyAdmin(admin.ModelAdmin):
+class FeedbackSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = FeedbackSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "show_after_n_surveys", "created_at"]
     list_filter = ["is_active"]
@@ -139,7 +140,7 @@ class ExitSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(ExitSurvey)
-class ExitSurveyAdmin(admin.ModelAdmin):
+class ExitSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = ExitSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "created_at"]
     list_filter = ["is_active"]
@@ -193,7 +194,7 @@ class DemographicQuestionGroupInline(admin.TabularInline):
 class DemographicQuestionInline(admin.TabularInline):
     model = Question
     extra = 1
-    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "options"]
+    fields = ["question_type", "text", "order", "group", "question_id", "likert_scale", "required", "options", "other_option"]
     readonly_fields = ["question_id"]
 
     def get_queryset(self, request):
@@ -210,7 +211,10 @@ class DemographicQuestionInline(admin.TabularInline):
                 kwargs["queryset"] = QuestionGroup.objects.filter(survey=request._demographic_survey_obj)
             else:
                 kwargs["queryset"] = QuestionGroup.objects.none()
-        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == "group":
+            field.label_from_instance = lambda group: group.choice_label
+        return field
 
 
 class DemographicSurveyAdminForm(forms.ModelForm):
@@ -224,12 +228,12 @@ class DemographicSurveyAdminForm(forms.ModelForm):
 
 
 @admin.register(DemographicSurvey)
-class DemographicSurveyAdmin(admin.ModelAdmin):
+class DemographicSurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
     form = DemographicSurveyAdminForm
     list_display = ["title", "researcher", "is_active", "created_at"]
     list_filter = ["is_active"]
     search_fields = ["title", "description"]
-    inlines = [DemographicLikertScaleInline, DemographicQuestionGroupInline, DemographicQuestionInline]
+    inlines = [DemographicLikertScaleInline, DemographicQuestionGroupInline, GuidelineInline, DemographicQuestionInline]
     fieldsets = [
         (
             "Demographic Survey",

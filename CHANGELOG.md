@@ -876,3 +876,83 @@ Visual tasks need enough screen space to produce usable data, so researchers can
 
 **Branch**: `bug-fixes-and-misc`
 
+
+---
+
+## Session 34: Researcher Bug Fixes & Scoring Review (October–November 2026)
+
+**Branch**: `researcher-bug-fixes`
+
+Fixes for bugs the researcher found while adding real surveys on Railway, followed by a review of survey scoring with the researcher.
+
+### Question rendering
+- **Question text as Markdown** — standalone and branch questions render their text as Markdown, so a long question can be split into prompts, instructions and the question itself. Blocks before the last sit in a shaded `--bg-prompt` box; the last keeps the `.q-title` style. The required `*` is drawn with CSS `::after` so the last-block rule holds. Help-text-only migration `surveys.0031`
+- **Footnotes** — paragraphs starting `\* ` render as small `.q-note` text under the question, outside `.q-title`
+- **Radio buttons for single-choice questions** — `multiple_choice_single` rendered as checkboxes, so participants could tick several options and only be rejected on submit
+- **Mixed scales in a question group** — a grouped matrix took its header from its first question, so a group mixing Likert scales showed the wrong labels. `split_into_scale_runs` (`surveys/views.py`) splits a group into consecutive runs sharing the same scale options, each rendered as its own table with its own header, with a dashed break and extra space before each run after the first
+- **Non-Likert questions in a group** — a free-text (or other non-Likert) question in a visible group rendered as a matrix row with no input. Each now gets its own run, rendered with the single-question markup in the new `templates/partials/_question_single.html` and styled as a matrix row (`.matrix-item`)
+- **Matrix stem padding** — right padding removed from matrix stem cells so they align with the scale labels
+
+### Conditional questions and groups
+Branching was only built when the trigger and its controlled questions had no group, so any grouping silently disabled the gate:
+- A trigger in a hidden (`show_title=False`) group now gates like an ungrouped question
+- A trigger controlling questions from a visible group reveals them as that group's matrix inside the branch. Matrix markup moved to `templates/partials/_question_matrix.html` so the group card and the branch share it
+- A trigger that is itself a row in a visible group's matrix still can't gate; tracked in README Known Open Items
+
+### Question IDs
+- **Whole group re-lettered** — saving, moving, reordering or deleting a question now re-letters every question in the groups it left and joined (`QuestionGroup.renumber_questions`), instead of only the saved question. Saving a group rebuilds its questions' IDs. Data migration `surveys.0032` repairs stale stored IDs
+- **Deleted group's questions** — `SET_NULL` ungroups them without calling `save()`, so they kept IDs like `1_a`; they now take their order number like other ungrouped questions
+- Group codes not closing gaps after a group is deleted is tracked in README Known Open Items
+
+### "Other (please specify)"
+`Question.other_option` names the option key that reveals a required "Please describe" text box, for both single and multiple choice. The text is saved in `ParticipantResponse.other_text` and exported as an `other_text` CSV column; the answer stays the list of selected keys. Choice markup moved to `templates/partials/_choice_list.html`. Migration `surveys.0033`; documented in the survey question guide and README.
+
+### Admin and dashboard
+- **Large surveys can be saved** — `DATA_UPLOAD_MAX_NUMBER_FIELDS = 10000`. The question inline posts about 15 fields per question, so one of the researcher's longest surveys hit Django's default limit of 1000 and returned a bare 400
+- **Shorter group dropdown** — the question row's group dropdown shows `[code] title` cut to 40 characters (`QuestionGroup.choice_label`) instead of the full name with the survey title, in the survey and demographic admins
+- **Domain description on the dashboard** — the selected domain's description shows above the participant dashboard list
+- **Card meta column** — fixed at 180px on `.task-card` and `.list-card`, with long domain names truncated (full name in a tooltip), centred and bolded on the dashboard
+
+### Scoring review
+Reviewed with the researcher. Fixed:
+- **Hidden branch questions saved as `NULL`** — hidden Likert follow-ups were filled with the scale minimum (or maximum once reverse-coded) and counted in the score; they now get `NULL` like every other question type, which scoring skips
+- **Only Likert answers scored** — `_numeric_responses` (`surveys/utils.py`) ignores other question types, so a number typed into a free-text answer no longer counts
+- **Result range wording** — "mapped" wording removed from the Results Display admin section, help text and guide: result min/max set the ends of the chart and scores aren't rescaled. Help-text-only migrations `surveys.0034` and `surveys.0035` (result max example changed from 100 to 60)
+- **Result label help text** — a blank label doesn't fall back to the title; it means the group isn't a scored subscale, and one labelled group switches the whole survey to subscale scoring. Help-text-only migration `surveys.0036`
+- **Result description on Preview & Test** — shown under the computed result; `.result-description` is no longer scoped to `.account-page`
+
+Everything else reviewed (one radar range per survey, groups never mixing scales for scoring, subscale all-or-nothing, one aggregation per survey, Sum with skipped optional questions, no multiple choice scoring) was confirmed as intended. The review was removed from README Known Open Items.
+
+---
+
+## Session 35: Question Ordering Fixes & Guidelines (November 2026)
+
+**Branch**: `researcher-bug-fixes`
+
+### Bug fix: changing a question's order didn't shift the others
+Setting a question's Order to a number already in use (e.g. moving question 6 to 1) left two questions sharing that number instead of moving the rest along.
+- **`QuestionOrderAdminMixin`** (`surveys/admin.py`), used by the survey, feedback, exit and demographic survey admins, renumbers every question 1, 2, 3... after the question inline saves. A question moved up goes before the one already at its new number, and one moved down goes after it, so 6→1 gives 6, 1, 2, 3, 4, 5
+- **`Survey.normalize_question_order(moved=None)`** does the renumbering in one pass with `update()`, rebuilding ungrouped question IDs (their order) and re-lettering every group. The "Normalize question order" admin action still uses it
+- Every survey save now closes gaps left by deleted questions, so ungrouped questions after a deleted one get new `question_id`s in exports
+- `order` help text updated (help-text-only migration `surveys.0037`); README and survey question guide updated to match
+
+### Bug fix: questions sharing an order number dropped off the page
+`organize_questions_by_group` (`surveys/views.py`) keyed each page item on `(sort_key, group)`, so two ungrouped questions with the same order produced the same key and one overwrote the other. The hidden question was still required, so the survey couldn't be submitted. Keys now include the item's position, so every question renders even if orders clash.
+
+### Guidelines
+Researchers had been using visible question groups just to show guidance text, which forced the following questions into a matrix. A **`Guideline`** (`surveys/models.py`, migration `surveys.0038`) is guidance text shown between question cards instead:
+- **Fields**: `text` (Markdown) and `before_question`, the Order number of the question it appears above. Edited in a Guidelines inline on the survey and demographic survey admins, between Question Groups and Questions; starts with one blank row like the other inlines
+- **Placement** (`attach_guidelines` in `surveys/views.py`): above the card containing that question, so a guideline aimed at a grouped or branch question appears above that group's or trigger's card and never inside a matrix or branch. A number past the last question puts it at the end; on randomised surveys every guideline goes at the top
+- **Rendering**: `templates/partials/_guidelines.html`, outside any card, in the question serif at regular weight with a left rule (`.guideline` in `static/css/styles.css`)
+- Not a question: no `data-question-id`, so guidelines are never numbered, counted in progress, random-filled, submitted, exported or scored
+- The number doesn't follow its question when questions are reordered (accepted; documented in the guide)
+- Documented in a new "Guidelines (inline)" section of the survey question guide and in the README; removed from Known Open Items
+
+### Results tab filtered by domain
+With 40+ results the account page's Results tab was one long list. It now has the dashboard's domain list beside the result cards:
+- **`accounts/views.py`** reads `?domain=`, lists only the domains the participant has a result in (plus Uncategorized if any result has no domain) and filters the results to match
+- **`templates/accounts/account.html`** reuses `partials/_domain_filter_panel.html` in a left column and shows the selected domain's description above its results. When a domain is selected the page opens on the Results tab, since the filter links reload the page. A participant with no results still sees just the "No results yet" card
+- **`static/css/styles.css`**: a 240px domain column (`.results-layout`); the content column widens only while the Results tab is open, so the cards keep their 860px width and the Profile and Consent tabs are unchanged
+
+### Contact email in the footer
+`templates/partials/_footer.html` now has a `mailto:eyesmind@ed.ac.uk` link on the left, opposite the university crest, on every page. `.footer` was already a flex row, so it switched from `justify-content: flex-end` to `space-between` with `align-items: center`; the link (`.footer__contact`) is white, 14px, and underlines on hover.

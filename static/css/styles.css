@@ -52,6 +52,7 @@
   --bg-page: #e9e9e9;
   --bg-card: #ffffff;
   --bg-accent: #d8f24b;
+  --bg-prompt: #e9e9e9;
 
   /* Text */
   --ink: #0a0a0a;
@@ -308,10 +309,21 @@ ol {
   margin-top: auto;
 
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
   padding: 16px var(--page-padding-x);
   background: var(--bg-page);
   color: var(--ink);
+}
+.footer__contact {
+  font-size: 14px;
+  color: var(--ink);
+  text-decoration: none;
+}
+.footer__contact:hover {
+  text-decoration: underline;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 1px;
 }
 
 /* -----------------------------------------------------------------------------
@@ -1155,6 +1167,20 @@ ol {
   padding: 0 var(--page-padding-x) 80px;
 }
 
+.domain-description {
+  max-width: 680px;
+  margin-bottom: 32px;
+}
+.domain-description p {
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin-bottom: 16px;
+}
+.domain-description p:last-child {
+  margin-bottom: 0;
+}
+
 .task-list-items {
   display: flex;
   flex-direction: column;
@@ -1244,12 +1270,24 @@ ol {
   display: flex;
   flex-direction: column;
   justify-content: center;
+  align-items: center;
   gap: 10px;
   padding-left: 32px;
   border-left: 1px solid var(--rule-soft);
   font-size: 13px;
   color: var(--ink-muted);
-  min-width: 120px;
+  width: 180px;
+  min-width: 0;
+}
+/* Domain name in a card's meta column (.task-card__meta and
+   .list-card__meta). The column has a fixed width so cards in a list
+   line up; long domain names truncate instead of widening it. */
+.meta-domain {
+  font-weight: 600;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 /* Phase 3 resolution (2026-08-21) of the 3-way .empty-state drift flagged
@@ -1385,7 +1423,8 @@ ol {
   border-left: 1px solid var(--rule-soft);
   font-size: 13px;
   color: var(--ink-muted);
-  min-width: 120px;
+  width: 180px;
+  min-width: 0;
 }
 
 /* -----------------------------------------------------------------------------
@@ -2480,6 +2519,20 @@ ol {
 .account-page .card + .card {
   margin-top: 16px;
 }
+
+/* Results tab: domain filter list beside the result cards. The content
+   column widens while this tab is open so the cards keep their usual
+   width next to the list. */
+.account-page
+  .content:has(.panel[data-panel="results"].is-active .results-layout) {
+  max-width: calc(860px + 240px + 48px);
+}
+.account-page .results-layout {
+  display: grid;
+  grid-template-columns: 240px minmax(0, 1fr);
+  gap: 48px;
+  align-items: start;
+}
 .account-page .card h3 {
   font-family: var(--font-body);
   font-size: 13px;
@@ -2618,7 +2671,8 @@ ol {
   margin-top: 20px;
   max-width: 72ch;
 }
-.account-page .result-description {
+/* Shared with the Preview & Test computed result in survey_detail.html */
+.result-description {
   margin-top: 16px;
   font-size: 14px;
   color: var(--ink-muted);
@@ -3133,6 +3187,27 @@ ol {
   margin-bottom: 16px;
 }
 
+/* Guidelines — researcher guidance between question cards. Sits on the page
+   background with no card, so it can't be mistaken for a question. */
+.guideline {
+  margin: 40px 0 28px;
+  padding: 12px 0 12px 28px;
+  border-left: 3px solid var(--ink);
+  font-family: var(--font-display);
+  font-size: 18px;
+  letter-spacing: -0.01em;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.guideline > * + * {
+  margin-top: 14px;
+}
+.guideline ul,
+.guideline ol {
+  list-style: revert;
+  padding-left: 1.5em;
+}
+
 .q-num {
   font-family: var(--font-display);
   font-size: 13px;
@@ -3146,6 +3221,55 @@ ol {
   font-size: 20px;
   letter-spacing: -0.01em;
   line-height: 1.3;
+}
+/* Question text is Markdown. In a multi-paragraph question the last block is
+   the question itself and keeps the title style; earlier blocks are prompts
+   and instructions, set as body text so **bold** labels stand out. */
+.q-title > :not(:last-child) {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: 15px;
+  letter-spacing: 0;
+  line-height: 1.6;
+  background: var(--bg-prompt);
+  padding: 6px 16px;
+}
+/* Those blocks are separate siblings, so they read as one box by touching,
+   with only the outer corners rounded. */
+.q-title > :first-child:not(:last-child) {
+  padding-top: 12px;
+  border-top-left-radius: var(--radius-card);
+  border-top-right-radius: var(--radius-card);
+}
+.q-title > :nth-last-child(2) {
+  padding-bottom: 12px;
+  border-bottom-left-radius: var(--radius-card);
+  border-bottom-right-radius: var(--radius-card);
+  margin-bottom: 14px;
+}
+.q-title ul,
+.q-title ol {
+  list-style: revert;
+  padding-left: 1.5em;
+}
+.q-title > ul:not(:last-child),
+.q-title > ol:not(:last-child) {
+  padding-left: calc(16px + 1.5em);
+}
+/* Drawn with CSS so no element follows the text: the :last-child rule above
+   depends on the question's last block being the last child. */
+.q-title--required > :last-child::after {
+  content: "*";
+  content: "*" / "";
+  color: var(--warn);
+  margin-left: 3px;
+}
+.q-note {
+  font-size: 13px;
+  font-style: italic;
+  line-height: 1.5;
+  color: var(--ink-muted);
+  margin-top: 8px;
 }
 .q-instruction {
   font-size: 14px;
@@ -3325,7 +3449,6 @@ ol {
   text-align: left;
   font-size: 14px;
   color: var(--ink);
-  padding-right: 16px;
 }
 /* Strip fieldset chrome used for semantic grouping */
 .matrix-stem {
@@ -3338,11 +3461,40 @@ ol {
   color: var(--ink);
   padding: 0;
 }
+/* Non-Likert question inside a group, styled as a matrix row */
+.matrix-item {
+  padding: 14px 0;
+  border-top: 1px solid var(--rule-soft);
+}
+.matrix-item__stem {
+  margin: 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.matrix-item .q-textarea,
+.matrix-item .q-select {
+  margin-top: 12px;
+}
+/* A change of scale (or answer type) within a group: dashed break before the run */
+.matrix + .matrix,
+.matrix + .matrix-item,
+.matrix-item + .matrix,
+.matrix-item + .matrix-item {
+  margin-top: 32px;
+  border-top: 1px dashed var(--rule);
+}
+.matrix + .matrix th,
+.matrix-item + .matrix th,
+.matrix + .matrix-item,
+.matrix-item + .matrix-item {
+  padding-top: 20px;
+}
 
 /* Multiple choice — checkbox list */
 .choice-list {
   margin-top: 20px;
   border: 0;
+  border-bottom: 1px solid var(--rule-soft);
   padding: 0;
 }
 .choice {
@@ -3355,9 +3507,6 @@ ol {
   font-size: 15px;
   color: var(--ink);
   position: relative;
-}
-.choice:last-child {
-  border-bottom: 1px solid var(--rule-soft);
 }
 /* Invisible native input covers the whole row for click area */
 .choice input {
@@ -3390,6 +3539,17 @@ ol {
   border-bottom: 1.5px solid var(--bg-card);
   transform: rotate(-45deg) translate(1px, -1px);
 }
+.choice input[type="radio"] ~ .choice__box {
+  border-radius: 50%;
+}
+.choice input[type="radio"]:checked ~ .choice__box::after {
+  width: 6px;
+  height: 6px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--bg-card);
+  transform: none;
+}
 .choice input:focus-visible ~ .choice__box {
   outline: 2px solid var(--blue);
   outline-offset: 3px;
@@ -3400,6 +3560,14 @@ ol {
 }
 .choice--disabled input {
   pointer-events: none;
+}
+/* "Other" text box — indented to line up with the option labels */
+.choice-other {
+  padding: 0 0 14px 32px;
+}
+.choice-other .q-textarea {
+  margin-top: 0;
+  min-height: 0;
 }
 
 /* Free text */

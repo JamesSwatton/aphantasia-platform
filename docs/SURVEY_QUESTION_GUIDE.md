@@ -34,9 +34,10 @@ survey-level values are ignored for that question.
 
 - **Result Aggregation** — Mean or Sum. How question scores are combined into a
   group/survey result.
-- **Result Min / Result Max** — the display range participant scores are mapped to
-  for charts (e.g. 0–100). Leave blank if you don't need a mapped/scored result at
-  all.
+- **Result Min / Result Max** — the two ends of the chart participants see. Scores
+  aren't rescaled to this range, so set it to the lowest and highest scores the
+  survey can actually produce (e.g. 12–60 for 12 questions on a 1–5 scale with Sum).
+  Leave blank if you don't need a scored result at all.
 - **Result Description** — short explanatory text shown to participants alongside
   their result (e.g. "Higher scores indicate greater vividness of mental imagery").
 
@@ -75,11 +76,13 @@ section or a hidden subscale.
   its questions together as a named subscale. Use unchecked groups when you want a
   composite score for a set of questions without exposing the grouping in the survey
   itself.
-- **Result Label** — the label used for this group in charts/results. Leave blank to
-  fall back to the Title. A group only counts as a scored subscale if this is
-  non-blank. For a short chart-axis label paired with a longer legend string, enter a
-  JSON array of two strings: `["V", "Visual"]` — "V" appears on the axis, "Visual" in
-  the legend.
+- **Result Label** — fill this in to score the group as its own subscale, shown under
+  this label in participants' results. Leave it blank if the group isn't a subscale.
+  Once any group in the survey has a Result Label, the survey is scored by subscale:
+  only labelled groups are scored, and unlabelled groups, ungrouped questions and an
+  overall score are left out. For a short chart-axis label paired with a longer legend
+  string, enter a JSON array of two strings: `["V", "Visual"]` — "V" appears on the
+  axis, "Visual" in the legend.
 - **Result Min / Result Max** — override the survey-level result range just for this
   subscale's display. Leave blank to inherit the survey's range.
 - **Order** — display order of the group. Leave at 0 to auto-append to the end.
@@ -95,6 +98,41 @@ Notes:
   is completely normal — questions just render top to bottom without any grouping or
   subscale scoring.
 
+## Guidelines (inline)
+
+A **Guideline** is guidance text shown to participants between question cards,
+for example instructions that apply to the next few questions. It sits outside any
+card, in the same serif type as the questions, so it reads as guidance rather than
+a question. Use it instead of a question group when all you need is to show some
+text: a group puts its questions into a matrix.
+
+- **Text** — what participants see. Markdown works here as it does in question
+  text: `**bold**`, a blank line for a new paragraph, `- ` for a bullet list.
+- **Before Question** — the Order number of the question this guideline appears
+  above.
+
+Notes:
+
+- **It appears above the card that contains that question.** For an ungrouped
+  question that's directly above it. For a question in a visible group, it's above
+  the group's card, even if the question isn't the group's first. For a question
+  inside a conditional branch, it's above the trigger question's card, so the
+  guideline is always visible.
+- **A number past the last question puts it at the end**, after the last question
+  and before the submit button.
+- **The number doesn't follow the question.** Adding, moving or deleting a question
+  above it renumbers the questions (see [Order](#order)) but not the guideline, so
+  check its Before Question after reordering.
+- **On a randomised survey every guideline appears at the top**, in Before Question
+  order, since there's no fixed position to put them in.
+- Several guidelines with the same number appear one after another, in the order
+  they were added.
+- Guidelines aren't questions: they have no number, don't count towards progress,
+  aren't filled by "Fill with random answers", and never appear in responses,
+  exports or scoring.
+- Guidelines show on regular and demographic surveys. Feedback and exit surveys
+  don't have this section.
+
 ## Questions (inline)
 
 Each row is one question. Fields, in the order they appear:
@@ -109,18 +147,44 @@ behavior of each.
 The question text/label shown to participants. Can be left blank for
 self-explanatory types like dropdowns.
 
+Supports Markdown, so a longer question can be split up: leave a blank line
+between paragraphs and use `**bold**` for prompts. The last paragraph is always
+shown in the large question style, and everything before it is grouped in a
+shaded box as normal body text, so put the question itself last:
+
+```
+**Starting position:** Sit upright with both feet on the floor.
+
+**Action:** Slowly raise your right arm.
+
+How clearly can you imagine this movement?
+```
+
+To add a footnote, start its paragraph with a backslash, an asterisk and a space
+(`\* 1 standard drink is about one small glass of wine`). It is shown in small
+text under the question, with the asterisk kept and the backslash removed, and
+doesn't count as the last paragraph. Without the backslash, a line starting
+`* ` becomes a bullet point.
+
+Markdown is rendered on standalone questions and branch questions only. In
+grouped matrix rows, exit surveys and feedback surveys the text is shown exactly
+as typed, so symbols like `**` will appear literally there.
+
 ### Order
 
 - **0 means "add to the end"** — auto-assigned the next available position.
-- Setting a specific number does **not** shift other questions out of the way, so
-  duplicate or out-of-sequence order values are possible and won't error.
-- Randomizing (via the survey's Randomize Questions checkbox) shuffles the
-  participant-facing order but doesn't change the stored Order values.
-- Use the **"Normalize question order"** action on the Surveys list (select the
-  survey, choose the action from the dropdown) to renumber everything sequentially
-  and clean up gaps/duplicates. Safe to run any time — responses are linked to
+- **Setting a specific number moves the question there** and shifts the others
+  along. Moving question 6 to 1 makes the old 1–5 become 2–6; moving question 1
+  to 4 makes the old 2–4 become 1–3. A new question given a number goes before
+  the question already at that number.
+- Every time you save the survey, all its questions are renumbered 1, 2, 3...,
+  so deleting a question closes the gap it leaves. Responses are linked to
   questions by ID, not by order, so this doesn't affect already-recorded data. It
   will, however, change the `question_id` of any ungrouped questions (see below).
+- Randomizing (via the survey's Randomize Questions checkbox) shuffles the
+  participant-facing order but doesn't change the stored Order values.
+- The **"Normalize question order"** action on the Surveys list does the same
+  renumbering for several surveys at once, without opening each one.
 
 ### Group
 
@@ -138,8 +202,8 @@ Auto-generated, shown for reference only — you can't edit it directly.
   question's position within the group. This is recalculated on every save, so
   reordering questions within a group changes their letters.
 - **Ungrouped questions** just use their Order number as the ID (e.g. `"5"`). This
-  means an ungrouped question's ID **changes if you reorder the survey or run
-  Normalize Question Order.** If you need stable identifiers for a question across
+  means an ungrouped question's ID **changes whenever its position changes** —
+  when it's moved, or a question above it is added, moved or deleted. If you need stable identifiers for a question across
   data exports over time, put it in a group — group membership changes far less
   often than raw order does.
 
@@ -197,6 +261,26 @@ Multiple-choice-only. JSON mapping option keys to labels:
   selection is allowed. Selecting more than one option on a "select one" question is
   rejected.
 
+### Other Option
+
+Multiple-choice-only. For the common "Other (please specify)" pattern, enter the
+**key** of the option that should reveal a text box, e.g. `4` for
+`{"1": "Yes", "2": "No", "3": "Unsure", "4": "Other"}`. Leave it blank if the
+question has no such option.
+
+- When a participant chooses that option, a "Please describe" text box appears
+  beneath it. Choosing something else hides it again.
+- **The text box must be filled in whenever the option is chosen**, even if the
+  question itself isn't required.
+- It works the same for select one and select multiple questions.
+- The key must be one of the question's selectable options. A key that doesn't
+  exist, or belongs to a disabled option, is rejected when you save.
+- The option's label can be anything ("Other", "Something else", ...). It's the
+  key that matters, not the wording.
+- The answer is still stored as the selected keys (e.g. `["4"]`). The typed text is
+  stored separately and appears in the `other_text` column of the CSV export (see
+  [Exporting data](#exporting-data)).
+
 ### Controls Next N Questions / Trigger Value
 
 Together these set up conditional branching — see
@@ -216,8 +300,8 @@ Together these set up conditional branching — see
 **Likert Scale** — see Likert Scale/Reverse Coded/Scale Factor fields above; those
 are the only settings that apply.
 
-**Multiple Choice (Select One / Select Multiple)** — see the Options field above.
-Answers are stored as a JSON-encoded list even for single-select.
+**Multiple Choice (Select One / Select Multiple)** — see the Options and Other Option
+fields above. Answers are stored as a JSON-encoded list even for single-select.
 
 **Free Text** — no type-specific settings beyond Required. The full text is stored
 exactly as submitted; any truncation you might see in a preview/summary table is
@@ -251,14 +335,12 @@ Important constraints:
   change which questions end up controlled.
 - **If a participant's answer doesn't match the Trigger Value**, the controlled
   questions aren't simply left blank — they're automatically disabled and filled in
-  on submission:
-  - Likert questions are auto-filled with the scale's **minimum** value.
-  - Every other type is auto-filled with the literal string `"NULL"`.
+  on submission with the literal string `"NULL"`, whatever the question type.
 
   This guarantees a response row exists for every question regardless of which branch
-  a participant took, but it means **these auto-filled rows need to be filtered or
-  accounted for in analysis** — a Likert "1" or a literal `"NULL"` string may mean
-  "skipped by branch logic," not a genuine answer.
+  a participant took. These questions are **left out of the participant's score**. In
+  analysis, a `"NULL"` means "skipped by branch logic" or an optional question left
+  blank, not a genuine answer.
 
 This is unrelated to the **demographic gateway** described below, which is a
 survey-level setting, not a per-question one.
@@ -286,4 +368,5 @@ The **Participant Responses** admin includes an "Export responses as CSV (with f
 question metadata)" action. Each row already includes question type, group, required
 flag, reverse-coding/scale-factor settings, and effective min/max/scale name, so you
 generally don't need to cross-reference the survey structure separately when
-analyzing exports. Every export is logged for research-integrity auditing.
+analyzing exports. The `other_text` column holds what a participant typed after
+choosing a multiple choice question's "Other" option, and is empty otherwise. Every export is logged for research-integrity auditing.

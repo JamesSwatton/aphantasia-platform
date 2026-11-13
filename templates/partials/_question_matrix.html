@@ -1,0 +1,49 @@
+{% comment %}
+  Matrix tables for a question group, one per run of questions sharing a scale.
+  Non-Likert questions arrive as their own run and render standalone.
+  Expects `runs` (from split_into_scale_runs). Set `conditional` when the
+  matrix sits inside a gate's branch, so progress and random fill treat each
+  row as a branch question.
+{% endcomment %}
+{% for run in runs %}
+{% if run.question %}
+{% include "partials/_question_single.html" with question=run.question in_group=True %}
+{% else %}
+<table class="matrix">
+  <thead>
+    <tr>
+      <th><span class="sr-only">Question</span></th>
+      {% for value, label in run.scale_options %}
+        <th>{{ label }}</th>
+      {% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% for question in run.questions %}
+      <tr class="q-matrix-row" data-question-id="{{ question.id }}" data-question-order="{{ question.order }}" {% if conditional %}data-conditional{% endif %} {% if question.controls_next_n_questions > 0 %}data-is-trigger="true" data-trigger-value="{{ question.trigger_value }}" data-controls-count="{{ question.controls_next_n_questions }}"{% endif %}>
+        <td>
+          <fieldset class="matrix-stem">
+            <legend>
+              {{ question.text }}
+              {% if question.required %}<span class="sr-only">(required)</span>{% endif %}
+            </legend>
+          </fieldset>
+        </td>
+        {% for value, label in question.scale_options %}
+          <td>
+            <span class="radio">
+              <input type="radio"
+                     name="question_{{ question.id }}"
+                     id="q{{ question.id }}_{{ value }}"
+                     value="{{ value }}"
+                     {% if question.required %}required{% endif %}>
+              <label for="q{{ question.id }}_{{ value }}" aria-label="{{ label }}"></label>
+            </span>
+          </td>
+        {% endfor %}
+      </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endif %}
+{% endfor %}

@@ -78,7 +78,7 @@
             {% if survey.is_priority %}
               <span class="pill pill--priority">Priority</span>
             {% endif %}
-            {% if survey.domain %}<span>{{ survey.domain.name }}</span>{% endif %}
+            {% if survey.domain %}<span class="meta-domain" title="{{ survey.domain.name }}">{{ survey.domain.name }}</span>{% endif %}
             <span>{{ survey.questions.count }} question{{ survey.questions.count|pluralize }}</span>
             <span>Scale {{ survey.min_value }}–{{ survey.max_value }}</span>
             {% if survey.randomize_questions %}<span>Randomised</span>{% endif %}

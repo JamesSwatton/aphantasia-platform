@@ -14,37 +14,60 @@ def organize_questions_by_group(questions, groups):
     """
     Organize questions into groups for display.
     Returns an OrderedDict where:
-    - Keys are (sort_key, group_obj or None)
+    - Keys are (sort_key, group_obj or None, position)
     - Values are lists of questions
+
+    position keeps keys unique, so questions that share an order number
+    don't overwrite each other.
 
     Trigger questions (controls_next_n_questions > 0) have their controlled
     questions attached as q.branch_questions and removed from the top-level
     list so the template can render them nested inside the trigger's card.
+    q.branch_items holds the same questions for rendering: single questions
+    as {'question': q}, and consecutive questions from a visible group as
+    {'group': g, 'questions': [...], 'scale_runs': [...]} so they render as
+    that group's matrix inside the branch.
     """
-    # Attach branch_questions to each trigger and collect IDs to suppress
+    # Groups with show_title=False are subscale-only; render their questions individually
+    group_lookup = {g.id: g for g in groups}
+
+    def visible_group(q):
+        group = group_lookup.get(q.group_id) if q.group_id else None
+        return group if group and group.show_title else None
+
+    # Attach branch_questions to each trigger and collect IDs to suppress.
+    # A trigger inside a visible group's matrix can't act as a gate.
     branch_question_ids = set()
     sorted_questions = sorted(questions, key=lambda q: q.order)
 
     for q in sorted_questions:
         q.branch_questions = []
-        if q.controls_next_n_questions > 0 and not q.group_id:
+        q.branch_items = []
+        if q.controls_next_n_questions > 0 and not visible_group(q):
             for candidate in sorted_questions:
                 if (candidate.order > q.order and
-                        candidate.order <= q.order + q.controls_next_n_questions and
-                        not candidate.group_id):
+                        candidate.order <= q.order + q.controls_next_n_questions):
                     q.branch_questions.append(candidate)
                     branch_question_ids.add(candidate.id)
+                    group = visible_group(candidate)
+                    if group and q.branch_items and q.branch_items[-1].get('group') == group:
+                        q.branch_items[-1]['questions'].append(candidate)
+                    elif group:
+                        q.branch_items.append({'group': group, 'questions': [candidate]})
+                    else:
+                        q.branch_items.append({'question': candidate})
+            for item in q.branch_items:
+                if 'group' in item:
+                    item['scale_runs'] = split_into_scale_runs(item['questions'])
 
     # Separate grouped and ungrouped questions, excluding branch children
-    # Groups with show_title=False are subscale-only; render their questions individually
-    group_lookup = {g.id: g for g in groups}
     grouped_questions = {}  # {group_id: [questions]}
     ungrouped_questions = []
 
     for q in questions:
         if q.id in branch_question_ids:
             continue  # rendered inside the trigger card, not as a top-level card
-        if q.group_id and group_lookup.get(q.group_id, None) and group_lookup[q.group_id].show_title:
+        if visible_group(q):
             if q.group_id not in grouped_questions:
                 grouped_questions[q.group_id] = []
             grouped_questions[q.group_id].append(q)
@@ -65,10 +88,69 @@ def organize_questions_by_group(questions, groups):
     items_to_sort.sort(key=lambda x: x[0])
 
     result = OrderedDict()
-    for sort_key, group_obj, qs in items_to_sort:
-        result[(sort_key, group_obj)] = qs
+    for position, (sort_key, group_obj, qs) in enumerate(items_to_sort):
+        result[(sort_key, group_obj, position)] = qs
+        if group_obj:
+            group_obj.scale_runs = split_into_scale_runs(qs)
 
     return result
+
+
+def attach_guidelines(grouped_questions, guidelines, randomized):
+    """
+    Attach each guideline to the card it appears above, as guidelines_before
+    on the card's first question, and return the ones that belong after the
+    last card.
+
+    A guideline sits above the card containing the question whose order is
+    its before_question, so one aimed at a grouped or branch question appears
+    above that group's or trigger's card. If no question has that order, the
+    next question after it is used. On a randomised survey the positions mean
+    nothing, so every guideline goes above the first card.
+    """
+    cards = list(grouped_questions.values())
+    for card in cards:
+        card[0].guidelines_before = []
+    if not cards:
+        return []
+    if randomized:
+        cards[0][0].guidelines_before = list(guidelines)
+        return []
+
+    card_for_order = {}
+    for card in cards:
+        for q in card:
+            for contained in [q] + q.branch_questions:
+                card_for_order.setdefault(contained.order, card)
+
+    guidelines_end = []
+    for guideline in guidelines:
+        later_orders = [order for order in card_for_order if order >= guideline.before_question]
+        if later_orders:
+            card_for_order[min(later_orders)][0].guidelines_before.append(guideline)
+        else:
+            guidelines_end.append(guideline)
+    return guidelines_end
+
+def split_into_scale_runs(questions):
+    """
+    Split a group's questions into consecutive runs that share the same
+    scale options, so the template can render each run as its own matrix
+    table with the right header. A group on a single scale stays one run.
+    Non-Likert questions can't sit in a matrix, so each becomes its own run
+    as {'question': q} and renders as a standalone question.
+    """
+    runs = []
+    for q in questions:
+        if q.question_type != 'likert':
+            runs.append({'question': q})
+            continue
+        options = getattr(q, 'scale_options', None)
+        if runs and runs[-1].get('scale_options') == options:
+            runs[-1]['questions'].append(q)
+        else:
+            runs.append({'scale_options': options, 'questions': [q]})
+    return runs
 
 
 @login_required
@@ -107,6 +189,7 @@ def survey_preview(request, pk):
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
 
     test_responses = None
     test_result = None
@@ -115,6 +198,7 @@ def survey_preview(request, pk):
         # Process preview submission - save to database with is_test=True
         errors = []
         responses = {}  # Store as {question: answer_value}
+        other_texts = {}  # {question: text typed for its "Other" option}
         display_responses = []  # For showing the summary table
 
         # Build a map of which questions are disabled based on trigger logic
@@ -136,43 +220,19 @@ def survey_preview(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Auto-fill disabled questions with default values
+            # Store disabled (hidden branch) questions as "NULL" so they aren't scored
             if q.id in disabled_questions:
-                if q.question_type == 'likert':
-                    # Use minimum value of the scale
-                    auto_value = q.effective_min()
-                    responses[q] = auto_value
-                    # Build display data for auto-filled response
-                    stored_value = q.apply_reverse_coding(auto_value) if q.reverse_coded else auto_value
-                    stored_value = q.apply_scale_factor(stored_value)
-                    if q.likert_scale:
-                        answer_label = q.likert_scale.get_label_for_value(auto_value)
-                    else:
-                        answer_label = survey.get_label_for_value(auto_value)
-                    display_responses.append({
-                        'question_id': q.get_question_identifier(),
-                        'question_text': q.text,
-                        'question_type': 'likert',
-                        'answer_value': auto_value,
-                        'answer_label': answer_label,
-                        'stored_value': stored_value,
-                        'reverse_coded': q.reverse_coded,
-                        'scale_factor': q.scale_factor,
-                        'is_auto_filled': True
-                    })
-                else:
-                    # For non-Likert questions, store "NULL"
-                    responses[q] = "NULL"
-                    display_responses.append({
-                        'question_id': q.get_question_identifier(),
-                        'question_text': q.text,
-                        'question_type': q.question_type,
-                        'answer_value': "NULL",
-                        'answer_label': '-',
-                        'stored_value': "NULL",
-                        'reverse_coded': False,
-                        'is_auto_filled': True
-                    })
+                responses[q] = "NULL"
+                display_responses.append({
+                    'question_id': q.get_question_identifier(),
+                    'question_text': q.text,
+                    'question_type': q.question_type,
+                    'answer_value': "NULL",
+                    'answer_label': '-',
+                    'stored_value': "NULL",
+                    'reverse_coded': False,
+                    'is_auto_filled': True
+                })
                 continue
 
             if q.question_type == 'likert':
@@ -233,17 +293,23 @@ def survey_preview(request, pk):
                 filtered_values = [v for v in selected_values if str(v) in enabled_keys]
 
                 is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
+                other_text = request.POST.get(f'{field_name}_other', '').strip() if q.other_option in filtered_values else ''
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
+                elif q.other_option in filtered_values and not other_text:
+                    errors.append(f"Question {index}: Please describe your \"Other\" answer.")
                 elif filtered_values:
                     import json
                     responses[q] = json.dumps(filtered_values)
+                    other_texts[q] = other_text
                     # Build display data - extract labels properly
                     labels = []
                     for v in filtered_values:
                         option_value = q.options.get(str(v), str(v))
                         # If it's a list (disabled option), take first element; otherwise use as-is
                         label = option_value[0] if isinstance(option_value, list) else option_value
+                        if v == q.other_option:
+                            label = f"{label.strip()}: {other_text}"
                         labels.append(label)
 
                     display_responses.append({
@@ -365,7 +431,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'is_test': True}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True}
                         )
 
             messages.success(
@@ -379,6 +445,7 @@ def survey_preview(request, pk):
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
+        'guidelines_end': guidelines_end,
         'is_preview': True,
         'test_responses': test_responses,
         'test_result': test_result,
@@ -443,11 +510,13 @@ def survey_take(request, pk):
 
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups)
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
 
     if request.method == 'POST':
         # Validate that all required questions are answered
         errors = []
         responses = {}  # Store as {question: answer_value}
+        other_texts = {}  # {question: text typed for its "Other" option}
 
         # Build a map of which questions are disabled based on trigger logic
         disabled_questions = set()
@@ -468,14 +537,9 @@ def survey_take(request, pk):
         for index, q in enumerate(questions, start=1):
             field_name = f'question_{q.id}'
 
-            # Auto-fill disabled questions with default values
+            # Store disabled (hidden branch) questions as "NULL" so they aren't scored
             if q.id in disabled_questions:
-                if q.question_type == 'likert':
-                    # Use minimum value of the scale
-                    responses[q] = q.effective_min()
-                else:
-                    # For non-Likert questions, store "NULL"
-                    responses[q] = "NULL"
+                responses[q] = "NULL"
                 continue
 
             if q.question_type == 'likert':
@@ -510,12 +574,16 @@ def survey_take(request, pk):
 
                 # Validate using the model method
                 is_valid, error_msg = q.validate_multiple_choice_answer(filtered_values)
+                other_text = request.POST.get(f'{field_name}_other', '').strip() if q.other_option in filtered_values else ''
                 if not is_valid:
                     errors.append(f"Question {index}: {error_msg}")
+                elif q.other_option in filtered_values and not other_text:
+                    errors.append(f"Question {index}: Please describe your \"Other\" answer.")
                 elif filtered_values:
                     # Store as JSON array
                     import json
                     responses[q] = json.dumps(filtered_values)
+                    other_texts[q] = other_text
                 else:
                     # Optional question left blank - record as NULL
                     if not q.required:
@@ -572,13 +640,14 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, '')}
                         )
 
             context = {
                 'survey': survey,
                 'questions': questions,
                 'grouped_questions': grouped_questions,
+                'guidelines_end': guidelines_end,
                 'is_preview': False,
                 'submitted': True,
             }
@@ -588,6 +657,7 @@ def survey_take(request, pk):
         'survey': survey,
         'questions': questions,
         'grouped_questions': grouped_questions,
+        'guidelines_end': guidelines_end,
         'is_preview': False,
     }
 
