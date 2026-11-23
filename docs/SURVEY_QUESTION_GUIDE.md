@@ -13,9 +13,11 @@ System Features" section of the main README.
     standard how-to-answer points.
   - **Researcher** dropdown only lists staff users.
   - **Is Priority** pins the survey to the top of participant-facing lists.
-- **Randomize Questions** — shuffles question order per participant. The shuffle is
-  seeded by participant ID, so a given participant always sees the same order if they
-  return to the survey.
+- **Randomize Questions** — shuffles the question cards per participant. A visible
+  group moves as one card with its questions shuffled inside it, and a conditional
+  trigger moves with its branch (the branch's questions stay in order). The shuffle
+  is seeded by participant and survey, so a participant always sees the same order if
+  they return to the survey, but a different order on each survey.
 - **Preview** — a link to preview the survey as it will appear to participants. Shows
   "Save survey first to generate preview link" until the survey has been saved once.
 
@@ -123,8 +125,9 @@ Notes:
 - **The number doesn't follow the question.** Adding, moving or deleting a question
   above it renumbers the questions (see [Order](#order)) but not the guideline, so
   check its Before Question after reordering.
-- **On a randomised survey every guideline appears at the top**, in Before Question
-  order, since there's no fixed position to put them in.
+- **On a randomised survey a guideline moves with its card**, so it stays above the
+  same question, group or trigger wherever that card lands. One placed at the end
+  stays at the end.
 - Several guidelines with the same number appear one after another, in the order
   they were added.
 - Guidelines aren't questions: they have no number, don't count towards progress,

@@ -10,7 +10,7 @@ import random
 from collections import OrderedDict
 
 
-def organize_questions_by_group(questions, groups):
+def organize_questions_by_group(questions, groups, rng=None):
     """
     Organize questions into groups for display.
     Returns an OrderedDict where:
@@ -19,6 +19,10 @@ def organize_questions_by_group(questions, groups):
 
     position keeps keys unique, so questions that share an order number
     don't overwrite each other.
+
+    If rng (a random.Random) is given, the cards are shuffled after they're
+    built, and so are the questions inside each group's card. Each card moves
+    as a unit, so a group stays together and a trigger keeps its branch.
 
     Trigger questions (controls_next_n_questions > 0) have their controlled
     questions attached as q.branch_questions and removed from the top-level
@@ -87,6 +91,12 @@ def organize_questions_by_group(questions, groups):
 
     items_to_sort.sort(key=lambda x: x[0])
 
+    if rng:
+        for sort_key, group_obj, qs in items_to_sort:
+            if group_obj:
+                rng.shuffle(qs)
+        rng.shuffle(items_to_sort)
+
     result = OrderedDict()
     for position, (sort_key, group_obj, qs) in enumerate(items_to_sort):
         result[(sort_key, group_obj, position)] = qs
@@ -96,7 +106,19 @@ def organize_questions_by_group(questions, groups):
     return result
 
 
-def attach_guidelines(grouped_questions, guidelines, randomized):
+def survey_rng(survey, user):
+    """
+    The random.Random that shuffles a randomised survey for this participant,
+    or None if the survey isn't randomised. Seeded by participant and survey,
+    so a participant sees the same order every time they open a survey but a
+    different order on each survey.
+    """
+    if not survey.randomize_questions:
+        return None
+    return random.Random(f"{user.id}-{survey.id}")
+
+
+def attach_guidelines(grouped_questions, guidelines):
     """
     Attach each guideline to the card it appears above, as guidelines_before
     on the card's first question, and return the ones that belong after the
@@ -105,17 +127,12 @@ def attach_guidelines(grouped_questions, guidelines, randomized):
     A guideline sits above the card containing the question whose order is
     its before_question, so one aimed at a grouped or branch question appears
     above that group's or trigger's card. If no question has that order, the
-    next question after it is used. On a randomised survey the positions mean
-    nothing, so every guideline goes above the first card.
+    next question after it is used. On a randomised survey the guideline
+    moves with its card.
     """
     cards = list(grouped_questions.values())
     for card in cards:
         card[0].guidelines_before = []
-    if not cards:
-        return []
-    if randomized:
-        cards[0][0].guidelines_before = list(guidelines)
-        return []
 
     card_for_order = {}
     for card in cards:
@@ -169,12 +186,6 @@ def survey_preview(request, pk):
     questions = list(survey.questions.all())
     groups = list(survey.question_groups.all())
 
-    # Randomize questions if enabled (using user ID as seed for consistency)
-    if survey.randomize_questions:
-        random.seed(request.user.id)
-        random.shuffle(questions)
-        random.seed()  # Reset seed for other random operations
-
     # Attach per-question scale options or multiple choice options for template rendering
     for question in questions:
         if question.question_type == 'likert':
@@ -188,8 +199,8 @@ def survey_preview(request, pk):
             question.country_options = question.get_country_options()
 
     # Organize questions by group
-    grouped_questions = organize_questions_by_group(questions, groups)
-    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
+    grouped_questions = organize_questions_by_group(questions, groups, survey_rng(survey, request.user))
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all())
 
     test_responses = None
     test_result = None
@@ -490,12 +501,6 @@ def survey_take(request, pk):
     questions = list(survey.questions.all())
     groups = list(survey.question_groups.all())
 
-    # Randomize questions if enabled (using user ID as seed for consistency)
-    if survey.randomize_questions:
-        random.seed(request.user.id)
-        random.shuffle(questions)
-        random.seed()  # Reset seed for other random operations
-
     # Attach per-question scale options or multiple choice options for template rendering
     for question in questions:
         if question.question_type == 'likert':
@@ -509,8 +514,8 @@ def survey_take(request, pk):
             question.country_options = question.get_country_options()
 
     # Organize questions by group
-    grouped_questions = organize_questions_by_group(questions, groups)
-    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all(), survey.randomize_questions)
+    grouped_questions = organize_questions_by_group(questions, groups, survey_rng(survey, request.user))
+    guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all())
 
     if request.method == 'POST':
         # Validate that all required questions are answered

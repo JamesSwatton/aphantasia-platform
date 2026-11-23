@@ -956,3 +956,18 @@ With 40+ results the account page's Results tab was one long list. It now has th
 
 ### Contact email in the footer
 `templates/partials/_footer.html` now has a `mailto:eyesmind@ed.ac.uk` link on the left, opposite the university crest, on every page. `.footer` was already a flex row, so it switched from `justify-content: flex-end` to `space-between` with `align-items: center`; the link (`.footer__contact`) is white, 14px, and underlines on hover.
+
+---
+
+## Session 36: Survey Randomisation Fix (November 2026)
+
+**Branch**: `fix-survey-randomisation`
+
+### Bug fix: randomised surveys weren't shuffled
+Since Session 16, Randomize Questions only shuffled the questions inside visible groups. The views shuffled the question list, but `organize_questions_by_group` then sorted every card back into order, so ungrouped questions (including hidden-group ones) and the group cards themselves always appeared in their stored order.
+- **`organize_questions_by_group(questions, groups, rng=None)`** (`surveys/views.py`) shuffles the built cards, and the questions inside each visible group's card, when given a `random.Random`. A group stays together and a trigger keeps its branch; branch questions keep their order
+- **`survey_rng(survey, user)`** seeds a dedicated `random.Random` with `"{user.id}-{survey.id}"` instead of reseeding the global `random` module. A participant still sees the same order every time, but no longer the same pattern of positions on every survey with the same number of cards
+- Participants on randomised surveys now see a different order than before
+
+### Guidelines move with their card
+`attach_guidelines` no longer puts every guideline at the top of a randomised survey. Since the cards are what gets shuffled, a guideline stays above the question, group or trigger card it's attached to wherever that card lands; one past the last question stays at the end. Guideline and Randomize Questions help text updated (help-text-only migration `surveys.0039`), along with the survey question guide and README
