@@ -3199,7 +3199,7 @@ ol {
 /* Guidelines — researcher guidance between question cards. Sits on the page
    background with no card, so it can't be mistaken for a question. */
 .guideline {
-  margin: 40px 0 28px;
+  margin: 0 0 28px;
   padding: 12px 0 12px 28px;
   border-left: 3px solid var(--ink);
   font-family: var(--font-display);
