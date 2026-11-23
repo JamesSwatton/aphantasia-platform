@@ -382,5 +382,4 @@ they're the same for every participant. `display_position` is where that partici
 saw it: every question on their page counted top to bottom from 1, including rows in a
 group and questions in a conditional branch. On a randomised survey this is the
 shuffled position, so you can analyse order effects. It's blank for responses saved
-before 23 November 2026, when it started being recorded. Every export is logged for
-research-integrity auditing.
+before this column was added. Every export is logged for research-integrity auditing.
