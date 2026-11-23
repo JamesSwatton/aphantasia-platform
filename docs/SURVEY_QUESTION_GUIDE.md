@@ -13,11 +13,16 @@ System Features" section of the main README.
     standard how-to-answer points.
   - **Researcher** dropdown only lists staff users.
   - **Is Priority** pins the survey to the top of participant-facing lists.
-- **Randomize Questions** — shuffles question order per participant. The shuffle is
-  seeded by participant ID, so a given participant always sees the same order if they
-  return to the survey.
+- **Randomize Questions** — shuffles the question cards per participant. A visible
+  group moves as one card with its questions shuffled inside it, and a conditional
+  trigger moves with its branch (the branch's questions stay in order). The shuffle
+  is seeded by participant and survey, so a participant always sees the same order if
+  they return to the survey, but a different order on each survey.
 - **Preview** — a link to preview the survey as it will appear to participants. Shows
   "Save survey first to generate preview link" until the survey has been saved once.
+  The preview banner says whether the survey is randomised. After you submit test
+  data, the results table's **Shown** column gives where each question appeared for
+  you, the same number exported as `display_position`.
 
 ## Default Likert Scale
 
@@ -123,8 +128,9 @@ Notes:
 - **The number doesn't follow the question.** Adding, moving or deleting a question
   above it renumbers the questions (see [Order](#order)) but not the guideline, so
   check its Before Question after reordering.
-- **On a randomised survey every guideline appears at the top**, in Before Question
-  order, since there's no fixed position to put them in.
+- **On a randomised survey a guideline moves with its card**, so it stays above the
+  same question, group or trigger wherever that card lands. One placed at the end
+  stays at the end.
 - Several guidelines with the same number appear one after another, in the order
   they were added.
 - Guidelines aren't questions: they have no number, don't count towards progress,
@@ -369,4 +375,12 @@ question metadata)" action. Each row already includes question type, group, requ
 flag, reverse-coding/scale-factor settings, and effective min/max/scale name, so you
 generally don't need to cross-reference the survey structure separately when
 analyzing exports. The `other_text` column holds what a participant typed after
-choosing a multiple choice question's "Other" option, and is empty otherwise. Every export is logged for research-integrity auditing.
+choosing a multiple choice question's "Other" option, and is empty otherwise.
+
+`question_id` and `question_order` describe the question as set up in the survey, so
+they're the same for every participant. `display_position` is where that participant
+saw it: every question on their page counted top to bottom from 1, including rows in a
+group and questions in a conditional branch. On a randomised survey this is the
+shuffled position, so you can analyse order effects. It's blank for responses saved
+before 23 November 2026, when it started being recorded. Every export is logged for
+research-integrity auditing.

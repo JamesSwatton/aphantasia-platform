@@ -56,7 +56,7 @@ research_platform/
 - **QuestionGroup**: Groups questions into a visible section (shown to participants) or a hidden subscale (grouped only for scoring, no visual hint to participants).
 - **LikertScale**: Named, reusable Likert scales definable per survey.
 - **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, an optional "Other" option that reveals a text box (`other_option`), and conditional branching (`controls_next_n_questions` / `trigger_value`).
-- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option.
+- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option. `display_position` is where the question appeared on that participant's page (every question counted top to bottom from 1, set by `display_positions` in `surveys/views.py`), so randomised order is recorded; null for responses saved before it existed.
 
 ### tasks
 - **LabTask**: Lab.js task uploads. Includes optional `trial_sender_filter` field (comma-separated sender names) to narrow trial data filtering beyond the default `ended_on='response'` filter, and an optional minimum-window-size gate (`requires_min_window_size`/`min_window_width`/`min_window_height`).
@@ -264,9 +264,10 @@ Questions can be ordered manually or automatically:
 Surveys can randomize question order for each participant:
 
 - **Enable**: Check "Randomize questions" on the survey
-- **Seeded randomization**: Each participant sees a consistent random order (using their ID as seed)
+- **What moves**: Cards are shuffled after `organize_questions_by_group` builds them, so a visible group moves as one card (its questions shuffled inside it) and a trigger moves with its branch (branch questions keep their order)
+- **Seeded randomization**: `survey_rng` in `surveys/views.py` seeds a `random.Random` with the participant and survey IDs
 - **Persistence**: Same participant always sees the same order across sessions
-- **Different per participant**: Each participant gets a unique randomized order
+- **Different per participant and survey**: Each participant gets a different order, and a different one on each survey
 - **Admin unaffected**: Admin panel always shows questions in order field sequence
 
 **Use case**: Reduce order effects and detect acquiescence bias
@@ -290,7 +291,7 @@ Beyond Likert scales, a question can be: multiple choice (select one or select m
 `QuestionGroup` groups questions either as a **visible section** (`show_title=True` — shown to participants as a titled matrix card, e.g. "Think of a relative or friend") or a **hidden subscale** (`show_title=False` — grouped only for scoring; questions render individually, interleaved with the rest of the survey by `order`, with no visual hint to participants that they belong together). Grouped questions get composite IDs like `1_a`, `1_b`.
 
 #### Guidelines
-`Guideline` is guidance text (Markdown) that renders between question cards, outside any card. `before_question` is the order number of the question it appears above; `attach_guidelines` in `surveys/views.py` places it above the card containing that question (a group's or trigger's card for grouped or branch questions), at the end if the number is past the last question, or at the top on randomised surveys. Guidelines have no `data-question-id`, so they're never numbered, counted, submitted, exported or scored.
+`Guideline` is guidance text (Markdown) that renders between question cards, outside any card. `before_question` is the order number of the question it appears above; `attach_guidelines` in `surveys/views.py` places it above the card containing that question (a group's or trigger's card for grouped or branch questions), or at the end if the number is past the last question. On randomised surveys it moves with its card. Guidelines have no `data-question-id`, so they're never numbered, counted, submitted, exported or scored.
 
 #### Conditional Branching
 A question can control the next N questions via `controls_next_n_questions` + `trigger_value`: when the trigger question's answer matches `trigger_value`, the controlled questions reveal (`.branch` UI, slides open); otherwise they stay collapsed and are auto-filled with `NULL` (all question types) so every participant has a complete response row regardless of branch. `NULL` isn't numeric, so these rows are left out of scoring.

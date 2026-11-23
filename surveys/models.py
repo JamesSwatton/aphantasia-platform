@@ -54,7 +54,7 @@ class Survey(models.Model):
     )
     randomize_questions = models.BooleanField(
         default=False,
-        help_text="Randomize question order for each participant (using participant ID as seed for consistency)"
+        help_text="Shuffle the question cards for each participant, and the questions inside each group. A participant always sees the same order on this survey."
     )
     min_value = models.IntegerField(
         default=1,
@@ -802,8 +802,8 @@ class Guideline(models.Model):
         help_text=(
             "Order number of the question this appears above. If that question is in a group "
             "or a conditional branch, it appears above that group's or trigger's card. A number "
-            "past the last question puts it at the end. On a randomised survey, all guidelines "
-            "appear at the top."
+            "past the last question puts it at the end. On a randomised survey, it moves with "
+            "that card."
         )
     )
     created_at = models.DateTimeField(auto_now_add=True)
@@ -843,6 +843,16 @@ class ParticipantResponse(models.Model):
     is_test = models.BooleanField(
         default=False,
         help_text="Marks this as test data submitted by researchers/staff"
+    )
+    display_position = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Where this question appeared on the participant's page, counting every question "
+            "top to bottom from 1, including rows in a group and questions in a branch. On a "
+            "randomised survey this is the shuffled position. Blank for responses saved before "
+            "this was recorded."
+        )
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

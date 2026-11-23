@@ -227,7 +227,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
     list_display = ["survey", "question", "participant", "answer", "test_badge", "created_at"]
     list_filter = ["survey", "is_test", "created_at"]
     search_fields = ["participant__email", "survey__title", "question__text", "answer"]
-    readonly_fields = ["created_at", "updated_at"]
+    readonly_fields = ["display_position", "created_at", "updated_at"]
     actions = ["export_responses_csv"]
 
     def test_badge(self, obj):
@@ -268,6 +268,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
             'question_text',
             'question_type',
             'question_order',
+            'display_position',
             'group_code',
             'group_title',
 
@@ -322,6 +323,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 'question_text': q.text,
                 'question_type': q.question_type,
                 'question_order': q.order,
+                'display_position': response_obj.display_position or '',
                 'group_code': group_code,
                 'group_title': group_title,
                 'required': q.required,

@@ -3088,6 +3088,9 @@ ol {
   background: color-mix(in srgb, var(--blue) 10%, var(--bg-page));
   border: 1px solid color-mix(in srgb, var(--blue) 30%, transparent);
 }
+.survey-banner__note {
+  margin-top: 6px;
+}
 
 /* Test response table (shown after researcher test submission) */
 .test-result {
@@ -3099,6 +3102,12 @@ ol {
   font-size: 16px;
   margin-bottom: 16px;
   color: var(--ink);
+}
+.test-result__note {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-top: -8px;
+  margin-bottom: 16px;
 }
 .test-result__table {
   width: 100%;
@@ -3420,7 +3429,7 @@ ol {
   table-layout: fixed;
 }
 .matrix th {
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 400;
   letter-spacing: 0.06em;
   text-transform: uppercase;
