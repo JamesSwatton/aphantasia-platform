@@ -977,3 +977,8 @@ The export's `question_id` and `question_order` describe the survey as set up, s
 - **`ParticipantResponse.display_position`** (migration `surveys.0040`): every question on the participant's page numbered top to bottom from 1, including group rows and branch questions. Null for older responses. Read-only in the Participant Responses admin
 - **`display_positions(grouped_questions)`** (`surveys/views.py`) builds the numbering from the cards as rendered; `survey_take` and `survey_preview` save it with each response. Feedback and exit surveys (`accounts/views.py`) save their question's position in order
 - Added as a `display_position` column in the responses CSV export, after `question_order`; documented in the survey question guide and README
+
+### Randomisation shown on the survey preview
+- **`templates/partials/_randomisation_note.html`**: "Randomised" or "Not randomised" with a one-line explanation, under the Researcher preview banner and under "✓ Test submission saved" on the results. Participants never see it
+- **Shown column** in the test results table: each question's `display_position`, so on a randomised survey you can see where each question landed. `survey_preview` adds it to every results row
+- `.survey-banner__note` and `.test-result__note` in `static/css/styles.css`; survey question guide's Preview entry updated

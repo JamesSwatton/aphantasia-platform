@@ -1,0 +1,8 @@
+{# Researcher preview only: says whether the survey's question order is randomised. #}
+{# Pass submitted=True on the test results, where the Shown column gives the order. #}
+{% if survey.randomize_questions %}
+  <strong>Randomised</strong> — cards are shuffled for each participant.
+  {% if submitted %}Shown is where each question appeared for you.{% else %}This is your order; participants each see a different one.{% endif %}
+{% else %}
+  <strong>Not randomised</strong> — every participant sees questions in this order.
+{% endif %}

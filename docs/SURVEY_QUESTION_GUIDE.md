@@ -20,6 +20,9 @@ System Features" section of the main README.
   they return to the survey, but a different order on each survey.
 - **Preview** — a link to preview the survey as it will appear to participants. Shows
   "Save survey first to generate preview link" until the survey has been saved once.
+  The preview banner says whether the survey is randomised. After you submit test
+  data, the results table's **Shown** column gives where each question appeared for
+  you, the same number exported as `display_position`.
 
 ## Default Likert Scale
 

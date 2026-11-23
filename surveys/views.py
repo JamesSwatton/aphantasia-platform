@@ -252,6 +252,7 @@ def survey_preview(request, pk):
                 responses[q] = "NULL"
                 display_responses.append({
                     'question_id': q.get_question_identifier(),
+                    'display_position': positions.get(q.id),
                     'question_text': q.text,
                     'question_type': q.question_type,
                     'answer_value': "NULL",
@@ -287,6 +288,7 @@ def survey_preview(request, pk):
                                 answer_label = survey.get_label_for_value(answer_int)
                             display_responses.append({
                                 'question_id': q.get_question_identifier(),
+                                'display_position': positions.get(q.id),
                                 'question_text': q.text,
                                 'question_type': 'likert',
                                 'answer_value': answer_int,
@@ -304,6 +306,7 @@ def survey_preview(request, pk):
                         responses[q] = "NULL"
                         display_responses.append({
                             'question_id': q.get_question_identifier(),
+                            'display_position': positions.get(q.id),
                             'question_text': q.text,
                             'question_type': 'likert',
                             'answer_value': "NULL",
@@ -341,6 +344,7 @@ def survey_preview(request, pk):
 
                     display_responses.append({
                         'question_id': q.get_question_identifier(),
+                        'display_position': positions.get(q.id),
                         'question_text': q.text,
                         'question_type': q.question_type,
                         'answer_value': filtered_values,
@@ -355,6 +359,7 @@ def survey_preview(request, pk):
                         responses[q] = "NULL"
                         display_responses.append({
                             'question_id': q.get_question_identifier(),
+                            'display_position': positions.get(q.id),
                             'question_text': q.text,
                             'question_type': q.question_type,
                             'answer_value': "NULL",
@@ -373,6 +378,7 @@ def survey_preview(request, pk):
                     # Build display data
                     display_responses.append({
                         'question_id': q.get_question_identifier(),
+                        'display_position': positions.get(q.id),
                         'question_text': q.text,
                         'question_type': 'free_text',
                         'answer_value': answer[:50] + '...' if len(answer) > 50 else answer,
@@ -387,6 +393,7 @@ def survey_preview(request, pk):
                         responses[q] = "NULL"
                         display_responses.append({
                             'question_id': q.get_question_identifier(),
+                            'display_position': positions.get(q.id),
                             'question_text': q.text,
                             'question_type': 'free_text',
                             'answer_value': "NULL",
@@ -413,6 +420,7 @@ def survey_preview(request, pk):
                     responses[q] = answer
                     display_responses.append({
                         'question_id': q.get_question_identifier(),
+                        'display_position': positions.get(q.id),
                         'question_text': q.text,
                         'question_type': q.question_type,
                         'answer_value': answer,
@@ -426,6 +434,7 @@ def survey_preview(request, pk):
                         responses[q] = "NULL"
                         display_responses.append({
                             'question_id': q.get_question_identifier(),
+                            'display_position': positions.get(q.id),
                             'question_text': q.text,
                             'question_type': q.question_type,
                             'answer_value': "NULL",
