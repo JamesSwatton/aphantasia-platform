@@ -78,6 +78,7 @@
     {% if is_preview and not test_responses %}
       <div class="survey-banner survey-banner--warn">
         <strong>Researcher preview</strong> — responses will be saved as TEST data and won't affect real results.
+        <p class="survey-banner__note">{% include "partials/_randomisation_note.html" %}</p>
       </div>
       <div style="margin-bottom:16px;">
         <button type="button" id="random-fill-btn" class="btn btn--outline">Fill with random answers</button>
@@ -88,10 +89,12 @@
     {% if test_responses %}
       <div class="card-surface test-result">
         <p class="test-result__heading">✓ Test submission saved</p>
+        <p class="test-result__note">{% include "partials/_randomisation_note.html" with submitted=True %}</p>
         <table class="test-result__table">
           <thead>
             <tr>
               <th style="width:10%">ID</th>
+              <th style="width:8%">Shown</th>
               <th>Question</th>
               <th style="width:10%">Selected</th>
               <th style="width:8%">Factor</th>
@@ -103,6 +106,7 @@
             {% for r in test_responses %}
               <tr{% if r.is_auto_filled %} class="is-autofill"{% endif %}>
                 <td>{{ r.question_id }}</td>
+                <td class="test-result__val">{{ r.display_position|default:"—" }}</td>
                 <td>
                   {{ r.question_text }}
                   {% if r.reverse_coded %}<span class="badge--rc">RC</span>{% endif %}

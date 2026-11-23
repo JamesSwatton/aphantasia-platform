@@ -956,3 +956,29 @@ With 40+ results the account page's Results tab was one long list. It now has th
 
 ### Contact email in the footer
 `templates/partials/_footer.html` now has a `mailto:eyesmind@ed.ac.uk` link on the left, opposite the university crest, on every page. `.footer` was already a flex row, so it switched from `justify-content: flex-end` to `space-between` with `align-items: center`; the link (`.footer__contact`) is white, 14px, and underlines on hover.
+
+---
+
+## Session 36: Survey Randomisation Fix (November 2026)
+
+**Branch**: `fix-survey-randomisation`
+
+### Bug fix: randomised surveys weren't shuffled
+Since Session 16, Randomize Questions only shuffled the questions inside visible groups. The views shuffled the question list, but `organize_questions_by_group` then sorted every card back into order, so ungrouped questions (including hidden-group ones) and the group cards themselves always appeared in their stored order.
+- **`organize_questions_by_group(questions, groups, rng=None)`** (`surveys/views.py`) shuffles the built cards, and the questions inside each visible group's card, when given a `random.Random`. A group stays together and a trigger keeps its branch; branch questions keep their order
+- **`survey_rng(survey, user)`** seeds a dedicated `random.Random` with `"{user.id}-{survey.id}"` instead of reseeding the global `random` module. A participant still sees the same order every time, but no longer the same pattern of positions on every survey with the same number of cards
+- Participants on randomised surveys now see a different order than before
+
+### Guidelines move with their card
+`attach_guidelines` no longer puts every guideline at the top of a randomised survey. Since the cards are what gets shuffled, a guideline stays above the question, group or trigger card it's attached to wherever that card lands; one past the last question stays at the end. Guideline and Randomize Questions help text updated (help-text-only migration `surveys.0039`), along with the survey question guide and README
+
+### Display position recorded with each response
+The export's `question_id` and `question_order` describe the survey as set up, so nothing recorded the order a participant actually saw.
+- **`ParticipantResponse.display_position`** (migration `surveys.0040`): every question on the participant's page numbered top to bottom from 1, including group rows and branch questions. Null for older responses. Read-only in the Participant Responses admin
+- **`display_positions(grouped_questions)`** (`surveys/views.py`) builds the numbering from the cards as rendered; `survey_take` and `survey_preview` save it with each response. Feedback and exit surveys (`accounts/views.py`) save their question's position in order
+- Added as a `display_position` column in the responses CSV export, after `question_order`; documented in the survey question guide and README
+
+### Randomisation shown on the survey preview
+- **`templates/partials/_randomisation_note.html`**: "Randomised" or "Not randomised" with a one-line explanation, under the Researcher preview banner and under "✓ Test submission saved" on the results. Participants never see it
+- **Shown column** in the test results table: each question's `display_position`, so on a randomised survey you can see where each question landed. `survey_preview` adds it to every results row
+- `.survey-banner__note` and `.test-result__note` in `static/css/styles.css`; survey question guide's Preview entry updated
