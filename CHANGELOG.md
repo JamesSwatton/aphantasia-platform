@@ -971,3 +971,9 @@ Since Session 16, Randomize Questions only shuffled the questions inside visible
 
 ### Guidelines move with their card
 `attach_guidelines` no longer puts every guideline at the top of a randomised survey. Since the cards are what gets shuffled, a guideline stays above the question, group or trigger card it's attached to wherever that card lands; one past the last question stays at the end. Guideline and Randomize Questions help text updated (help-text-only migration `surveys.0039`), along with the survey question guide and README
+
+### Display position recorded with each response
+The export's `question_id` and `question_order` describe the survey as set up, so nothing recorded the order a participant actually saw.
+- **`ParticipantResponse.display_position`** (migration `surveys.0040`): every question on the participant's page numbered top to bottom from 1, including group rows and branch questions. Null for older responses. Read-only in the Participant Responses admin
+- **`display_positions(grouped_questions)`** (`surveys/views.py`) builds the numbering from the cards as rendered; `survey_take` and `survey_preview` save it with each response. Feedback and exit surveys (`accounts/views.py`) save their question's position in order
+- Added as a `display_position` column in the responses CSV export, after `question_order`; documented in the survey question guide and README

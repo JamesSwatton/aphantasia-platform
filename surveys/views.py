@@ -118,6 +118,21 @@ def survey_rng(survey, user):
     return random.Random(f"{user.id}-{survey.id}")
 
 
+def display_positions(grouped_questions):
+    """
+    Map each question's ID to where it appears on the page, counting every
+    question top to bottom from 1: a group's rows in card order, and a
+    trigger followed by its branch questions. Saved with each response so
+    the order a participant saw is recorded.
+    """
+    positions = {}
+    for card in grouped_questions.values():
+        for q in card:
+            for contained in [q] + q.branch_questions:
+                positions[contained.id] = len(positions) + 1
+    return positions
+
+
 def attach_guidelines(grouped_questions, guidelines):
     """
     Attach each guideline to the card it appears above, as guidelines_before
@@ -201,6 +216,7 @@ def survey_preview(request, pk):
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups, survey_rng(survey, request.user))
     guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all())
+    positions = display_positions(grouped_questions)
 
     test_responses = None
     test_result = None
@@ -434,7 +450,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': str(stored_value), 'is_test': True}
+                            defaults={'answer': str(stored_value), 'is_test': True, 'display_position': positions.get(question.id)}
                         )
                     else:
                         # For multiple choice, free text, and NULL values, store as-is
@@ -442,7 +458,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True, 'display_position': positions.get(question.id)}
                         )
 
             messages.success(
@@ -516,6 +532,7 @@ def survey_take(request, pk):
     # Organize questions by group
     grouped_questions = organize_questions_by_group(questions, groups, survey_rng(survey, request.user))
     guidelines_end = attach_guidelines(grouped_questions, survey.guidelines.all())
+    positions = display_positions(grouped_questions)
 
     if request.method == 'POST':
         # Validate that all required questions are answered
@@ -637,7 +654,7 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': str(stored_value)}
+                            defaults={'answer': str(stored_value), 'display_position': positions.get(question.id)}
                         )
                     else:
                         # For multiple choice, free text, and NULL values, store as-is
@@ -645,7 +662,7 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, '')}
+                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'display_position': positions.get(question.id)}
                         )
 
             context = {

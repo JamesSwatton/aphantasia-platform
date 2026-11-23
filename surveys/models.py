@@ -844,6 +844,16 @@ class ParticipantResponse(models.Model):
         default=False,
         help_text="Marks this as test data submitted by researchers/staff"
     )
+    display_position = models.PositiveIntegerField(
+        null=True,
+        blank=True,
+        help_text=(
+            "Where this question appeared on the participant's page, counting every question "
+            "top to bottom from 1, including rows in a group and questions in a branch. On a "
+            "randomised survey this is the shuffled position. Blank for responses saved before "
+            "this was recorded."
+        )
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

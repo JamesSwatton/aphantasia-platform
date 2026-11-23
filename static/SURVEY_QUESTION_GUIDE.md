@@ -372,4 +372,12 @@ question metadata)" action. Each row already includes question type, group, requ
 flag, reverse-coding/scale-factor settings, and effective min/max/scale name, so you
 generally don't need to cross-reference the survey structure separately when
 analyzing exports. The `other_text` column holds what a participant typed after
-choosing a multiple choice question's "Other" option, and is empty otherwise. Every export is logged for research-integrity auditing.
+choosing a multiple choice question's "Other" option, and is empty otherwise.
+
+`question_id` and `question_order` describe the question as set up in the survey, so
+they're the same for every participant. `display_position` is where that participant
+saw it: every question on their page counted top to bottom from 1, including rows in a
+group and questions in a conditional branch. On a randomised survey this is the
+shuffled position, so you can analyse order effects. It's blank for responses saved
+before 23 November 2026, when it started being recorded. Every export is logged for
+research-integrity auditing.

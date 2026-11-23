@@ -88,7 +88,7 @@ def feedback_submit(request):
 
     skipped = request.POST.get('skip') == '1'
     questions = survey.questions.order_by('order')
-    for question in questions:
+    for position, question in enumerate(questions, start=1):
         if skipped:
             answer = 'NULL'
         else:
@@ -114,6 +114,7 @@ def feedback_submit(request):
             participant=user,
             answer=answer,
             is_test=False,
+            display_position=position,
         )
 
     return redirect(reverse('accounts:account') + '?feedback=submitted')
@@ -147,7 +148,7 @@ def exit_survey_submit(request):
         try:
             survey = ExitSurvey.objects.get(id=survey_id, is_active=True, is_exit_survey=True)
             if action == 'submit':
-                for question in survey.questions.order_by('order'):
+                for position, question in enumerate(survey.questions.order_by('order'), start=1):
                     raw = request.POST.get(f'question_{question.id}', '').strip()
                     if question.question_type == 'likert':
                         if raw:
@@ -169,6 +170,7 @@ def exit_survey_submit(request):
                         participant=user,
                         answer=answer,
                         is_test=False,
+                        display_position=position,
                     )
         except ExitSurvey.DoesNotExist:
             pass
