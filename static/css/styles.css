@@ -3208,6 +3208,11 @@ ol {
   line-height: 1.5;
   color: var(--ink);
 }
+/* Extra space when a guideline follows a question, so it reads as a break
+   between questions rather than a footnote to the one above. */
+.q-card + .guideline {
+  margin-top: 40px;
+}
 .guideline > * + * {
   margin-top: 14px;
 }
