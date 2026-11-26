@@ -836,6 +836,13 @@ class ParticipantResponse(models.Model):
         related_name='survey_responses'
     )
     answer = models.TextField()
+    raw_answer = models.TextField(
+        blank=True,
+        help_text=(
+            "What the participant actually selected, before reverse coding and scale factor. "
+            "Same as answer for non-Likert questions. Blank for responses saved before this was recorded."
+        )
+    )
     other_text = models.TextField(
         blank=True,
         help_text='What the participant typed after choosing the question\'s "Other" option'

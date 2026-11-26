@@ -90,7 +90,7 @@ def feedback_submit(request):
     questions = survey.questions.order_by('order')
     for position, question in enumerate(questions, start=1):
         if skipped:
-            answer = 'NULL'
+            answer = raw_answer = 'NULL'
         else:
             raw = request.POST.get(f'question_{question.id}', '').strip()
 
@@ -98,21 +98,23 @@ def feedback_submit(request):
                 if raw:
                     try:
                         answer = int(raw)
+                        raw_answer = str(answer)
                         if question.reverse_coded:
                             answer = question.apply_reverse_coding(answer)
                         answer = str(question.apply_scale_factor(answer))
                     except ValueError:
-                        answer = 'NULL'
+                        answer = raw_answer = 'NULL'
                 else:
-                    answer = 'NULL'
+                    answer = raw_answer = 'NULL'
             else:
-                answer = raw if raw else 'NULL'
+                answer = raw_answer = raw if raw else 'NULL'
 
         ParticipantResponse.objects.create(
             survey=survey,
             question=question,
             participant=user,
             answer=answer,
+            raw_answer=raw_answer,
             is_test=False,
             display_position=position,
         )
@@ -154,21 +156,23 @@ def exit_survey_submit(request):
                         if raw:
                             try:
                                 answer = int(raw)
+                                raw_answer = str(answer)
                                 if question.reverse_coded:
                                     answer = question.apply_reverse_coding(answer)
                                 answer = str(question.apply_scale_factor(answer))
                             except ValueError:
-                                answer = 'NULL'
+                                answer = raw_answer = 'NULL'
                         else:
-                            answer = 'NULL'
+                            answer = raw_answer = 'NULL'
                     else:
-                        answer = raw if raw else 'NULL'
+                        answer = raw_answer = raw if raw else 'NULL'
 
                     ParticipantResponse.objects.create(
                         survey=survey,
                         question=question,
                         participant=user,
                         answer=answer,
+                        raw_answer=raw_answer,
                         is_test=False,
                         display_position=position,
                     )
