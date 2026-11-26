@@ -238,6 +238,12 @@ so the order is: raw answer → reverse-coded (if enabled) → × scale factor �
 Must be 1 or greater — 0 and negative values aren't allowed. Example: a factor of 2
 turns a 1–5 scale into stored values of 2–10.
 
+The value the participant actually picked is kept too, as `raw_answer` in the CSV
+export, so you can apply reverse coding and weighting yourself if you prefer. This
+matters if you change Reverse Coded or Scale Factor after responses have come in: the
+export shows the question's *current* settings, which won't match how older answers
+were stored, but `raw_answer` is always what the participant chose.
+
 Note: range validation for Likert answers only happens when a participant actually
 submits a response. The admin won't warn you if a question's assigned Likert Scale
 conflicts with the survey defaults — check ranges manually when reviewing a survey.
@@ -376,6 +382,15 @@ flag, reverse-coding/scale-factor settings, and effective min/max/scale name, so
 generally don't need to cross-reference the survey structure separately when
 analyzing exports. The `other_text` column holds what a participant typed after
 choosing a multiple choice question's "Other" option, and is empty otherwise.
+
+`participant_id` is the participant's anonymised ID (e.g. `PRH-2026-0042`); responses
+from researcher or admin accounts show their username instead. To find the email
+behind an ID, search for it in the **Users** admin.
+
+`answer` is the stored value, with reverse coding and scale factor already applied
+for Likert questions. `raw_answer` is what the participant actually selected, before
+either was applied. For every other question type the two columns are the same.
+`raw_answer` is blank for responses saved before this column was added.
 
 `question_id` and `question_order` describe the question as set up in the survey, so
 they're the same for every participant. `display_position` is where that participant

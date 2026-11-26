@@ -459,7 +459,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': str(stored_value), 'is_test': True, 'display_position': positions.get(question.id)}
+                            defaults={'answer': str(stored_value), 'raw_answer': str(answer_value), 'is_test': True, 'display_position': positions.get(question.id)}
                         )
                     else:
                         # For multiple choice, free text, and NULL values, store as-is
@@ -467,7 +467,7 @@ def survey_preview(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True, 'display_position': positions.get(question.id)}
+                            defaults={'answer': answer_value, 'raw_answer': answer_value, 'other_text': other_texts.get(question, ''), 'is_test': True, 'display_position': positions.get(question.id)}
                         )
 
             messages.success(
@@ -663,7 +663,7 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': str(stored_value), 'display_position': positions.get(question.id)}
+                            defaults={'answer': str(stored_value), 'raw_answer': str(answer_value), 'display_position': positions.get(question.id)}
                         )
                     else:
                         # For multiple choice, free text, and NULL values, store as-is
@@ -671,7 +671,7 @@ def survey_take(request, pk):
                             survey=survey,
                             question=question,
                             participant=request.user,
-                            defaults={'answer': answer_value, 'other_text': other_texts.get(question, ''), 'display_position': positions.get(question.id)}
+                            defaults={'answer': answer_value, 'raw_answer': answer_value, 'other_text': other_texts.get(question, ''), 'display_position': positions.get(question.id)}
                         )
 
             context = {

@@ -179,7 +179,8 @@ class Command(BaseCommand):
             for question in likert_questions:
                 min_v = question.effective_min()
                 max_v = question.effective_max()
-                answer = rng.randint(min_v, max_v)
+                raw_answer = rng.randint(min_v, max_v)
+                answer = raw_answer
 
                 if question.reverse_coded:
                     answer = question.apply_reverse_coding(answer)
@@ -189,7 +190,7 @@ class Command(BaseCommand):
                     survey=survey,
                     question=question,
                     participant=participant,
-                    defaults={'answer': str(answer), 'is_test': False},
+                    defaults={'answer': str(answer), 'raw_answer': str(raw_answer), 'is_test': False},
                 )
                 count += 1
 

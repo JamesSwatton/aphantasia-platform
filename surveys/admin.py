@@ -228,7 +228,7 @@ class ParticipantResponseAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
     list_display = ["survey", "question", "participant_display","answer", "test_badge", "created_at"]
     list_filter = ["survey", "is_test", "created_at"]
     search_fields = ["participant__email", "survey__title", "question__text", "answer"]
-    readonly_fields = ["display_position", "created_at", "updated_at"]
+    readonly_fields = ["raw_answer", "display_position", "created_at", "updated_at"]
     actions = ["export_responses_csv"]
 
     def test_badge(self, obj):
@@ -282,6 +282,7 @@ class ParticipantResponseAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
             'likert_scale_name',
 
             # Response data
+            'raw_answer',
             'answer',
             'other_text',
             'is_test',
@@ -333,6 +334,7 @@ class ParticipantResponseAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
                 'min_value': min_val,
                 'max_value': max_val,
                 'likert_scale_name': scale_name,
+                'raw_answer': response_obj.raw_answer,
                 'answer': response_obj.answer,
                 'other_text': response_obj.other_text,
                 'is_test': response_obj.is_test,
