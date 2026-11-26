@@ -41,7 +41,7 @@ research_platform/
 ## Apps and Models
 
 ### accounts
-- **User**: Custom user model with `is_researcher` and `is_participant` fields, and `consent_text` field to track the consent form version agreed to during registration. Includes progress tracking methods.
+- **User**: Custom user model with `is_researcher` and `is_participant` fields, and `consent_text` field to track the consent form version agreed to during registration. Includes progress tracking methods. `participant_id` is the anonymised ID (`PRH-{join year}-{pk:04d}`, computed, not stored); `display_id` is that ID for participants and the username/email for researchers and admins, and is what the admin and data exports show.
 - **ConsentForm**: Editable consent form text shown to participants during registration, rendered as individual required checkboxes. Supports versioning and history tracking.
 - **WithdrawalText**: Editable copy shown on the withdrawal/exit-survey flow.
 - **WithdrawalRecord**: Audit snapshot (anonymised participant ID + exit survey responses as JSON) created before an account is deleted.
@@ -56,7 +56,7 @@ research_platform/
 - **QuestionGroup**: Groups questions into a visible section (shown to participants) or a hidden subscale (grouped only for scoring, no visual hint to participants).
 - **LikertScale**: Named, reusable Likert scales definable per survey.
 - **Question**: Individual survey questions belonging to a single survey, optionally in a `QuestionGroup`. Supports multiple question types (Likert, multiple choice single/multi, free text, dropdowns), ordering, required flag, reverse coding, scale factor, an optional "Other" option that reveals a text box (`other_option`), and conditional branching (`controls_next_n_questions` / `trigger_value`).
-- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option. `display_position` is where the question appeared on that participant's page (every question counted top to bottom from 1, set by `display_positions` in `surveys/views.py`), so randomised order is recorded; null for responses saved before it existed.
+- **ParticipantResponse**: Participant responses to survey questions (linked by question ID, independent of order). `other_text` holds the text typed for a multiple choice question's "Other" option. `display_position` is where the question appeared on that participant's page (every question counted top to bottom from 1, set by `display_positions` in `surveys/views.py`), so randomised order is recorded; null for responses saved before it existed. `answer` is stored after reverse coding and scale factor; `raw_answer` is what the participant actually selected (the same as `answer` for non-Likert questions, blank for responses saved before it existed).
 
 ### tasks
 - **LabTask**: Lab.js task uploads. Includes optional `trial_sender_filter` field (comma-separated sender names) to narrow trial data filtering beyond the default `ended_on='response'` filter, and an optional minimum-window-size gate (`requires_min_window_size`/`min_window_width`/`min_window_height`).
@@ -229,7 +229,7 @@ Surveys are created and managed through the Django admin panel by researchers:
   - Selected value (what participant clicked)
   - Stored value (after reverse coding, if applied)
   - Label for selected value
-- No data is saved to database
+- Responses are saved flagged `is_test=True` (see "Data Protection & Research Integrity" below)
 - Perfect for verifying survey configuration and reverse coding
 
 ### Participant Workflow
@@ -277,7 +277,7 @@ Individual questions can be reverse-coded to detect response patterns:
 
 - **Enable**: Check "Reverse coded" on specific questions
 - **Inversion formula**: `stored_value = (max_value + min_value) - selected_value`
-- **Example (1-5 scale)**: Participant selects 5 → Database stores 1
+- **Example (1-5 scale)**: Participant selects 5 → Database stores 1 in `answer`, and the original 5 in `raw_answer`
 - **Invisible to participants**: They see the normal scale
 - **Test mode display**: Shows both selected and stored values with **[RC]** indicator
 - **Data integrity**: Responses are always linked by question ID, never by order
@@ -414,6 +414,9 @@ All models are registered in the Django admin panel with:
 - Search functionality
 - Filtering options
 - Inline editing for related models (e.g., Questions within Surveys)
+
+### Participant IDs
+Participants appear by their PRH ID (e.g. `PRH-2026-0042`), never their email, on the Participant Responses and Task Submissions pages and in every CSV export. The search bar on Users, Participant Responses and Task Submissions accepts a PRH ID or just its number (`ParticipantIdSearchMixin` / `ParticipantDataAdminMixin` in `accounts/admin.py`; the year isn't checked). The Users list is where researchers trace an ID back to an email.
 
 ### Custom Branding
 The admin panel has been customized with research platform branding:
