@@ -34,6 +34,17 @@ class User(AbstractUser):
         """Anonymised participant ID shown to researchers, e.g. PRH-2026-0042."""
         return f"PRH-{self.date_joined.year}-{self.id:04d}"
 
+    @property
+    def display_id(self):
+        """
+        How this user is labelled in the admin and data exports: the PRH ID for
+        participants, the username/email for researchers so their test data
+        isn't mistaken for a participant's.
+        """
+        if self.is_participant and not self.is_researcher:
+            return self.participant_id
+        return self.username or self.email
+
     @staticmethod
     def pk_from_participant_id(term):
         """

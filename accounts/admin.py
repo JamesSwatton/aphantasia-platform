@@ -39,14 +39,14 @@ class ParticipantDataAdminMixin(ParticipantIdSearchMixin):
     participant_lookup = 'participant_id'
 
     def participant_display(self, obj):
-        return obj.participant.participant_id
+        return obj.participant.display_id
     participant_display.short_description = 'Participant'
     participant_display.admin_order_field = 'participant'
 
     def formfield_for_foreignkey(self, db_field, request, **kwargs):
         field = super().formfield_for_foreignkey(db_field, request, **kwargs)
         if db_field.name == 'participant':
-            field.label_from_instance = lambda user: user.participant_id
+            field.label_from_instance = lambda user: user.display_id
         return field
 
 
@@ -87,9 +87,7 @@ class UserAdmin(ParticipantIdSearchMixin, BaseUserAdmin):
         return readonly
 
     def participant_id_display(self, obj):
-        if obj.is_participant and not obj.is_researcher:
-            return obj.participant_id
-        return obj.username or obj.email
+        return obj.display_id
     participant_id_display.short_description = 'ID'
 
     def survey_progress_display(self, obj):

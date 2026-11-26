@@ -297,7 +297,7 @@ class TaskSubmissionAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
         writer.writeheader()
 
         meta = {
-            'participant_id': submission.participant.participant_id,
+            'participant_id': submission.participant.display_id,
             'task_title': submission.task.title,
             'submission_status': submission.status,
             'is_test': submission.is_test,
@@ -341,7 +341,7 @@ class TaskSubmissionAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
         writer.writeheader()
 
         meta = {
-            'participant_id': submission.participant.participant_id,
+            'participant_id': submission.participant.display_id,
             'task_title': submission.task.title,
             'submission_status': submission.status,
             'is_test': submission.is_test,
@@ -398,7 +398,7 @@ class TaskSubmissionAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
 
         for submission, trials in submission_rows:
             meta = {
-                'participant_id': submission.participant.participant_id,
+                'participant_id': submission.participant.display_id,
                 'task_title': submission.task.title,
                 'submission_status': submission.status,
                 'is_test': submission.is_test,
@@ -456,7 +456,7 @@ class TaskSubmissionAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
 
         for submission, raw_rows in submission_rows:
             meta = {
-                'participant_id': submission.participant.participant_id,
+                'participant_id': submission.participant.display_id,
                 'task_title': submission.task.title,
                 'submission_status': submission.status,
                 'is_test': submission.is_test,
