@@ -982,3 +982,23 @@ The export's `question_id` and `question_order` describe the survey as set up, s
 - **`templates/partials/_randomisation_note.html`**: "Randomised" or "Not randomised" with a one-line explanation, under the Researcher preview banner and under "✓ Test submission saved" on the results. Participants never see it
 - **Shown column** in the test results table: each question's `display_position`, so on a randomised survey you can see where each question landed. `survey_preview` adds it to every results row
 - `.survey-banner__note` and `.test-result__note` in `static/css/styles.css`; survey question guide's Preview entry updated
+
+## Session 37: Participant ID Privacy & Raw Answers (November 2026)
+
+**Branches**: `participant-id-privacy`, `store-raw-answer`
+
+### Participant IDs instead of emails
+Researchers asked to see only participant IDs in the data, with a way to trace an ID back to an email. Participants were identified four different ways: the PRH ID in the Users list, the raw database id in the survey export, and their email in the task exports and the response/submission admin.
+- **`User.participant_id`** (`accounts/models.py`): the PRH ID, built in one place instead of three. Still computed, not stored
+- **`User.display_id`**: the PRH ID for participants, the username/email for researchers and admins, so researcher test data isn't mistaken for a participant's
+- Survey and task CSV exports now have a `participant_id` column with `display_id` (the task exports previously had `participant_email`; the survey export previously had the raw pk)
+- Participant Responses and Task Submissions admin show `display_id` in the list column, the participant dropdown and page titles (`__str__`)
+- **Admin search by PRH ID**: the PRH ID is computed, so it couldn't be in `search_fields`. `ParticipantIdSearchMixin` and `ParticipantDataAdminMixin` (`accounts/admin.py`) match the trailing number of `PRH-2026-0042`, `0042` or `42`. Used on Users, Participant Responses and Task Submissions
+- The Users list keeps its email column for all researchers; it's the ID → email lookup
+
+### Raw answer stored alongside the scored answer
+`answer` has always been stored after reverse coding and scale factor, so the value a participant actually picked was lost, and the export shows a question's *current* settings, so older answers couldn't be reliably un-transformed if those settings changed.
+- **`ParticipantResponse.raw_answer`** (migration `surveys.0041`): what the participant selected; the same as `answer` for non-Likert questions. Saved by `survey_take`, `survey_preview`, the feedback and exit surveys, and `seed_results_data`. Existing (test) responses were left blank
+- Exported as `raw_answer` before `answer`; read-only in the Participant Responses admin
+- `answer` is unchanged, so scoring and participant results are unaffected
+- Survey question guide documents `raw_answer` and `participant_id`; README updated, including correcting Test Mode's "no data is saved" line
