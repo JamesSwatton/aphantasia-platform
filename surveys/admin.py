@@ -8,6 +8,7 @@ import csv
 from datetime import date
 
 from .models import Guideline, LikertScale, ParticipantResponse, Question, QuestionGroup, Survey
+from accounts.admin import ParticipantDataAdminMixin
 from accounts.models import User
 from core.models import DataDownloadLog
 
@@ -223,8 +224,8 @@ class SurveyAdmin(QuestionOrderAdminMixin, admin.ModelAdmin):
 
 
 @admin.register(ParticipantResponse)
-class ParticipantResponseAdmin(admin.ModelAdmin):
-    list_display = ["survey", "question", "participant", "answer", "test_badge", "created_at"]
+class ParticipantResponseAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
+    list_display = ["survey", "question", "participant_display","answer", "test_badge", "created_at"]
     list_filter = ["survey", "is_test", "created_at"]
     search_fields = ["participant__email", "survey__title", "question__text", "answer"]
     readonly_fields = ["display_position", "created_at", "updated_at"]
@@ -316,7 +317,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 scale_name = ''
 
             row = {
-                'participant_id': response_obj.participant.id,
+                'participant_id': response_obj.participant.display_id,
                 'survey_title': response_obj.survey.title,
                 'survey_id': response_obj.survey.id,
                 'question_id': q.question_id,

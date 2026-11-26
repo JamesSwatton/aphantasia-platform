@@ -864,4 +864,4 @@ class ParticipantResponse(models.Model):
         unique_together = ['survey', 'question', 'participant']
 
     def __str__(self):
-        return f"{self.participant.email} - {self.survey.title} - {self.question.text[:30]}"
+        return f"{self.participant.display_id} - {self.survey.title} - {self.question.text[:30]}"

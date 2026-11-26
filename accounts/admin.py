@@ -14,8 +14,44 @@ from datetime import date
 admin.site.unregister(EmailAddress)
 
 
+class ParticipantIdSearchMixin:
+    """
+    Lets the admin search bar find participants by their PRH ID, which is
+    computed rather than stored so can't go in search_fields.
+    Set participant_lookup to the path from this model to the user's pk.
+    """
+    participant_lookup = 'pk'
+
+    def get_search_results(self, request, queryset, search_term):
+        results, may_have_duplicates = super().get_search_results(request, queryset, search_term)
+        pk = User.pk_from_participant_id(search_term)
+        if pk is not None:
+            results |= queryset.filter(**{self.participant_lookup: pk})
+        return results, may_have_duplicates
+
+
+class ParticipantDataAdminMixin(ParticipantIdSearchMixin):
+    """
+    For admins of participant data (responses, submissions): shows the
+    participant as their PRH ID rather than their email, in the list column,
+    the participant dropdown and search. Add 'participant_display' to list_display.
+    """
+    participant_lookup = 'participant_id'
+
+    def participant_display(self, obj):
+        return obj.participant.display_id
+    participant_display.short_description = 'Participant'
+    participant_display.admin_order_field = 'participant'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'participant':
+            field.label_from_instance = lambda user: user.display_id
+        return field
+
+
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(ParticipantIdSearchMixin, BaseUserAdmin):
     """
     Admin configuration for custom User model.
     """
@@ -51,9 +87,7 @@ class UserAdmin(BaseUserAdmin):
         return readonly
 
     def participant_id_display(self, obj):
-        if obj.is_participant and not obj.is_researcher:
-            return f"PRH-{obj.date_joined.year}-{obj.id:04d}"
-        return obj.username or obj.email
+        return obj.display_id
     participant_id_display.short_description = 'ID'
 
     def survey_progress_display(self, obj):
