@@ -290,13 +290,13 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         extras = [f for f in all_trial_keys if f not in self.PRIORITY_FIELDS and f not in self.LABJS_INTERNAL_FIELDS]
         trial_columns = priority + extras
 
-        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+        meta_columns = ['participant_id','task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
 
         writer = csv.DictWriter(response, fieldnames=meta_columns + trial_columns, extrasaction='ignore')
         writer.writeheader()
 
         meta = {
-            'participant_email': submission.participant.email,
+            'participant_id': submission.participant.participant_id,
             'task_title': submission.task.title,
             'submission_status': submission.status,
             'is_test': submission.is_test,
@@ -334,13 +334,13 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
                 if key not in all_keys:
                     all_keys.append(key)
 
-        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+        meta_columns = ['participant_id','task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
 
         writer = csv.DictWriter(response, fieldnames=meta_columns + all_keys, extrasaction='ignore')
         writer.writeheader()
 
         meta = {
-            'participant_email': submission.participant.email,
+            'participant_id': submission.participant.participant_id,
             'task_title': submission.task.title,
             'submission_status': submission.status,
             'is_test': submission.is_test,
@@ -367,7 +367,7 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         """
         Export the filtered trial data (get_trial_data()) for selected submissions as CSV.
         Each row in the CSV corresponds to one trial response, with submission-level
-        metadata (participant email, task title, is_test, status, time_spent_seconds)
+        metadata (participant ID, task title, is_test, status, time_spent_seconds)
         prepended as additional columns.
         """
         response = HttpResponse(content_type='text/csv')
@@ -390,14 +390,14 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
         trial_columns = priority + extras
 
         # Submission-level metadata columns prepended to every row
-        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+        meta_columns = ['participant_id','task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
 
         writer = csv.DictWriter(response, fieldnames=meta_columns + trial_columns, extrasaction='ignore')
         writer.writeheader()
 
         for submission, trials in submission_rows:
             meta = {
-                'participant_email': submission.participant.email,
+                'participant_id': submission.participant.participant_id,
                 'task_title': submission.task.title,
                 'submission_status': submission.status,
                 'is_test': submission.is_test,
@@ -448,14 +448,14 @@ class TaskSubmissionAdmin(admin.ModelAdmin):
                     if key not in all_keys:
                         all_keys.append(key)
 
-        meta_columns = ['participant_email', 'task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
+        meta_columns = ['participant_id','task_title', 'submission_status', 'is_test', 'time_spent_seconds', 'started_at', 'completed_at']
 
         writer = csv.DictWriter(response, fieldnames=meta_columns + all_keys, extrasaction='ignore')
         writer.writeheader()
 
         for submission, raw_rows in submission_rows:
             meta = {
-                'participant_email': submission.participant.email,
+                'participant_id': submission.participant.participant_id,
                 'task_title': submission.task.title,
                 'submission_status': submission.status,
                 'is_test': submission.is_test,
