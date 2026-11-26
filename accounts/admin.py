@@ -52,7 +52,7 @@ class UserAdmin(BaseUserAdmin):
 
     def participant_id_display(self, obj):
         if obj.is_participant and not obj.is_researcher:
-            return f"PRH-{obj.date_joined.year}-{obj.id:04d}"
+            return obj.participant_id
         return obj.username or obj.email
     participant_id_display.short_description = 'ID'
 

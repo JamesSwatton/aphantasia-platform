@@ -27,6 +27,11 @@ class User(AbstractUser):
     def __str__(self):
         return self.email or self.username
 
+    @property
+    def participant_id(self):
+        """Anonymised participant ID shown to researchers, e.g. PRH-2026-0042."""
+        return f"PRH-{self.date_joined.year}-{self.id:04d}"
+
     def get_survey_progress(self):
         """
         Calculate survey completion progress for this user.

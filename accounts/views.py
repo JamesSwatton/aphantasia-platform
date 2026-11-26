@@ -20,7 +20,7 @@ def account(request):
 
     withdrawal_text_obj = WithdrawalText.objects.filter(is_active=True).first()
     withdrawal_text_html = markdown_to_html(withdrawal_text_obj.content) if withdrawal_text_obj else None
-    participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
+    participant_id = user.participant_id
     results = get_all_results(user)
 
     # Domain filter for the Results tab. Only domains the participant has a result in are listed.
@@ -176,7 +176,7 @@ def exit_survey_submit(request):
             pass
 
     # Build anonymised participant ID before deleting the user
-    participant_id = f"PRH-{user.date_joined.year}-{user.id:04d}"
+    participant_id = user.participant_id
 
     # Snapshot exit survey responses if any were just saved
     exit_survey_title = ''
