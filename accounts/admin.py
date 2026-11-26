@@ -14,8 +14,24 @@ from datetime import date
 admin.site.unregister(EmailAddress)
 
 
+class ParticipantIdSearchMixin:
+    """
+    Lets the admin search bar find participants by their PRH ID, which is
+    computed rather than stored so can't go in search_fields.
+    Set participant_lookup to the path from this model to the user's pk.
+    """
+    participant_lookup = 'pk'
+
+    def get_search_results(self, request, queryset, search_term):
+        results, may_have_duplicates = super().get_search_results(request, queryset, search_term)
+        pk = User.pk_from_participant_id(search_term)
+        if pk is not None:
+            results |= queryset.filter(**{self.participant_lookup: pk})
+        return results, may_have_duplicates
+
+
 @admin.register(User)
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(ParticipantIdSearchMixin, BaseUserAdmin):
     """
     Admin configuration for custom User model.
     """

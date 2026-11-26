@@ -1,3 +1,5 @@
+import re
+
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
@@ -31,6 +33,15 @@ class User(AbstractUser):
     def participant_id(self):
         """Anonymised participant ID shown to researchers, e.g. PRH-2026-0042."""
         return f"PRH-{self.date_joined.year}-{self.id:04d}"
+
+    @staticmethod
+    def pk_from_participant_id(term):
+        """
+        Return the user pk referenced by a participant ID search term, or None.
+        Accepts the full ID (PRH-2026-0042) or just its number (0042, 42).
+        """
+        match = re.fullmatch(r'(?:PRH-\d{4}-)?(\d+)', term.strip(), re.IGNORECASE)
+        return int(match.group(1)) if match else None
 
     def get_survey_progress(self):
         """
