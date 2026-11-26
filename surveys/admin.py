@@ -316,7 +316,7 @@ class ParticipantResponseAdmin(admin.ModelAdmin):
                 scale_name = ''
 
             row = {
-                'participant_id': response_obj.participant.id,
+                'participant_id': response_obj.participant.participant_id,
                 'survey_title': response_obj.survey.title,
                 'survey_id': response_obj.survey.id,
                 'question_id': q.question_id,
