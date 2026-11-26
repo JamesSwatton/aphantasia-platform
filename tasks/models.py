@@ -296,4 +296,4 @@ class TaskSubmission(models.Model):
         ]
 
     def __str__(self):
-        return f"{self.participant.email} - {self.task.title} ({self.status})"
+        return f"{self.participant.participant_id} - {self.task.title} ({self.status})"

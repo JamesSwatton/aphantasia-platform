@@ -8,6 +8,7 @@ from django.urls import path
 from django.utils.html import format_html
 from django import forms
 from .models import LabTask, TaskSubmission
+from accounts.admin import ParticipantDataAdminMixin
 from accounts.models import User
 from core.models import DataDownloadLog
 
@@ -118,8 +119,8 @@ class LabTaskAdmin(admin.ModelAdmin):
 
 
 @admin.register(TaskSubmission)
-class TaskSubmissionAdmin(admin.ModelAdmin):
-    list_display = ['task', 'participant', 'status', 'is_test_badge', 'started_at', 'completed_at', 'time_spent_seconds', 'trial_count', 'window_size_display']
+class TaskSubmissionAdmin(ParticipantDataAdminMixin, admin.ModelAdmin):
+    list_display = ['task', 'participant_display','status', 'is_test_badge', 'started_at', 'completed_at', 'time_spent_seconds', 'trial_count', 'window_size_display']
     list_filter = ['status', 'is_test', 'started_at', 'completed_at']
     search_fields = ['task__title', 'participant__email']
     readonly_fields = ['started_at', 'updated_at', 'trial_data_display', 'is_test_badge']

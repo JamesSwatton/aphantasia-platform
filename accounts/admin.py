@@ -30,6 +30,26 @@ class ParticipantIdSearchMixin:
         return results, may_have_duplicates
 
 
+class ParticipantDataAdminMixin(ParticipantIdSearchMixin):
+    """
+    For admins of participant data (responses, submissions): shows the
+    participant as their PRH ID rather than their email, in the list column,
+    the participant dropdown and search. Add 'participant_display' to list_display.
+    """
+    participant_lookup = 'participant_id'
+
+    def participant_display(self, obj):
+        return obj.participant.participant_id
+    participant_display.short_description = 'Participant'
+    participant_display.admin_order_field = 'participant'
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        field = super().formfield_for_foreignkey(db_field, request, **kwargs)
+        if db_field.name == 'participant':
+            field.label_from_instance = lambda user: user.participant_id
+        return field
+
+
 @admin.register(User)
 class UserAdmin(ParticipantIdSearchMixin, BaseUserAdmin):
     """
